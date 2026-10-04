@@ -104,10 +104,15 @@ Fix remaining unit-test and spec gaps in this session where possible, following 
 
 ### Step 10: Post the Jira comment
 
-Compose the comment from the template below, post it to the ticket with the Atlassian MCP, and show the user the same text in the session.
+Read the template for the mode and compose the comment from it:
+
+- `initial`: [templates/initial-comment.md](templates/initial-comment.md)
+- `final`: [templates/final-comment.md](templates/final-comment.md)
+
+Post only the content of the fenced `markdown` block under "Template". Fill in every `{{ placeholder }}`, keep exactly one `**Verdict:**` line and delete the other, and remove no sections (write "None" or "Not applicable" instead). Keep it scannable: facts and file references, no padding. Post it to the ticket with the Atlassian MCP, then show the user the same text in the session.
 
 - `initial`: post the comment and stop. The ticket goes back to dev for the listed gaps.
-- `final`: post the comment. State a verdict: **Ready to mark Done** (no open gaps) or **Gaps remain** (list them).
+- `final`: post the comment. The verdict is **Ready to mark Done** (no open gaps) or **Gaps remain** (list them).
 
 Do not transition the ticket yourself. If the verdict is "Ready to mark Done" or a status change would clearly be next, offer it and wait for the user to say yes.
 
@@ -125,31 +130,3 @@ Follow the memory file format from the system prompt (frontmatter plus body). Up
 ### Step 12: Report to the user
 
 End with a short summary: verdict, number of gaps by status, files modified in the working tree (`final` only, uncommitted), commands run with pass/fail, and a link to the posted comment.
-
-## Comment template
-
-```
-*QA Review (<initial|final>)* - PRs: #<n>[, #<n>]
-
-*Verdict:* <Send back to dev | Ready to mark Done | Gaps remain>
-
-*Acceptance criteria*
-- AC1 <short text>: Covered/Partial/Missing - <evidence>
-
-*Unit tests*
-- <gap or "No gaps">
-
-*Functional/integration tests*  (final only, otherwise "Skipped (initial review)")
-- <tests added / .todo stubs and why / "No gaps">
-
-*API spec*
-- <gap, fixed item, "No gaps", or "Not applicable">
-
-*Previous gaps*  (final only)
-- G1 <text>: Closed/Still open/Closed differently
-
-*Changes made in session*  (final only)
-- <files touched, uncommitted>
-```
-
-Use Jira wiki/markdown formatting that the Atlassian MCP accepts. Keep it scannable: facts and file references, no padding.
