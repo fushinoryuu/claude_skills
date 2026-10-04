@@ -1,6 +1,13 @@
 # QA Review Skill
 
-Runs a structured QA review session for a Jira ticket + one or more PRs. This could serve as the formal QA verification step for a given team/project: when all gaps are revolved and you are satisfied, mark the ticket Done.
+Runs a structured QA review session for a Jira ticket + one or more PRs. This could serve as the formal QA verification step for a given team/project: when all gaps are resolved and you are satisfied, mark the ticket Done.
+
+### Initial setup
+
+This skill assumes that you have the following tools already setup and fully athenticated to work:
+
+- Atlassian MCP with write access to post comments and transition tickets into different statuses.
+- Github CLI
 
 ### Review modes
 There are two modes, used at different points in the ticket lifecycle:
@@ -16,7 +23,7 @@ There are two modes, used at different points in the ticket lifecycle:
 /qa-review <mode> <JIRA-TICKET> <PR#> [PR#2 PR#3 ...]
 ```
 
-**Examples:***
+**Examples:**
 ```
 /qa-review initial ABC-123 456
 /qa-review final ABC-123 456
@@ -33,7 +40,7 @@ There are two modes, used at different points in the ticket lifecycle:
 4. Identify unit test gaps (reports only - does not fix)
 5. _(Functional/Integration tests skipped)_
 6. Identify OpenAPI spec gaps (reports only - does not fix)
-7. Post an initial review comment and stop
+7. Post an initial review comment to the Jira ticket and stop
 
 **`final` review:**
 
@@ -41,12 +48,14 @@ There are two modes, used at different points in the ticket lifecycle:
 2. Fetch the Jira ticket and all PR diffs in parallel
 3. Check acceptance criteria coverage
 4. Verify initial review gaps are closed; identify any new gaps
-5. Evaluate and implement functiona/integration tests
+5. Evaluate and implement functional/integration tests
 6. Verify OpenAPI spec; fix if needed
 7. Fix unit test and spec gaps in session where possible
-8. Post a final review comment
+8. Post a final review comment to the Jira ticket
 
-### what it checks
+### What it checks
+
+**Unit tests**
 
 - New or modified core logic (factories, utilities, sub-resource handlers) has unit test coverage.
 - New or modified branches in existing handlers have test coverage (eg. error handling branches).
@@ -54,7 +63,7 @@ There are two modes, used at different points in the ticket lifecycle:
 
 **Functional/Integration tests** _(final mode only)_
 
-- Observable API behavior is covered in designated test directory. This includes response shape, status codes, filtering, pagination, and any other behavior described in AV that cannot be fully verified by unit tests.
+- Observable API behavior is covered in designated test directory. This includes response shape, status codes, filtering, pagination, and any other behavior described in AC that cannot be fully verified by unit tests.
 - If for some reason a functional/integration tests can't be created at this moment, a `.todo` stub is added to keep track of missing tests in source control.
 - Every `beforeAll` that creates test data has matching `afterAll` that cleans it up.
 
