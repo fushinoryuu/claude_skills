@@ -6,7 +6,7 @@ Runs a structured QA review session for a Jira ticket + one or more PRs. This co
 
 This skill assumes that you have the following tools already setup and fully athenticated to work:
 
-- Atlassian MCP with write access to post comments and transition tickets into different statuses.
+- Atlassian MCP with write access to post comments
 - Github CLI
 
 ### Review modes

@@ -4,41 +4,83 @@ Use this template when posting the Jira comment for an `initial` mode review. Fi
 
 ---
 
+## Rules for initial review comments
+
+- **Never include an Actions section.** Initial review only reports gaps - it does not fix them.
+- **Never mention functional/integration tests.** These types of tests are evaluated in the final review only.
+- Keep each gap description to one sentence: what is missing and why it matters.
+- Use `*Section Name*` for bold headers (Jira rendering).
+- Use `✓`/`✗` for AC items, `✅`/`❌` for the verdict line.
+- Do not include file line numbers - they change and go stale.
+- Do not include any code snippets in the comment.
+- Never change Jira ticket status.
+
+---
+
+## Verdict decision guide
+
+| Situation                                    | Verdict  |
+| -------------------------------------------- | -------- |
+| AC met, unit tests complete, spec correct    | Option A |
+| Any gap in: AC coverage, unit tests, or spec | Option B |
+
+---
+
 ## Template
 
-````markdown
-## QA Review (initial)
+```
+Initial QA Review - {{ JIRA TICKET }}
 
-**PRs:** {{ #PR_NUMBER, #PR_NUMBER }}
+**PRs:** {{ PR list, e.g. #123 #456}}
 **Reviewed:** {{ YYYY-MM-DD }}
 
-**Verdict:** Send back to dev - {{ N }} gap(s) found
-**Verdict:** No gaps found - ready for final review
+---
 
-### Acceptance criteria
+*Verdict*
 
-| # | Criterion | Status | Evidence |
-| - | --------- | ------ | -------- |
-| AC1 | {{ short criterion text }} | Covered / Partial / Missing | {{ file:line or test name }} |
+{{ OPTION A - No gaps found }}
+✅ No gaps found. Ready for final QA review.
 
-### Gaps
+{{ OPTION B - Gaps found }}
+❌ {{ N }} gap(s) found (see below). Sending back to dev.
 
-Each gap has an id so the final review can reference it. Write "None" if there are no gaps.
+---
 
-**Unit tests**
-- **G1** - {{ what is untested }} (`{{ file }}` - `{{ symbol }}`). Needed: {{ test that would close it }}.
+*Acceptance Criteria*
+{{ One line per AC item: }}
+✓ {{ AC item text - met }}
+✗ {{ AC item text - not met, with brief reason }}
 
-**API spec** _(write "Not applicable - no API contract in this project" if so)_
-- **G2** - {{ what is missing or wrong in the spec }} (`{{ spec file }}`). Needed: {{ change that would close it }}.
+---
 
-**Other**
-- **G3** - {{ anything outside the categories above }}
+*Implementation*
+{{ 2-4 sentence summary of what the PR(s) actually do. Write for a reader who has not seen the diff. Focus on the approach taken, not just what the ticket asked for. }}
 
-### Not evaluated
+---
 
-- Functional/integration tests - skipped in the initial review, evaluated in the final review.
+*Unit Tests*
+{{ If no gaps: }}
+No gaps found.
 
-### Next steps
+{{ If gaps found (one block per gap): }}
+Gap: {{ Describe what is untested }} - `{{ file }}`- {{ Test that would close it }}.
 
-{{ one or two sentences: what dev should address before requesting the final review }}
-````
+{{ Repeat per gap }}
+
+---
+
+*OpenAPI Spec*
+{{ If project does not contain any API contracts/specs: }}
+Not applicable - no API contract in this project.
+
+{{ If no changes were needed and spec is untouched: }}
+No spec changes required.
+
+{{ If spec was updated correctly by the dev: }}
+Correct. Changes in source files only ({{ list files }}).
+
+{{ If gaps found (one block per gap): }}
+Gap: {{ What is missing or wrong in the spec }} - `{{ spec file }}` - {{ Change that would close it }}.
+
+{{ Repeat per gap }}
+```
