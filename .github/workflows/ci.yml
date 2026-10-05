@@ -3,11 +3,12 @@ name: CI
 # Runs unit and structure tests only. Evals are run manually (see evals/).
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
 
 jobs:
-  test:
+  run-tests:
     runs-on: ubuntu-latest
 
     steps:
