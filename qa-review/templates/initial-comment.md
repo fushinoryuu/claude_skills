@@ -6,14 +6,16 @@ Use this template when posting the Jira comment for an `initial` mode review. Fi
 
 ## Rules for initial review comments
 
-- **Never include an Actions section.** Initial review only reports gaps - it does not fix them.
-- **Never mention functional/integration tests.** These types of tests are evaluated in the final review only.
-- Keep each gap description to one sentence: what is missing and why it matters.
-- Use `*Section Name*` for bold headers (Jira rendering).
-- Use `✓`/`✗` for AC items, `✅`/`❌` for the verdict line.
-- Do not include file line numbers - they change and go stale.
-- Do not include any code snippets in the comment.
-- Never change Jira ticket status.
+1. **Never include an Actions section.** Initial review only reports gaps - it does not fix them.
+2. **Never mention functional/integration tests.** These types of tests are evaluated in the final review only.
+3. Keep each gap description to one sentence: what is missing and why it matters.
+4. Use `*Section Name*` for bold headers (Jira rendering).
+5. Use `✓`/`✗` for AC items, `✅`/`❌` for the verdict line.
+6. Do not include file line numbers - they change and go stale.
+7. Do not include any code snippets in the comment.
+8. Never wrap the comment, or any part of it, in a code fence, code block, `{code}`, `{noformat}` or panel. Jira renders those as a grey box instead of a normal comment.
+9. Do not use Markdown tables. Use one line per item.
+10. Never change Jira ticket status.
 
 ---
 
@@ -28,11 +30,11 @@ Use this template when posting the Jira comment for an `initial` mode review. Fi
 
 ## Template
 
-```
-Initial QA Review - {{ JIRA TICKET }}
+Post everything below this line as the comment body. It is plain comment text, not a code block.
 
-**PRs:** {{ PR list, e.g. #123 #456}}
-**Reviewed:** {{ YYYY-MM-DD }}
+Initial QA Review - {{ JIRA TICKET }}
+PRs: {{ PR list, e.g. #123 #456}}
+Reviewed: {{ YYYY-MM-DD }}
 
 ---
 
@@ -83,4 +85,3 @@ Correct. Changes in source files only ({{ list files }}).
 Gap: {{ What is missing or wrong in the spec }} - `{{ spec file }}` - {{ Change that would close it }}.
 
 {{ Repeat per gap }}
-```

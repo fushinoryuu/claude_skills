@@ -109,7 +109,9 @@ Read the template for the mode and compose the comment from it:
 - `initial`: [templates/initial-comment.md](templates/initial-comment.md)
 - `final`: [templates/final-comment.md](templates/final-comment.md)
 
-Post only the content of the fenced `markdown` block under "Template". Fill in every `{{ placeholder }}`, keep exactly one `**Verdict:**` line and delete the other, and remove no sections (write "None" or "Not applicable" instead). Keep it scannable: facts and file references, no padding. Post it to the ticket with the Atlassian MCP, then show the user the same text in the session.
+Post only the text under the "Template" heading, and follow the rules section of the template. Fill in every `{{ placeholder }}`, keep only the applicable verdict and the applicable branch of each conditional (delete the `{{ ... }}` marker lines), and remove no sections (write "None" or "Not applicable" instead). Keep it scannable: facts and file names, no padding.
+
+The comment must look like a normal comment from a person. Post it as plain text exactly as the template formats it. Never wrap it in a code fence, code block, `{code}`, `{noformat}` or panel, since Jira renders those as a grey box. Post it to the ticket with the Atlassian MCP, then show the user the same text in the session.
 
 - `initial`: post the comment and stop. The ticket goes back to dev for the listed gaps.
 - `final`: post the comment. The verdict is **Ready to mark Done** (no open gaps) or **Gaps remain** (list them).

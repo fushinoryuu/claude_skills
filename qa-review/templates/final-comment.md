@@ -6,17 +6,17 @@ Use this template when posting the Jira comment for an `final` mode review. Fill
 
 ## Rules for final review comments
 
-- Always include the _Gaps from Initial Review_ section, even if there was no prior initial review.
-- Each gap entry needs both a **Gap** line and an **Action** line - unlike the initial review which only has a Gap line.
-- Keep each gap description to one sentence: what is missing and why it matters.
-- Keep each action to one sentence: what was done or why it was sent back.
-- Use `*Section Name*` for bold headers (Jira rendering).
-- Use `✓`/`✗` for AC items and gap closure status, `✅`/`❌` for the verdict line.
-- Do not include file line numbers - they change and go stale.
-- Do not include any code snippets in the comment.
-- Never wrap the comment, or any part of it, in a code fence, code block, `{code}`, `{noformat}` or panel. Jira renders those as a grey box instead of a normal comment.
-- Do not use Markdown tables. Use one line per item.
-- Never change Jira ticket status.
+1. Always include the *Gaps from Previous Review* section, even if there was no prior initial review.
+2. Each gap entry needs both a **Gap** line and an **Action** line - unlike the initial review which only has a Gap line.
+3. Keep each gap description to one sentence: what is missing and why it matters.
+4. Keep each action to one sentence: what was done or why it was sent back.
+5. Use `*Section Name*` for bold headers (Jira rendering).
+6. Use `✓`/`✗` for AC items and gap closure status, `✅`/`❌` for the verdict line.
+7. Do not include file line numbers - they change and go stale.
+8. Do not include any code snippets in the comment.
+9. Never wrap the comment, or any part of it, in a code fence, code block, `{code}`, `{noformat}` or panel. Jira renders those as a grey box instead of a normal comment.
+10. Do not use Markdown tables. Use one line per item.
+11. Never change Jira ticket status.
 
 ---
 
@@ -136,22 +136,3 @@ Gap: {{ What is missing or wrong in the spec }} - `{{ spec file }}`.
 Action: Sent back to dev - {{ brief reason, e.g. "an update to production code would be required" }}
 
 {{ Repeat per gap }}
-
----
-
-*Changes Made In This Session*
-{{ If no files were edited: }}
-None.
-
-{{ Otherwise: }}
-The following files were edited and are not committed:
-- `{{ file }}` - {{ what changed }}
-
----
-
-*Remaining Work For Dev*
-{{ If none: }}
-None.
-
-{{ Otherwise one line per open gap that needs a production code change: }}
-- {{ Gap }}
