@@ -1,14 +1,14 @@
 # QA Review Final Review Comment Template
 
-Use this template when posting the Jira comment for an `final` mode review. Fill in every `{{ placeholder }`, pick the correct verdict, and delete the unused verdict option before posting.
+Use this template when posting the Jira comment for a `final` mode review. Fill in every `{{ placeholder }}`, pick the correct verdict, and delete the unused verdict option before posting.
 
 ---
 
 ## Rules for final review comments
 
 1. Always include the *Gaps from Previous Review* section, even if there was no prior initial review.
-2. Each gap entry needs both a **Gap** line and an **Action** line - unlike the initial review which only has a Gap line.
-3. Keep each gap description to one sentence: what is missing and why it matters.
+2. Each new gap entry (Unit Tests and OpenAPI Spec sections) needs both a **Gap** line and an **Action** line - unlike the initial review which only has a Gap line. Gaps from the previous review use the one-line ✓/✗ format instead.
+3. Keep each gap description to one sentence: what is untested and why it matters.
 4. Keep each action to one sentence: what was done or why it was sent back.
 5. Use `*Section Name*` for bold headers (Jira rendering).
 6. Use `✓`/`✗` for AC items and gap closure status, `✅`/`❌` for the verdict line.
@@ -24,11 +24,14 @@ Use this template when posting the Jira comment for an `final` mode review. Fill
 
 | Situation                                                                                               | Verdict  |
 | ------------------------------------------------------------------------------------------------------- | -------- |
-| All initial gaps closed, no new gaps, functional/integration tests pass                                 | Option A |
-| All initial gaps closed, new gaps were found and fixed in this session                                  | Option B |
-| Test .todo stubs added, unable to write tests for some reason                                           | Option C |
+| All initial gaps closed, no new gaps, functional/integration tests pass or are not required             | Option A |
+| All initial gaps closed, new gaps were found and all fixed in this session, tests pass or not required  | Option B |
+| Test .todo stubs added, unable to write tests for some reason, and no gap needs dev action              | Option C |
 | Any gap remains that cannot be fixed in this session (e.g. it would require changes to production code) | Option D |
 | Implementation is wrong or AC not met                                                                   | Option D |
+| Tests fail and the failure is a genuine bug that needs a dev fix (first try to fix the test in session) | Option D |
+
+If more than one row applies, Option D takes precedence over Option C.
 
 ---
 
@@ -51,7 +54,7 @@ Reviewed: {{ YYYY-MM-DD }}
 ✅ QA verified with fixes. {{ N }} gap(s) resolved in this session (see below). Ready to mark Done.
 
 {{ OPTION C - Gaps remain, unable to create tests and .todo stubs added }}
-❌ {{ N }} gap(s) require QA Engineer to triage issues creating integration tests. Ticket reamins in QA.
+❌ {{ N }} gap(s) require QA Engineer to triage issues creating integration tests. Ticket remains in QA.
 
 {{ OPTION D - Gaps remain, sent back }}
 ❌ {{ N }} gap(s) require Developer action (see below). Sending back to dev.
@@ -71,8 +74,8 @@ Reviewed: {{ YYYY-MM-DD }}
 ---
 
 *Gaps from Previous Review*
-{{ If there was no initial review on record: }}
-No prior review on record.
+{{ If no initial review was found in memory or in the Jira ticket comments: }}
+No initial review found.
 
 {{ If all gaps from previous review are confirmed closed: }}
 All gaps from previous review confirmed closed.

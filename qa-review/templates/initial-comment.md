@@ -1,6 +1,6 @@
 # QA Review Initial Review Comment Template
 
-Use this template when posting the Jira comment for an `initial` mode review. Fill in every `{{ placeholder }`, pick the correct verdict, and delete the unused verdict option before posting.
+Use this template when posting the Jira comment for an `initial` mode review. Fill in every `{{ placeholder }}`, pick the correct verdict, and delete the unused verdict option before posting.
 
 ---
 
@@ -8,7 +8,7 @@ Use this template when posting the Jira comment for an `initial` mode review. Fi
 
 1. **Never include an Actions section.** Initial review only reports gaps - it does not fix them.
 2. **Never mention functional/integration tests.** These types of tests are evaluated in the final review only.
-3. Keep each gap description to one sentence: what is missing and why it matters.
+3. Keep each gap description to one sentence: what is untested and why it matters.
 4. Use `*Section Name*` for bold headers (Jira rendering).
 5. Use `✓`/`✗` for AC items, `✅`/`❌` for the verdict line.
 6. Do not include file line numbers - they change and go stale.
