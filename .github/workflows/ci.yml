@@ -1,0 +1,22 @@
+name: CI
+
+# Runs unit and structure tests only. Evals are run manually (see evals/).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check repo skeleton
+        run: |
+          for d in skills tests evals docs; do
+            test -d "$d" || { echo "Missing directory: $d"; exit 1; }
+          done
+
+      # TODO: add unit and structure test steps once the test runner is chosen.
