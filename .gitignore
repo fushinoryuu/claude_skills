@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets
+.env
+
+# Eval output
+evals/results/
+
+# OS / editor
+.DS_Store
+Thumbs.db
