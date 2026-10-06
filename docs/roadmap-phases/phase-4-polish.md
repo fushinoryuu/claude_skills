@@ -11,13 +11,13 @@ Make the repo easy to understand, easy to try, and easy to talk about. A reviewe
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Per-skill docs | `docs/skills/<skill>.md` |
-| Eval results summary | `docs/eval-results.md` |
-| Demo asset (GIF or transcript) | `docs/demo/` and linked from `README.md` |
-| Final README | `README.md` |
-| Resume bullet(s) | kept outside the repo, drafted here for reference |
+| Deliverable                    | Location                                          |
+| ------------------------------ | ------------------------------------------------- |
+| Per-skill docs                 | `docs/skills/<skill>.md`                          |
+| Eval results summary           | `docs/eval-results.md`                            |
+| Demo asset (GIF or transcript) | `docs/demo/` and linked from `README.md`          |
+| Final README                   | `README.md`                                       |
+| Resume bullet(s)               | kept outside the repo, drafted here for reference |
 
 ## Tasks
 

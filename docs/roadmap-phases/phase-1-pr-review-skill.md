@@ -11,14 +11,14 @@ The generic PR-review skill is the foundation the Phase 2 extensions build on. I
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Skill definition | `skills/pr-review/SKILL.md` |
+| Deliverable             | Location                                                  |
+| ----------------------- | --------------------------------------------------------- |
+| Skill definition        | `skills/pr-review/SKILL.md`                               |
 | Project-type references | `skills/pr-review/references/{frontend,backend,infra}.md` |
-| Output format reference | `skills/pr-review/references/output-format.md` |
-| Deterministic scripts | `skills/pr-review/scripts/` |
-| Script unit tests | `tests/unit/pr_review/` |
-| Fixtures and cases | `evals/pr-review/` |
+| Output format reference | `skills/pr-review/references/output-format.md`            |
+| Deterministic scripts   | `skills/pr-review/scripts/`                               |
+| Script unit tests       | `tests/unit/pr_review/`                                   |
+| Fixtures and cases      | `evals/pr-review/`                                        |
 
 ## Design decisions
 
@@ -74,11 +74,11 @@ Each reference is a checklist the agent applies, with the reasoning behind each 
 
 ### 4. Scripts (deterministic only)
 
-| Script | Purpose |
-|---|---|
-| `changed_endpoints.py` | Parse a diff and list added, removed, or modified HTTP routes |
-| `missing_tests.py` | Given changed source files, report which have no matching test file changes |
-| `openapi_changed.py` | Report whether an OpenAPI/Swagger file changed, and whether route changes lack a matching spec change |
+| Script                 | Purpose                                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| `changed_endpoints.py` | Parse a diff and list added, removed, or modified HTTP routes                                         |
+| `missing_tests.py`     | Given changed source files, report which have no matching test file changes                           |
+| `openapi_changed.py`   | Report whether an OpenAPI/Swagger file changed, and whether route changes lack a matching spec change |
 
 For each script:
 
@@ -101,14 +101,14 @@ For each script:
 Each fixture is a small PR (diff, description, ticket). Planted defects:
 
 | Fixture | Planted defect | Expected category |
-|---|---|---|
-| `missing-tests` | New service function with no test changes | `missing-unit-tests` |
+| --------------------------- | ------------------------------------------ | ---------------------------- |
+| `missing-tests`             | New service function with no test changes  | `missing-unit-tests`         |
 | `criterion-not-implemented` | Ticket lists 4 criteria, diff implements 3 | `unmet-acceptance-criterion` |
-| `route-without-spec` | New endpoint, OpenAPI file untouched | `missing-spec-update` |
-| `no-validation` | Backend handler trusts request body | `missing-input-validation` |
-| `infra-wildcard-perms` | IAM policy with `*` actions | `excessive-permissions` |
-| `frontend-no-error-state` | Component fetches data, no failure path | `missing-error-handling` |
-| `clean` | Well-formed PR with tests and spec update | none |
+| `route-without-spec`        | New endpoint, OpenAPI file untouched       | `missing-spec-update`        |
+| `no-validation`             | Backend handler trusts request body        | `missing-input-validation`   |
+| `infra-wildcard-perms`      | IAM policy with `*` actions                | `excessive-permissions`      |
+| `frontend-no-error-state`   | Component fetches data, no failure path    | `missing-error-handling`     |
+| `clean`                     | Well-formed PR with tests and spec update  | none                         |
 
 - [ ] Write each fixture to be realistic but minimal.
 - [ ] Write one case per fixture, plus a mixed fixture with two defects.

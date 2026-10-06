@@ -11,14 +11,14 @@ Everything the later phases depend on: repo structure, a shared eval runner, CI,
 
 ## Deliverables
 
-| Deliverable | Location |
-|---|---|
-| Repo skeleton | repo root |
-| Shared eval runner | `evals/runner/` |
-| Fixture and case format spec | `docs/eval-format.md` |
-| Structure tests | `tests/structure/` |
-| CI workflow | `.github/workflows/ci.yml` |
-| README with "Expected tools" section | `README.md` |
+| Deliverable                          | Location                   |
+| ------------------------------------ | -------------------------- |
+| Repo skeleton                        | repo root                  |
+| Shared eval runner                   | `evals/runner/`            |
+| Fixture and case format spec         | `docs/eval-format.md`      |
+| Structure tests                      | `tests/structure/`         |
+| CI workflow                          | `.github/workflows/ci.yml` |
+| README with "Expected tools" section | `README.md`                |
 
 ## Target repo layout
 

@@ -18,13 +18,13 @@ Build in that order. #7 consumes the output of #5, and #8 is the hardest, so it 
 
 Analyze test reports, logs, and stack traces and classify each failure as one of:
 
-| Class | Meaning |
-|---|---|
-| `application-defect` | The product behaves incorrectly |
-| `automation-issue` | The test code is wrong, brittle, or outdated |
-| `test-data-problem` | Data was missing, stale, conflicting, or malformed |
+| Class                 | Meaning                                                |
+| --------------------- | ------------------------------------------------------ |
+| `application-defect`  | The product behaves incorrectly                        |
+| `automation-issue`    | The test code is wrong, brittle, or outdated           |
+| `test-data-problem`   | Data was missing, stale, conflicting, or malformed     |
 | `environment-failure` | Infrastructure, network, deploy, or dependency problem |
-| `unknown` | Evidence is insufficient to decide |
+| `unknown`             | Evidence is insufficient to decide                     |
 
 ### Design decisions
 

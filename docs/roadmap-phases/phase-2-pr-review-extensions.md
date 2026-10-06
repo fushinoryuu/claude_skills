@@ -18,15 +18,15 @@ When a PR contains automation or test code, review it for the problems that make
 
 ### What it checks
 
-| Check | What to look for |
-|---|---|
-| Hardcoded data | Literal IDs, emails, URLs, or environment-specific values in tests |
-| Weak assertions | Tests that assert only that something exists, no exception was thrown, or status is 200 with no body check |
-| Unstable locators | Positional XPath, auto-generated class names, text-dependent selectors where a test id exists |
-| Fixed waits | `sleep`, `Thread.sleep`, or hardcoded timeouts instead of explicit waits on a condition |
-| Duplicate code | Repeated setup or step sequences that belong in a helper, fixture, or page object |
-| Test independence | Tests that depend on order or on state left by another test |
-| Cleanup | Created data never removed |
+| Check             | What to look for                                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| Hardcoded data    | Literal IDs, emails, URLs, or environment-specific values in tests                                         |
+| Weak assertions   | Tests that assert only that something exists, no exception was thrown, or status is 200 with no body check |
+| Unstable locators | Positional XPath, auto-generated class names, text-dependent selectors where a test id exists              |
+| Fixed waits       | `sleep`, `Thread.sleep`, or hardcoded timeouts instead of explicit waits on a condition                    |
+| Duplicate code    | Repeated setup or step sequences that belong in a helper, fixture, or page object                          |
+| Test independence | Tests that depend on order or on state left by another test                                                |
+| Cleanup           | Created data never removed                                                                                 |
 
 ### Tasks
 
