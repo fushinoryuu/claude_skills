@@ -20,7 +20,7 @@ jobs:
             test -d "$d" || { echo "Missing directory: $d"; exit 1; }
           done
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v10.2.0
 
       - name: Install dependencies
         run: uv sync --locked
