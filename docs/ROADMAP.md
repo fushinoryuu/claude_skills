@@ -4,7 +4,7 @@ Build order for the PR-review skill and its related QA skills. Every skill gets 
 
 ## Phase 0: Foundation
 
-- [ ] Repo skeleton: `skills/`, `tests/`, `evals/`, `docs/`, CI workflow
+- [x] Repo skeleton: `skills/`, `tests/`, `evals/`, `docs/`, CI workflow
 - [ ] Shared eval runner and fixture format, written once
 - [ ] CI runs unit and structure tests; evals run manually
 - [ ] README lists the expected MCP servers (GitHub, Atlassian) with a `gh` CLI fallback

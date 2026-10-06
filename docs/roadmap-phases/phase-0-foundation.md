@@ -55,10 +55,10 @@ Phase 2 items (#4, #1, #3) are extensions of `pr-review`, so they live inside th
 
 ### 1. Repo skeleton
 
-- [ ] Create the folder structure above with placeholder `.gitkeep` files where needed.
-- [ ] Add a `.gitignore` (Python cache, `.env`, eval output folders).
-- [ ] Add `.env.example` listing only what is still needed. With MCP servers handling Jira and GitHub access, this may be limited to the model API key used by the eval runner.
-- [ ] Choose the script language once (Python is the usual pick) and pin a version.
+- [x] Create the folder structure above with placeholder `.gitkeep` files where needed.
+- [x] Add a `.gitignore` (Python cache, `.env`, eval output folders).
+- [x] Add `.env.example` listing only what is still needed. With MCP servers handling Jira and GitHub access, this may be limited to the model API key used by the eval runner.
+- [x] Choose the script language once (Python is the usual pick) and pin a version.
 
 ### 2. Eval format
 
