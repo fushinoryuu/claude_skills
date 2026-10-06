@@ -93,11 +93,11 @@ A clean case sets `findings: []` and a low `max_findings`, so it fails if the sk
 
 Decisions to record in `docs/eval-format.md`:
 
-- [ ] **Structured findings block.** Each skill ends its output with a machine-readable block (JSON) listing `category`, `file`, `severity`, and a one-line `summary`. This lets the runner score without a judge model.
-- [ ] **Category vocabulary.** Keep one shared list of category slugs per skill so cases and skills agree on names.
-- [ ] **Scoring.** Per case: recall of planted defects, count of unexpected findings, and pass/fail. Per run: aggregate recall and false-positive rate.
-- [ ] **Optional judge pass.** A second model call that grades quality (is the explanation correct and actionable). Off by default, since it costs money and adds variance.
-- [ ] **Fixture delivery.** Fixtures are pasted into the eval prompt (or mounted as files). They stand in for what the MCP servers would normally return, so no API mocks are needed.
+- [x] **Structured findings block.** Each skill ends its output with a machine-readable block (JSON) listing `category`, `file`, `severity`, and a one-line `summary`. This lets the runner score without a judge model.
+- [x] **Category vocabulary.** Keep one shared list of category slugs per skill so cases and skills agree on names.
+- [x] **Scoring.** Per case: recall of planted defects, count of unexpected findings, and pass/fail. Per run: aggregate recall and false-positive rate.
+- [x] **Optional judge pass.** A second model call that grades quality (is the explanation correct and actionable). Off by default, since it costs money and adds variance.
+- [x] **Fixture delivery.** Fixtures are pasted into the eval prompt (or mounted as files). They stand in for what the MCP servers would normally return, so no API mocks are needed.
 
 ### 3. Eval runner
 

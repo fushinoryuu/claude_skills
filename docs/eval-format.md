@@ -1,0 +1,171 @@
+# Eval format
+
+How skills are tested. Every skill uses this format, and the shared runner in `evals/runner/` reads it. Write fixtures and cases against this spec, not the other way round. If the format has to change, change this file first.
+
+## Layout
+
+```
+evals/<skill>/
+├── categories.yaml              # vocabulary for this skill's findings
+├── triggers.yaml                # trigger prompts
+├── fixtures/<fixture-name>/     # inputs the agent will see
+│   ├── pr.diff
+│   ├── ticket.md
+│   └── ...
+└── cases/<case-id>.yaml         # one case per file, file name equals the id
+```
+
+`<skill>` matches the folder name under `skills/`. Fixture names are lowercase kebab-case.
+
+## Fixtures
+
+A fixture is a folder of plain files that stand in for what the MCP servers (or `gh`) would return: the PR diff, PR description, ticket text, spec files, logs. No API mocks are needed.
+
+- **Delivery.** The runner pastes each file into the eval prompt, in alphabetical order, wrapped as `<file name="pr.diff">...</file>`. It tells the model the files are the results of its tool calls and that it must not try to call tools.
+- **No fixture manifest.** File names carry the meaning. Use the names the skill's SKILL.md expects (`pr.diff`, `pr-description.md`, `ticket.md`) so one convention works everywhere.
+- **Synthetic only.** No real company, ticket, person, or credential data.
+- **Minimal.** Realistic, but with exactly the content needed to plant the defect. One planted defect per fixture, unless the fixture is explicitly a mixed one.
+- Fixtures can be shared by several cases (for example a different prompt against the same PR).
+
+## Case file
+
+```yaml
+id: pr-review-missing-tests-01
+skill: pr-review
+fixture: missing-tests
+prompt: "Review this PR against the ticket."
+expect:
+  findings:
+    - category: missing-unit-tests
+      file: src/orders/service.py
+  must_not_flag: []
+  max_findings: 8
+tags: [defect]
+```
+
+| Field | Required | Meaning |
+|---|---|---|
+| `id` | yes | Unique, and equal to the file name without `.yaml`. Format: `<skill>-<fixture>-<nn>`. |
+| `skill` | yes | Skill under test. Must exist in `skills/`. |
+| `fixture` | yes | Folder name under `fixtures/`. |
+| `prompt` | yes | The user message sent with the fixture. |
+| `expect.findings` | yes | Planted defects the skill must report. Empty list for a clean case. |
+| `expect.must_not_flag` | no | Values of the skill's key field that must not appear at all (for tricky near-miss fixtures). |
+| `expect.max_findings` | yes | Upper bound on total findings. Guards against noisy output. Keep it low for clean cases. |
+| `tags` | no | Free-form. Reserved: `defect`, `clean`, `tricky`, `ambiguous`. |
+| `scorer` | no | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
+
+A **clean case** has `expect.findings: []`, a low `max_findings` (0 to 2), and the `clean` tag. Every skill needs at least one, and the structure tests check for it.
+
+## Structured findings block
+
+Each skill ends its output with one machine-readable block, so the runner can score without a judge model.
+
+````
+```json
+{
+  "findings": [
+    {
+      "category": "missing-unit-tests",
+      "file": "src/orders/service.py",
+      "severity": "high",
+      "summary": "create_order has no unit test."
+    }
+  ]
+}
+```
+````
+
+Rules:
+
+- The runner uses the **last** fenced `json` block in the output that parses to an object with a `findings` list. Earlier JSON in the explanation is ignored.
+- `findings` is a list of objects. An empty list means "nothing found" and is valid.
+- Extra top-level keys are allowed (for example `unmapped_files`) and are ignored unless the scorer uses them.
+- A missing or unparseable block is a failed run (`parse_error`), never a pass.
+- Fields are skill-specific and declared in the skill's `categories.yaml`. `pr-review` uses `category`, `file`, `severity`, `summary`. Other skills (failure analysis uses `test`, `class`, `confidence`, `evidence`, `next_action`) define their own in their phase docs.
+- `severity` is one of `high`, `medium`, `low` wherever it appears.
+
+## Category vocabulary
+
+One file per skill, `evals/<skill>/categories.yaml`, is the single list of valid slugs:
+
+```yaml
+key_field: category        # the field that names the kind of finding
+values:
+  - missing-unit-tests
+  - unmet-acceptance-criterion
+  - missing-spec-update
+```
+
+- The skill's `output-format.md` reference points at this file's slugs, so the skill and the cases use the same names.
+- Structure tests fail if a case uses a slug that is not in `values`, or if `key_field` is missing from a case's expectations.
+- If a model emits a slug outside the vocabulary, the runner flags it as `invalid_category`. That finding counts as unexpected, and the flag shows category drift.
+- `key_field` is `category` for most skills and `class` for failure analysis. The rest of the format treats it generically.
+
+## Scoring
+
+### Matching
+
+An expected finding is a partial object. An actual finding **matches** it when every field named in the expectation is equal. Fields the expectation leaves out are not checked.
+
+- `file` compares normalized paths (forward slashes, no leading `./`).
+- `line`, `severity` and `summary` are never scored, because they vary run to run.
+- Matching is one-to-one. Each actual finding can satisfy at most one expected finding, so a duplicate counts as unexpected.
+- An actual finding that matches nothing is **unexpected**.
+
+### Per run (one model call)
+
+| Measure | Definition |
+|---|---|
+| `recall` | matched expected findings divided by expected findings. `1.0` when none were expected. |
+| `unexpected` | count of actual findings that matched no expectation |
+| `forbidden` | count of actual findings whose key field is in `must_not_flag` |
+| `pass` | `recall == 1.0`, `forbidden == 0`, no `parse_error`, and total findings at most `max_findings` |
+
+Unexpected findings do not fail a defect case on their own, since a model may report a real issue the fixture author did not plant. They fail through `max_findings`, and they drive the false-positive rate below.
+
+### Per case (`--runs N`)
+
+Model output varies, so a case is judged on its pass rate across N runs, not one result.
+
+- `pass_rate`: fraction of runs that passed.
+- A case **passes** when `pass_rate` is above 0.5 (a majority). This matches the "majority of runs" criterion in the phase docs. The threshold can be overridden with a flag on the runner.
+
+### Per skill (aggregate)
+
+| Measure | Definition |
+|---|---|
+| Recall | mean `recall` over defect cases and runs |
+| False-positive rate | on `clean` and `tricky` cases, the fraction of runs with any unexpected finding |
+| Case pass rate | fraction of cases that passed |
+| Trigger accuracy | fraction of `triggers.yaml` prompts classified correctly (see below) |
+
+Results are written to `evals/results/<timestamp>.json` (git-ignored). Each result records the model, the date, and the number of runs, so numbers are never quoted without them.
+
+## Trigger tests
+
+`evals/<skill>/triggers.yaml`:
+
+```yaml
+should_trigger:
+  - "Review this PR against PROJ-123"
+should_not_trigger:
+  - "Explain what a pull request is"
+```
+
+The runner shows the model only each skill's `name` and `description`, together with the prompt, and records which skill (if any) it would pick. Include 8 to 10 prompts of each kind, with near-misses. Prompts that belong to another skill in the repo go in that skill's `should_trigger` and in this skill's `should_not_trigger`.
+
+## Optional judge pass
+
+A second model call that grades explanation quality (correct, actionable, grounded in the diff) against a short rubric.
+
+- Off by default. Enable with a runner flag.
+- It never affects `pass`. Judge scores are reported separately, because they add cost and variance.
+- Use it for spot checks before publishing numbers, not for routine runs.
+
+## Rules of thumb
+
+- Plant one defect per fixture, and say in the case what it is.
+- Every skill gets the same kit: defect fixtures, a clean case, trigger prompts.
+- Keep expectations to what the fixture proves. Do not expect findings the fixture does not plant.
+- When a case fails often, first check whether the fixture or expectation is wrong before changing the skill.
