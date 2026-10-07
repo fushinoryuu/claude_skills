@@ -154,7 +154,17 @@ should_not_trigger:
   - "Explain what a pull request is"
 ```
 
-The runner shows the model only each skill's `name` and `description`, together with the prompt, and records which skill (if any) it would pick. Include 8 to 10 prompts of each kind, with near-misses. Prompts that belong to another skill in the repo go in that skill's `should_trigger` and in this skill's `should_not_trigger`.
+Run with `python -m evals.runner --skill <skill> --triggers [--runs N]`.
+
+The runner builds a router prompt from the `name` and `description` in the frontmatter of **every** skill under `skills/`, never the skill bodies. Each trigger prompt is sent as the user message. The model thinks briefly if it wants to, then gives the exact skill name or `none` on its final line. Showing the whole catalog means a near-miss prompt tests the real choice: the model must prefer the right skill, not just any skill. Include 8 to 10 prompts of each kind, with near-misses. Prompts that belong to another skill in the repo go in that skill's `should_trigger` and in this skill's `should_not_trigger`.
+
+Scoring:
+
+- A `should_trigger` run is correct when the model picked this skill. A `should_not_trigger` run is correct when it picked anything else, including another skill or `none`.
+- An unreadable answer, a refusal, or an API error is an incorrect run.
+- A prompt passes when its pass rate across `--runs` is above the threshold (default majority). The skill passes when every prompt passes.
+- Reported: **accuracy** (correct runs over all runs), **trigger recall** (`should_trigger` runs that picked the skill), and **false-trigger rate** (`should_not_trigger` runs that picked the skill).
+- Results go to `evals/results/<timestamp>-<skill>-triggers.json`.
 
 ## Optional judge pass
 

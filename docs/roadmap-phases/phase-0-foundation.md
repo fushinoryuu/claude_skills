@@ -121,7 +121,7 @@ should_not_trigger:
   - "Explain what a pull request is"
 ```
 
-- [ ] Runner mode that presents each prompt with the skill's name and description only, and records whether the model would select the skill.
+- [x] Runner mode that presents each prompt with the skill's name and description only, and records whether the model would select the skill.
 - [ ] Aim for 8 to 10 prompts of each kind per skill, including near-misses.
 
 ### 5. Structure tests (run in CI)
