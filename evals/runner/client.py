@@ -5,7 +5,7 @@ from typing import Protocol
 
 import anthropic
 
-DEFAULT_MODEL = "claude-opus-5-5"
+DEFAULT_MODEL = "claude-sonnet-5-5"
 DEFAULT_MAX_TOKENS = 16000
 
 

@@ -9,7 +9,7 @@ __pycache__/
 .env
 
 # Eval output
-evals/results/
+**/evals/results/
 
 # OS / editor
 .DS_Store
