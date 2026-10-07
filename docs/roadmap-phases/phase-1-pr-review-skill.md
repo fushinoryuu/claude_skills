@@ -87,6 +87,7 @@ For each script:
 - [ ] Has a `--help` and a documented output schema.
 - [ ] Has unit tests with small hand-written diffs, including empty diffs and malformed input.
 - [ ] SKILL.md tells the agent to run the script and treat its output as a signal, not a verdict.
+- [ ] Decide how evals handle scripts. The eval runner does not run scripts or load `scripts/`: the model only sees `SKILL.md`, `references/`, and the fixture files. So for every fixture where a script applies, add the script's output to the fixture as a file (for example `script-output/missing_tests.json`), and make sure the skill's wording still works when the output arrives as a provided file rather than from a command it ran. Generate these files by running the script on the fixture diff, and add a unit test that fails when the committed file drifts from the script's real output.
 
 ### 5. Report format
 
@@ -111,6 +112,7 @@ Each fixture is a small PR (diff, description, ticket). Planted defects:
 | `clean`                     | Well-formed PR with tests and spec update  | none                         |
 
 - [ ] Write each fixture to be realistic but minimal.
+- [ ] Include the output of any applicable script as a fixture file (see Task 4), since scripts are not run during evals.
 - [ ] Write one case per fixture, plus a mixed fixture with two defects.
 - [ ] Write 8 to 10 trigger prompts of each kind.
 

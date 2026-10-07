@@ -101,12 +101,12 @@ Decisions to record in `docs/eval-format.md`:
 
 ### 3. Eval runner
 
-- [ ] CLI: `python -m evals.runner --skill pr-review [--case ID] [--runs N]`.
-- [ ] Load the skill's SKILL.md and references, assemble the prompt with the fixture, call the model, and capture output.
-- [ ] Parse the structured findings block and score against the case.
-- [ ] Support `--runs N` to repeat each case, since model output varies. Report pass rate across runs, not a single result.
-- [ ] Write results to `evals/results/<timestamp>.json` (git-ignored) and print a summary table.
-- [ ] Unit test the parser and scorer with canned model outputs (these tests run in CI and cost nothing).
+- [x] CLI: `python -m evals.runner --skill pr-review [--case ID] [--runs N]`.
+- [x] Load the skill's SKILL.md and references, assemble the prompt with the fixture, call the model, and capture output.
+- [x] Parse the structured findings block and score against the case.
+- [x] Support `--runs N` to repeat each case, since model output varies. Report pass rate across runs, not a single result.
+- [x] Write results to `evals/results/<timestamp>.json` (git-ignored) and print a summary table.
+- [x] Unit test the parser and scorer with canned model outputs (these tests run in CI and cost nothing).
 
 ### 4. Trigger tests
 
