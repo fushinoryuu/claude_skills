@@ -23,7 +23,7 @@ Build order for the PR-review skill and its related QA skills. Every skill gets 
   - [ ] Fixtures with each planted defect type
 - [ ] **#1 Requirement Review**
   - [ ] Flag missing acceptance criteria, edge cases, and unclear requirements
-  - [ ] Works from Jira and GitHub Issues via MCP
+  - [ ] Works from Jira (Atlassian MCP) and GitHub Issues (`gh`)
   - [ ] Fixtures: vague stories, plus one well-written story
 - [ ] **#3 API Contract**
   - [ ] Spec-diff script for OpenAPI changes

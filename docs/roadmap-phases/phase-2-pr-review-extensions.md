@@ -1,6 +1,6 @@
 # Phase 2: Extensions to PR Review
 
-Three capabilities that extend the Phase 1 skill instead of becoming separate skills. They share its adapters (MCP), its eval runner, and its output format.
+Three capabilities that extend the Phase 1 skill instead of becoming separate skills. They share its tooling (`gh` and the Atlassian MCP server), its eval runner, and its output format.
 
 - **#4 Automation Code Review:** review test code itself.
 - **#1 Requirement Review:** review the ticket before code is written.
@@ -68,7 +68,7 @@ Review a ticket or user story before implementation and identify missing accepta
 - [ ] Add a "Requirement review" entry point in SKILL.md, triggered when the user asks to review a ticket or story with no PR attached.
 - [ ] Share the criterion-extraction step with the PR workflow so there is one definition of "acceptance criterion".
 - [ ] Define how clarifying questions are phrased: specific, answerable, grouped by theme, with a suggested default when one is reasonable.
-- [ ] Source support: Jira issues and GitHub Issues via MCP, with paste-in text as a fallback.
+- [ ] Source support: Jira issues via the Atlassian MCP server and GitHub Issues via `gh`, with paste-in text as a fallback.
 - [ ] Add categories: `missing-acceptance-criteria`, `untestable-criterion`, `unhandled-edge-case`, `ambiguous-requirement`, `missing-nonfunctional`.
 
 ### Fixtures

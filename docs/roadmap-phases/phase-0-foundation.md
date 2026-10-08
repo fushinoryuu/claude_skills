@@ -7,7 +7,7 @@ Everything the later phases depend on: repo structure, a shared eval runner, CI,
 - One repo that holds several skills without them stepping on each other.
 - One eval runner and one fixture format shared by every skill.
 - Fast, deterministic checks in CI. Slow, model-driven evals run on demand.
-- A clear statement of which MCP servers the skills expect and what to do without them.
+- A clear statement of which tools the skills expect (the `gh` CLI and the Atlassian MCP server) and what to do without them.
 
 ## Deliverables
 
@@ -57,7 +57,7 @@ Phase 2 items (#4, #1, #3) are extensions of `pr-review`, so they live inside th
 
 - [x] Create the folder structure above with placeholder `.gitkeep` files where needed.
 - [x] Add a `.gitignore` (Python cache, `.env`, eval output folders).
-- [x] Add `.env.example` listing only what is still needed. With MCP servers handling Jira and GitHub access, this may be limited to the model API key used by the eval runner.
+- [x] Add `.env.example` listing only what is still needed. With `gh` and the Jira MCP server handling their own authentication, this may be limited to the model API key used by the eval runner.
 - [x] Choose the script language once (Python is the usual pick) and pin a version.
 
 ### 2. Eval format
@@ -97,7 +97,7 @@ Decisions to record in `docs/eval-format.md`:
 - [x] **Category vocabulary.** Keep one shared list of category slugs per skill so cases and skills agree on names.
 - [x] **Scoring.** Per case: recall of planted defects, count of unexpected findings, and pass/fail. Per run: aggregate recall and false-positive rate.
 - [x] **Optional judge pass.** A second model call that grades quality (is the explanation correct and actionable). Off by default, since it costs money and adds variance.
-- [x] **Fixture delivery.** Fixtures are pasted into the eval prompt (or mounted as files). They stand in for what the MCP servers would normally return, so no API mocks are needed.
+- [x] **Fixture delivery.** Fixtures are pasted into the eval prompt (or mounted as files). They stand in for what the `gh` CLI and the Jira MCP server would normally return, so no API mocks are needed.
 
 ### 3. Eval runner
 
@@ -147,7 +147,7 @@ Deterministic checks over every `skills/*/SKILL.md`:
 
 - [x] List expected tooling: GitHub CLI (PRs, issues) and Atlassian MCP (Jira).
 - [x] State the fallback: if no Jira access, paste the ticket text.
-- [x] Explain that the skills never store credentials; auth lives in the MCP configuration.
+- [x] Explain that the skills never store credentials; auth lives in `gh auth login` and the MCP configuration.
 
 ## Acceptance criteria
 

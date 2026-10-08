@@ -27,7 +27,7 @@ For each skill (`pr-review` including its extensions, `failure-analysis`, `defec
 
 - [ ] **Purpose:** two or three sentences on the problem it solves.
 - [ ] **When it triggers:** a few example prompts.
-- [ ] **Inputs:** what it needs and where it gets them (MCP server, pasted text, file).
+- [ ] **Inputs:** what it needs and where it gets them (`gh`, the Atlassian MCP server, pasted text, file).
 - [ ] **Outputs:** what the report looks like, with the structured findings block explained.
 - [ ] **Example run:** a real input and the real output, trimmed for length. Use fixture data so it is reproducible.
 - [ ] **Scripts:** what each does, its inputs and outputs, how to run it standalone.
@@ -62,10 +62,10 @@ Suggested scenario: a PR with a missing unit test and an undocumented endpoint, 
 - [ ] One-paragraph summary at the top: what the repo is and who it is for.
 - [ ] Demo directly below the summary.
 - [ ] Skill table: name, one-line purpose, link to its doc.
-- [ ] Quick start: install instructions, required MCP servers, and how to invoke each skill.
+- [ ] Quick start: install instructions, required tools (`gh`, the Atlassian MCP server), and how to invoke each skill.
 - [ ] Expected tools section from Phase 0, kept current.
 - [ ] Testing section: how to run unit, structure, and eval suites.
-- [ ] Design notes: why MCP instead of custom adapters, why scripts only for deterministic work, why evals use planted defects. These show engineering judgment.
+- [ ] Design notes: why MCP instead of custom adapters for Jira, why the `gh` CLI instead of an MCP server for GitHub (token cost), why scripts only for deterministic work, why evals use planted defects. These show engineering judgment.
 - [ ] Roadmap and contributing notes, if any.
 - [ ] CI badge and license.
 
@@ -89,6 +89,7 @@ Draft a few bullets and revise to fit the resume. Examples of the shape (adjust 
 Also prepare short answers for likely interview questions:
 
 - [ ] Why use MCP servers instead of custom API adapters?
+- [ ] Why the `gh` CLI for GitHub but an MCP server for Jira?
 - [ ] How do you test something non-deterministic?
 - [ ] What did the evals show that surprised you?
 - [ ] How would you roll this out to a team of engineers?

@@ -85,7 +85,7 @@ Convert logs, screenshots, and API responses into a structured bug report with c
 - **Never invent steps.** If reproduction steps are inferred from a test script or logs, label them as inferred and list what to verify manually.
 - **Mark unknowns.** Missing environment or version details appear under open questions, not filled with guesses.
 - **Chain from #5.** Accept the structured output of Failure Analysis as an input, and only draft reports for failures classified as application defects (or on explicit request).
-- **Output targets.** Provide Jira-flavored and GitHub-flavored markdown variants via a template choice. Creating the ticket is done through the MCP server only if the user asks.
+- **Output targets.** Provide Jira-flavored and GitHub-flavored markdown variants via a template choice. Creating the ticket is done only if the user asks, through the Atlassian MCP server for Jira or `gh issue create` for GitHub.
 
 ### Tasks
 
@@ -93,7 +93,7 @@ Convert logs, screenshots, and API responses into a structured bug report with c
 - [ ] Write `references/report-template.md` with both formats and a quality checklist.
 - [ ] Write `references/severity-guide.md` with a simple, adjustable rubric (data loss, security, outage, workaround available, user impact).
 - [ ] Handle screenshots: describe only what is visible, and note when text in an image is unreadable.
-- [ ] Add a duplicate check step: search existing issues through MCP before drafting, and mention likely duplicates.
+- [ ] Add a duplicate check step: search existing issues before drafting (Atlassian MCP for Jira, `gh issue list --search` for GitHub), and mention likely duplicates.
 - [ ] Define the structured findings block: `title`, `severity`, `steps_inferred` (true or false), `open_questions` count.
 
 ### Fixtures

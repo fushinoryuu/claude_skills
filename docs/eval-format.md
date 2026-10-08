@@ -45,16 +45,16 @@ tags: [defect]
 ```
 
 | Field | Required | Meaning |
-|---|---|---|
-| `id` | yes | Unique, and equal to the file name without `.yaml`. Format: `<skill>-<fixture>-<nn>`. |
-| `skill` | yes | Skill under test. Must exist in `skills/`. |
-| `fixture` | yes | Folder name under `fixtures/`. |
-| `prompt` | yes | The user message sent with the fixture. |
-| `expect.findings` | yes | Planted defects the skill must report. Empty list for a clean case. |
-| `expect.must_not_flag` | no | Values of the skill's key field that must not appear at all (for tricky near-miss fixtures). |
-| `expect.max_findings` | yes | Upper bound on total findings. Guards against noisy output. Keep it low for clean cases. |
-| `tags` | no | Free-form. Reserved: `defect`, `clean`, `tricky`, `ambiguous`. |
-| `scorer` | no | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
+| ---------------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                   | yes | Unique, and equal to the file name without `.yaml`. Format: `<skill>-<fixture>-<nn>`.                                                                                  |
+| `skill`                | yes | Skill under test. Must exist in `skills/`.                                                                                                                             |
+| `fixture`              | yes | Folder name under `fixtures/`.                                                                                                                                         |
+| `prompt`               | yes | The user message sent with the fixture.                                                                                                                                |
+| `expect.findings`      | yes | Planted defects the skill must report. Empty list for a clean case.                                                                                                    |
+| `expect.must_not_flag` | no  | Values of the skill's key field that must not appear at all (for tricky near-miss fixtures).                                                                           |
+| `expect.max_findings`  | yes | Upper bound on total findings. Guards against noisy output. Keep it low for clean cases.                                                                               |
+| `tags`                 | no  | Free-form. Reserved: `defect`, `clean`, `tricky`, `ambiguous`.                                                                                                         |
+| `scorer`               | no  | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
 
 A **clean case** has `expect.findings: []`, a low `max_findings` (0 to 2), and the `clean` tag. Every skill needs at least one, and the structure tests check for it.
 
@@ -116,12 +116,12 @@ An expected finding is a partial object. An actual finding **matches** it when e
 
 ### Per run (one model call)
 
-| Measure | Definition |
-|---|---|
-| `recall` | matched expected findings divided by expected findings. `1.0` when none were expected. |
-| `unexpected` | count of actual findings that matched no expectation |
-| `forbidden` | count of actual findings whose key field is in `must_not_flag` |
-| `pass` | `recall == 1.0`, `forbidden == 0`, no `parse_error`, and total findings at most `max_findings` |
+| Measure      | Definition                                                                                     |
+| ------------ | ---------------------------------------------------------------------------------------------- |
+| `recall`     | matched expected findings divided by expected findings. `1.0` when none were expected.         |
+| `unexpected` | count of actual findings that matched no expectation                                           |
+| `forbidden`  | count of actual findings whose key field is in `must_not_flag`                                 |
+| `pass`       | `recall == 1.0`, `forbidden == 0`, no `parse_error`, and total findings at most `max_findings` |
 
 Unexpected findings do not fail a defect case on their own, since a model may report a real issue the fixture author did not plant. They fail through `max_findings`, and they drive the false-positive rate below.
 
@@ -134,12 +134,12 @@ Model output varies, so a case is judged on its pass rate across N runs, not one
 
 ### Per skill (aggregate)
 
-| Measure | Definition |
-|---|---|
-| Recall | mean `recall` over defect cases and runs |
+| Measure             | Definition                                                                      |
+| ------------------- | ------------------------------------------------------------------------------- |
+| Recall              | mean `recall` over defect cases and runs                                        |
 | False-positive rate | on `clean` and `tricky` cases, the fraction of runs with any unexpected finding |
-| Case pass rate | fraction of cases that passed |
-| Trigger accuracy | fraction of `triggers.yaml` prompts classified correctly (see below) |
+| Case pass rate      | fraction of cases that passed                                                   |
+| Trigger accuracy    | fraction of `triggers.yaml` prompts classified correctly (see below)            |
 
 Results are written to `evals/results/<timestamp>.json` (git-ignored). Each result records the model, the date, and the number of runs, so numbers are never quoted without them.
 
