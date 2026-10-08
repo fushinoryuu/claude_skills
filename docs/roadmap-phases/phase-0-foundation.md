@@ -145,9 +145,9 @@ Deterministic checks over every `skills/*/SKILL.md`:
 
 ### 7. README tooling section
 
-- [ ] List expected tooling: GitHub CLI (PRs, issues) and Atlassian MCP (Jira).
-- [ ] State the fallback: if no Jira access, paste the ticket text.
-- [ ] Explain that the skills never store credentials; auth lives in the MCP configuration.
+- [x] List expected tooling: GitHub CLI (PRs, issues) and Atlassian MCP (Jira).
+- [x] State the fallback: if no Jira access, paste the ticket text.
+- [x] Explain that the skills never store credentials; auth lives in the MCP configuration.
 
 ## Acceptance criteria
 
