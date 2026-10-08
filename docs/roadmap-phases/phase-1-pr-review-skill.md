@@ -1,6 +1,6 @@
 # Phase 1: PR-Review Skill (the base)
 
-The generic PR-review skill is the foundation the Phase 2 extensions build on. It should work across frontend, backend, and infra projects, pull its context through MCP servers, and use scripts only for deterministic checks.
+The generic PR-review skill is the foundation the Phase 2 extensions build on. It should work across frontend, backend, and infra projects, pull its context through the `gh` CLI (GitHub) and the Atlassian MCP server (Jira), and use scripts only for deterministic checks.
 
 ## Goals
 
@@ -24,7 +24,17 @@ The generic PR-review skill is the foundation the Phase 2 extensions build on. I
 
 ### No API adapters
 
-Ticket and PR data come from MCP servers (GitHub, Atlassian). The skill describes what it needs ("the PR diff, the PR description, the linked ticket and its acceptance criteria") and lets the agent fetch it. Scripts are reserved for work that is not an API call. SKILL.md includes an "Expected tools" section with the `gh` CLI and paste-the-ticket fallbacks.
+PR data comes from the `gh` CLI and ticket data from the Atlassian MCP server. The skill describes what it needs ("the PR diff, the PR description, the linked ticket and its acceptance criteria") and lets the agent fetch it. Scripts are reserved for work that is not an API call. SKILL.md includes an "Expected tools" section with the paste-the-ticket fallback for Jira.
+
+### Token-conscious fetching
+
+Token spend matters, both for this repo's evals and for a team running the skill daily. That is the main reason GitHub goes through the CLI instead of an MCP server:
+
+- An MCP server puts every tool definition into context, whether or not the tools are used, and its tools tend to return full JSON objects.
+- With `gh`, the agent chooses exactly which fields to request (`--json`), can filter with `--jq`, `head`, or `grep`, and pays only for what it reads.
+- Jira has no equivalent CLI, so it stays on MCP. The skill fetches the ticket once and works from the extracted acceptance criteria afterwards.
+
+SKILL.md carries these rules (see Task 1): list the changed files first, request only the fields needed, read diffs only for files that matter, and never silently truncate. The effect is easy to measure: `/context` in Claude Code shows what an MCP server's tool definitions cost.
 
 ### Two modes
 
@@ -44,7 +54,13 @@ SKILL.md holds the workflow and decision points. Project-type details live in `r
 ### 1. Write SKILL.md
 
 - [ ] Frontmatter: `name: pr-review` and a `description` that states what it does and when to use it (reviewing a PR against a ticket, checking test coverage, checking API spec changes). Include trigger phrases a user would naturally say.
-- [ ] **Expected tools** section: GitHub MCP (PR, diff, files, comments), Atlassian MCP (issue, acceptance criteria), with fallbacks.
+- [ ] **Expected tools** section: the `gh` CLI (PR, diff, files, comments, GitHub Issues), the Atlassian MCP server (Jira issue, acceptance criteria), and the paste-the-ticket fallback when Jira is not available.
+- [ ] **Fetching** section, to keep token use down:
+  - List the changed files first (`gh pr diff <n> --name-only`, or `gh pr view <n> --json files`) and apply "What to skip" before reading any diff.
+  - Request only the fields needed (`gh pr view <n> --json title,body,files`), not the full object.
+  - Read diffs only for the files that matter, filtering by path with shell tools or `gh api` with `--jq`. Never fetch lockfile or generated-file diffs.
+  - Fetch the ticket and the PR once per review and work from the extracted criteria and file list, not repeated fetches.
+  - When the diff is too large to review carefully, review the highest-risk files first and say which files were skipped. Do not silently truncate.
 - [ ] **Workflow** section, in order:
   1. Identify the PR and the linked ticket.
   2. Detect project type from changed files (see below).
@@ -121,7 +137,7 @@ Each fixture is a small PR (diff, description, ticket). Planted defects:
 - Structure and unit tests pass in CI.
 - On the eval set, the skill finds each planted defect in a majority of runs and produces no more than the allowed findings on the clean PR.
 - SKILL.md is under the line budget, with detail in references.
-- A reader can follow the README to run the skill with only the GitHub MCP server connected.
+- A reader can follow the README to run the skill with only the `gh` CLI authenticated, pasting the ticket text in place of Jira access.
 
 ## Risks and notes
 
