@@ -138,15 +138,15 @@ Deterministic checks over every `skills/*/SKILL.md`:
 
 ### 6. CI
 
-- [ ] GitHub Actions workflow triggered on push and pull request.
-- [ ] Jobs: lint, unit tests, structure tests.
-- [ ] Evals are not part of CI. Add a manually triggered workflow (`workflow_dispatch`) for them later if wanted, using a repository secret for the API key.
-- [ ] Add a status badge to the README.
+- [x] GitHub Actions workflow triggered on push and pull request.
+- [x] Jobs: lint, unit tests, structure tests.
+- [x] Evals are not part of CI. Add a manually triggered workflow (`workflow_dispatch`) for them later if wanted, using a repository secret for the API key.
+- [x] Add a status badge to the README.
 
 ### 7. README tooling section
 
-- [ ] List expected MCP servers: GitHub (PRs, issues) and Atlassian (Jira).
-- [ ] State the fallback: if no GitHub MCP server is available, use the `gh` CLI; if no Jira access, paste the ticket text.
+- [ ] List expected tooling: GitHub CLI (PRs, issues) and Atlassian MCP (Jira).
+- [ ] State the fallback: if no Jira access, paste the ticket text.
 - [ ] Explain that the skills never store credentials; auth lives in the MCP configuration.
 
 ## Acceptance criteria
