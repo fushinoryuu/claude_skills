@@ -128,13 +128,13 @@ should_not_trigger:
 
 Deterministic checks over every `skills/*/SKILL.md`:
 
-- [ ] Frontmatter parses and contains `name` and `description`.
-- [ ] `name` matches the folder name.
-- [ ] `description` is present, specific, and under a set length.
-- [ ] Every file referenced from SKILL.md exists.
-- [ ] No reference file is orphaned (exists but is never mentioned).
-- [ ] SKILL.md stays under a line budget (for example 500 lines), with detail pushed into `references/`.
-- [ ] Every skill has an `evals/<skill>/triggers.yaml` and at least one clean case.
+- [x] Frontmatter parses and contains `name` and `description`.
+- [x] `name` matches the folder name.
+- [x] `description` is present, specific, and under a set length.
+- [x] Every file referenced from SKILL.md exists.
+- [x] No reference file is orphaned (exists but is never mentioned).
+- [x] SKILL.md stays under a line budget (for example 500 lines), with detail pushed into `references/`.
+- [x] Every skill has an `evals/<skill>/triggers.yaml` and at least one clean case.
 
 ### 6. CI
 
