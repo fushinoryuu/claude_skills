@@ -1,0 +1,9 @@
+id: todo-check-no-todo-01
+skill: todo-check
+fixture: no-todo
+prompt: "Check this diff for leftover TODOs."
+expect:
+  findings: []
+  must_not_flag: []
+  max_findings: 0
+tags: [clean]

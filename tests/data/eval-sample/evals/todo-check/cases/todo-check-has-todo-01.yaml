@@ -1,0 +1,11 @@
+id: todo-check-has-todo-01
+skill: todo-check
+fixture: has-todo
+prompt: "Check this diff for leftover TODOs."
+expect:
+  findings:
+    - category: leftover-todo
+      file: src/app.py
+  must_not_flag: []
+  max_findings: 2
+tags: [defect]

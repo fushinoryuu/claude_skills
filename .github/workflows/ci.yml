@@ -1,0 +1,35 @@
+name: CI
+
+# Runs unit and structure tests only. Evals are run manually (see evals/).
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check repo skeleton
+        run: |
+          for d in docs evals skills tests; do
+            test -d "$d" || { echo "Missing directory: $d"; exit 1; }
+          done
+
+      - uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Unit tests
+        run: uv run pytest tests/unit
+
+      - name: Structure tests
+        run: uv run pytest tests/structure
