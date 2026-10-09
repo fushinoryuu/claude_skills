@@ -8,6 +8,7 @@ Build order for the PR-review skill and its related QA skills. Every skill gets 
 - [x] Shared eval runner and fixture format, written once
 - [x] CI runs unit and structure tests; evals run manually
 - [x] README lists the expected tooling: Atlassian MCP server and GitHub CLI
+- [x] Short task commands for lint, tests, and evals (`uv run poe <task>`), documented in the README
 
 ## Phase 1: PR-review skill (the base)
 
