@@ -11,14 +11,15 @@ Everything the later phases depend on: repo structure, a shared eval runner, CI,
 
 ## Deliverables
 
-| Deliverable                          | Location                   |
-| ------------------------------------ | -------------------------- |
-| Repo skeleton                        | repo root                  |
-| Shared eval runner                   | `evals/runner/`            |
-| Fixture and case format spec         | `docs/eval-format.md`      |
-| Structure tests                      | `tests/structure/`         |
-| CI workflow                          | `.github/workflows/ci.yml` |
-| README with "Expected tools" section | `README.md`                |
+| Deliverable                          | Location                      |
+| ------------------------------------ | ----------------------------- |
+| Repo skeleton                        | repo root                     |
+| Shared eval runner                   | `evals/runner/`               |
+| Fixture and case format spec         | `docs/eval-format.md`         |
+| Structure tests                      | `tests/structure/`            |
+| CI workflow                          | `.github/workflows/ci.yml`    |
+| README with "Expected tools" section | `README.md`                   |
+| Task commands                        | `pyproject.toml`, `README.md` |
 
 ## Target repo layout
 
@@ -148,6 +149,15 @@ Deterministic checks over every `skills/*/SKILL.md`:
 - [x] List expected tooling: GitHub CLI (PRs, issues) and Atlassian MCP (Jira).
 - [x] State the fallback: if no Jira access, paste the ticket text.
 - [x] Explain that the skills never store credentials; auth lives in `gh auth login` and the MCP configuration.
+
+### 8. Task commands
+
+The test and eval commands are long and easy to forget. Python has no built-in equivalent of `npm run`, so use a small task runner ([poethepoet](https://poethepoet.natn.io/)), with the tasks defined in `pyproject.toml` the way npm scripts live in `package.json`.
+
+- [x] Add `poethepoet` as a dev dependency and define tasks under `[tool.poe.tasks]`: `lint`, `unit`, `structure`, `test`, `check` (lint, then all tests), `eval` (the runner, with extra arguments passed through), and the sample-skill eval and trigger runs.
+- [x] Verify extra arguments reach the underlying command (`uv run poe eval --skill X --runs 3`) and that `check` stops at the first failing step.
+- [x] Add a "Common commands" section to the README listing each task.
+- [x] Keep CI calling the underlying commands directly, so CI does not depend on the task runner.
 
 ## Acceptance criteria
 

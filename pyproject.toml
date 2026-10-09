@@ -12,6 +12,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "poethepoet",
     "pytest",
     "ruff",
 ]
@@ -22,3 +23,16 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+# Short commands, run as `uv run poe <task>`. CI calls the underlying commands directly.
+[tool.poe.tasks]
+lint = "ruff check ."
+unit = "pytest tests/unit"
+structure = "pytest tests/structure"
+test = "pytest"
+check = ["lint", "test"]
+# Extra arguments are appended: `uv run poe eval --skill pr-review --runs 3`
+eval = "python -m evals.runner"
+# The sample skill used to test the runner (no real skills needed)
+eval-sample = "python -m evals.runner --skill todo-check --skills-dir tests/data/eval-sample/skills --evals-dir tests/data/eval-sample/evals"
+triggers-sample = "python -m evals.runner --skill todo-check --triggers --skills-dir tests/data/eval-sample/skills --evals-dir tests/data/eval-sample/evals"
