@@ -1,0 +1,9 @@
+should_trigger:
+  - "Check this diff for leftover TODO comments."
+  - "Does my pull request add any TODOs I forgot to remove?"
+  - "Scan the changes in this PR for unfinished TODO notes."
+should_not_trigger:
+  - "Write a function that parses ISO dates."
+  - "Explain what a pull request is."
+  - "Review this PR for missing unit tests."
+  - "Fix the failing login test."

@@ -1,0 +1,8 @@
+diff --git a/src/app.py b/src/app.py
+--- a/src/app.py
++++ b/src/app.py
+@@ -1,3 +1,5 @@
+ def greet(name):
+-    return "hi"
++    # TODO: handle empty names
++    return f"hi {name}"
