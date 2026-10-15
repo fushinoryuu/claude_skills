@@ -1,6 +1,6 @@
 # Phase 2: Extensions to PR Review
 
-Three capabilities that extend the Phase 1 skill instead of becoming separate skills. They share its tooling (`gh` and the Atlassian MCP server), its eval runner, and its output format.
+Three capabilities that extend the Phase 1 skill instead of becoming separate skills. They share its adapters/tooling (`gh` and the Atlassian MCP server), its eval runner, and its output format.
 
 - **#4 Automation Code Review:** review test code itself.
 - **#1 Requirement Review:** review the ticket before code is written.
@@ -31,7 +31,7 @@ When a PR contains automation or test code, review it for the problems that make
 ### Tasks
 
 - [ ] Add `skills/pr-review/references/test-code.md` with the checklist above, including why each item matters and when it is acceptable (for example, a fixed wait inside a retry utility).
-- [ ] Add a project-type detection rule: changed files under test directories, or matching test naming patterns, load this reference.
+- [ ] Add a loading rule: when the change includes test or automation code (files under test directories, or matching the repo's test naming patterns), apply this reference in addition to the core checklist. This is based on what the change contains, not on a project type.
 - [ ] Make the reference framework-neutral, with short examples for common stacks you actually use (for example Playwright, Selenium, pytest, REST client tests). Keep examples to a few lines each.
 - [ ] Optional script `scripts/scan_test_smells.py`: regex-based detection of obvious fixed waits and hardcoded URLs. It is a hint generator for the agent, not a verdict. Unit test it.
 - [ ] Add finding categories: `hardcoded-test-data`, `weak-assertion`, `unstable-locator`, `fixed-wait`, `duplicate-code`, `test-dependency`, `missing-cleanup`.
