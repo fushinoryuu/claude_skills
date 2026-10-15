@@ -29,7 +29,7 @@ Everything the later phases depend on: repo structure, a shared eval runner, CI,
 ├── .env.example
 ├── .github/workflows/ci.yml
 ├── skills/
-│   ├── pr-review/            # Phase 1
+│   ├── qa-review/            # Phase 1
 │   │   ├── SKILL.md
 │   │   ├── references/
 │   │   ├── scripts/
@@ -42,7 +42,7 @@ Everything the later phases depend on: repo structure, a shared eval runner, CI,
 │   └── structure/            # skill structure checks
 ├── evals/
 │   ├── runner/
-│   ├── pr-review/
+│   ├── qa-review/
 │   │   ├── fixtures/
 │   │   ├── cases/
 │   │   └── triggers.yaml
@@ -50,7 +50,7 @@ Everything the later phases depend on: repo structure, a shared eval runner, CI,
 └── docs/
 ```
 
-Phase 2 items (#4, #1, #3) are extensions of `pr-review`, so they live inside that skill's `references/` and `scripts/` folders, not as separate skills.
+Phase 2 items (#4, #1, #3) are extensions of `qa-review`, so they live inside that skill's `references/` and `scripts/` folders, not as separate skills.
 
 ## Tasks
 
@@ -77,8 +77,8 @@ evals/<skill>/
 A case file:
 
 ```yaml
-id: pr-review-missing-tests-01
-skill: pr-review
+id: qa-review-missing-tests-01
+skill: qa-review
 fixture: missing-tests
 prompt: "Review this PR against the ticket."
 expect:
@@ -102,7 +102,7 @@ Decisions to record in `docs/eval-format.md`:
 
 ### 3. Eval runner
 
-- [x] CLI: `python -m evals.runner --skill pr-review [--case ID] [--runs N]`.
+- [x] CLI: `python -m evals.runner --skill qa-review [--case ID] [--runs N]`.
 - [x] Load the skill's SKILL.md and references, assemble the prompt with the fixture, call the model, and capture output.
 - [x] Parse the structured findings block and score against the case.
 - [x] Support `--runs N` to repeat each case, since model output varies. Report pass rate across runs, not a single result.

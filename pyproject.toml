@@ -31,7 +31,7 @@ unit = "pytest tests/unit"
 structure = "pytest tests/structure"
 test = "pytest"
 check = ["lint", "test"]
-# Extra arguments are appended: `uv run poe eval --skill pr-review --runs 3`
+# Extra arguments are appended: `uv run poe eval --skill qa-review --runs 3`
 eval = "python -m evals.runner"
 # The sample skill used to test the runner (no real skills needed)
 eval-sample = "python -m evals.runner --skill todo-check --skills-dir tests/data/eval-sample/skills --evals-dir tests/data/eval-sample/evals"

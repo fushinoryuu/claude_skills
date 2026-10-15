@@ -1,4 +1,4 @@
-"""CLI: python -m evals.runner --skill pr-review [--case ID] [--runs N] [--triggers]"""
+"""CLI: python -m evals.runner --skill qa-review [--case ID] [--runs N] [--triggers]"""
 
 import argparse
 import sys
@@ -28,7 +28,7 @@ from evals.runner.triggers import build_router_prompt, prepare_triggers, run_tri
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="python -m evals.runner", description="Run skill evals.")
-    p.add_argument("--skill", required=True, help="skill folder name, e.g. pr-review")
+    p.add_argument("--skill", required=True, help="skill folder name, e.g. qa-review")
     p.add_argument("--triggers", action="store_true", help="run the trigger tests (triggers.yaml) instead of the cases")
     p.add_argument("--case", help="run only this case id")
     p.add_argument("--runs", type=int, default=1, help="runs per case or trigger prompt (default 1)")

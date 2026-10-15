@@ -17,7 +17,7 @@ Build order for the qa-review skill and its related QA skills. Every skill gets 
 - [ ] Scripts only for deterministic work (changed endpoints, missing test files)
 - [ ] Fixtures: PRs with planted defects, plus one clean PR
 
-## Phase 2: Extensions to PR review
+## Phase 2: Extensions to QA review
 
 - [ ] **#4 Automation Code Review**
   - [ ] Add a test-code reference covering hardcoded data, weak assertions, unstable locators, fixed waits, and duplicate code

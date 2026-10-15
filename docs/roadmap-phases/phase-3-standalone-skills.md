@@ -192,6 +192,6 @@ Score with precision and recall against a hand-labeled "correct set" per change:
 ## Phase 3 exit checklist
 
 - [ ] Each skill has SKILL.md, references, fixtures, cases, trigger prompts, and passing structure tests.
-- [ ] Trigger prompts across all four skills in the repo are checked for overlap, so "analyze this failing test" picks Failure Analysis and not PR Review.
+- [ ] Trigger prompts across all four skills in the repo are checked for overlap, so "analyze this failing test" picks Failure Analysis and not QA Review.
 - [ ] The #5 to #7 handoff works end to end on a shared fixture.
 - [ ] Unit tests for every script run in CI.

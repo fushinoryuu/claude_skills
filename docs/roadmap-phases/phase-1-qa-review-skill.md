@@ -1,6 +1,6 @@
-# Phase 1: PR-Review Skill (the base)
+# Phase 1: QA-Review Skill (the base)
 
-The generic PR-review skill is the foundation the Phase 2 extensions build on. It must work on **any project where a QA engineer would be asked to review code or a feature**, whatever the stack, domain, or type of project. It pulls its context through the `gh` CLI (GitHub) and the Atlassian MCP server (Jira), and use scripts only for deterministic checks.
+The generic `qa-review` skill is the foundation the Phase 2 extensions build on. It must work on **any project where a QA engineer would be asked to review code or a feature**, whatever the stack, domain, or type of project. It pulls its context through the `gh` CLI (GitHub) and the Atlassian MCP server (Jira), and use scripts only for deterministic checks.
 
 ## Scope principle: project-agnostic by design
 
@@ -25,13 +25,13 @@ What this means in practice:
 
 | Deliverable                           | Location                                       |
 | ------------------------------------- | ---------------------------------------------- |
-| Skill definition                      | `skills/pr-review/SKILL.md`                    |
-| Core QA review checklist (universal)  | `skills/pr-review/references/qa-core.md`       |
-| Optional stack lenses (examples only) | `skills/pr-review/references/lenses/`          |
-| Output format reference               | `skills/pr-review/references/output-format.md` |
-| Deterministic scripts                 | `skills/pr-review/scripts/`                    |
-| Script unit tests                     | `tests/unit/pr_review/`                        |
-| Fixtures and cases                    | `evals/pr-review/`                             |
+| Skill definition                      | `skills/qa-review/SKILL.md`                    |
+| Core QA review checklist (universal)  | `skills/qa-review/references/qa-core.md`       |
+| Optional stack lenses (examples only) | `skills/qa-review/references/lenses/`          |
+| Output format reference               | `skills/qa-review/references/output-format.md` |
+| Deterministic scripts                 | `skills/qa-review/scripts/`                    |
+| Script unit tests                     | `tests/unit/qa_review/`                        |
+| Fixtures and cases                    | `evals/qa-review/`                             |
 
 ## Design decisions
 
@@ -73,7 +73,7 @@ SKILL.md holds the workflow and decision points. The universal checklist lives i
 
 ### 1. Write SKILL.md
 
-- [ ] Frontmatter: `name: pr-review` and a `description` that states what it does and when to use it (a QA review of a PR or feature against its ticket, checking test coverage, checking whether interface or contract docs need updating). Include trigger phrases a user would naturally say, and keep the description free of stack-specific words so it triggers on any kind of project.
+- [ ] Frontmatter: `name: qa-review` and a `description` that states what it does and when to use it (a QA review of a PR or feature against its ticket, checking test coverage, checking whether interface or contract docs need updating). Include trigger phrases a user would naturally say, and keep the description free of stack-specific words so it triggers on any kind of project.
 - [ ] State near the top of SKILL.md that the skill is project-agnostic and applies to any code or feature a QA engineer would review.
 - [ ] **Expected tools** section: the `gh` CLI (PR, diff, files, comments, GitHub Issues), the Atlassian MCP server (Jira issue, acceptance criteria), and the paste-the-ticket fallback when Jira is not available.
 - [ ] **Fetching** section, to keep token use down:

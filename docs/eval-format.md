@@ -31,8 +31,8 @@ A fixture is a folder of plain files that stand in for what the `gh` CLI and the
 ## Case file
 
 ```yaml
-id: pr-review-missing-tests-01
-skill: pr-review
+id: qa-review-missing-tests-01
+skill: qa-review
 fixture: missing-tests
 prompt: "Review this PR against the ticket."
 expect:
@@ -83,7 +83,7 @@ Rules:
 - `findings` is a list of objects. An empty list means "nothing found" and is valid.
 - Extra top-level keys are allowed (for example `unmapped_files`) and are ignored unless the scorer uses them.
 - A missing or unparseable block is a failed run (`parse_error`), never a pass.
-- Fields are skill-specific and declared in the skill's `categories.yaml`. `pr-review` uses `category`, `file`, `severity`, `summary`. Other skills (failure analysis uses `test`, `class`, `confidence`, `evidence`, `next_action`) define their own in their phase docs.
+- Fields are skill-specific and declared in the skill's `categories.yaml`. `qa-review` uses `category`, `file`, `severity`, `summary`. Other skills (failure analysis uses `test`, `class`, `confidence`, `evidence`, `next_action`) define their own in their phase docs.
 - `severity` is one of `high`, `medium`, `low` wherever it appears.
 
 ## Category vocabulary
