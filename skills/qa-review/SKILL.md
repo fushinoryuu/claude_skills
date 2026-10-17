@@ -7,17 +7,33 @@ disable-model-invocation: true
 
 # QA Review
 
-Formal QA verification step for a Jira ticket and one or more PRs. The Jira ticket is the source of truth for the state of the work, so all findings are posted there.
+You are peforming a QA review for the given repository and take on the role of a QA engineer. These review sessions are the formal QA verfication step in the ticket lifecycle. When all gaps are resolved and the user is satisfied, the ticket can be marked Done. The Jira ticket is the source of truth for the state of the work, so all findings are posted there.
+
+## Invocation
+
+```
+/qa-review <MODE> <JIRA-TICKET> <PR#> [PR#2 PR#3 ...]
+```
+
+All arguments are required. If any are missing, stop and show the usage line. Do not guess.
 
 ## Arguments
 
-`$ARGUMENTS` = `<mode> <JIRA-TICKET> <PR#> [PR#2 ...]`
+`$ARGUMENTS` = `<MODE> <JIRA-TICKET> <PR#> [PR#2 ...]`
 
-- `mode`: `initial` or `final`
+- `MODE`: `initial` or `final`
 - `JIRA-TICKET`: Jira issue key, e.g. `ABC-123`
-- `PR#`: one or more GitHub PR numbers in the current repository
+- `PR#`: one or more GitHub PR numbers in the current repository (integers only, no `#` prefix required). The PRs must be in the same repo as the current working tree.
 
 If the mode is not `initial` or `final`, the ticket key is missing, or no PR numbers are given, stop and show the usage line. Do not guess.
+
+## Effort Handling
+
+Run the review at the session's default effort level. Do not ask the user to raise the session-wide effort setting for a review.
+
+Note: The skill's instructions cannot inspect or set the session's effort level, that control lives outside what these steps can enforce. Users should set their session effort to **high or above** before running `/qa-review`, the analysis in steps 3 and above assumes at least that floor.
+
+If a specific finding is genuinely ambiguous (a contested AC interpretation, a subtle concurrency/data-integrity question) and cannot be resolved with confidence at the default effort, delegate just that sub-question to a single `Agent` call with an explicit higher `effort` override set to `max`. Keep the rest of the review (AC mapping, checklist scans, spec checks, etc.) at the default effort.
 
 ## Ground rules
 
@@ -29,25 +45,49 @@ If the mode is not `initial` or `final`, the ticket key is missing, or no PR num
 - Do not transition the ticket's status unless the user asks.
 - Discover the project's conventions instead of assuming them (see "Discover the project" below). This skill must work for back-end, front-end, infra, and library projects.
 
+## Progress Checklist
+
+Immediately after parsing arguments (before Step 1), create a todo list with `TodoWrite` so the user can see review progress at a glace, this matters most on reviews that run long. Use one entry per step below, worded so someone skimming the list understand whats happening without re-reading this file:
+
+1. Load prior review memory for `{{ JIRA-TICKET }}`.
+2. Fetch Jira tickets, linked tickets, and PRs `{{ PR list }}`.
+3. Discover project conventions and testing framework.
+4. Acceptance criteria coverage check.
+
+Mark an item `in_progress` when you begin that step and flip it to `completed` the moment the step's work is actually done, not in a batch at the end, and not before the work behind it is real (e.g. don't complete "Post Jira comment" until `addCommentToJiraIssue` has actually returned successfully). If Step 9 turns up enough gaps that tracking them individually would help, add them as sub-items under the "Handle gaps" entry rather than replacing it. The numbered list above should stay stable as the backbone so the progress bar reads consistently accross every review session. Add new items only as sub-items under the relevant step.
+
 ## Workflow
 
 ### Step 1: Load prior review memory
 
-Look in Claude Code memory for a project memory named `qa-review-<JIRA-TICKET>` (lowercase the key). If it exists, read it: it holds the gaps and verdict from earlier reviews of this ticket.
+Check `~/.claude/projects/<project_name>/memory/MEMORY.md`for a prior review entry for this ticket (e.g. `qa-review-<JIRA-TICKET>`). If one exists, read it: it holds the gaps and verdict from earlier reviews of this ticket.
 
-- `initial` with prior memory: this is a repeat review. Say so, and use the memory only for context.
-- `final` with no prior memory: warn that there is no initial review to cross-reference, then continue treating every gap as new.
+- `initial`
+  - with prior memory: This is a repeat `initial` review. Note any previously identified gaps so you don't re-report closed ones.
+- `final`
+  - with prior memory: Prior memory is essential for the `final` review, it records what gaps the initial review found. You will verify each one is closed before moving on.
+  - with no prior memory: Look at the Jira ticket comments to see if someone else has done an initial review. If not, warn that there is no initial review to cross-reference, then continue treating every gap as new.
 
-### Step 2: Gather inputs (in parallel)
+### Step 2: Gather context
 
-Make these calls in the same turn:
+#### Step 2a: Run all of the following **in parallel**:
 
-- Jira: fetch the ticket (summary, description, acceptance criteria, comments, linked issues).
-- GitHub: for each PR, `gh pr view <PR#> --json title,body,baseRefName,headRefName,files,state` and `gh pr diff <PR#>`.
+1. `mcp__atlassian__getJiraIssue` with the ticket key to fetch the ticket summary, description, acceptance criteria, status, steps to reproduce, test steps, linked issues, and all comments.
+2. For each PR number:
+   - `gh pr view <PR#>` get title, body, baseRefName, headRefName, files, and state in JSON.
+   - `gh pr diff <PR#>` get the full diff.
 
 If the working tree is not on a PR's head branch and `final` mode needs to edit files, tell the user which branch to check out instead of switching branches yourself.
 
-### Step 3: Discover the project
+#### Step 2b: Fetch linked tickets (required before proceeding to Step 3)
+
+Inspect `fields.issuelinks` from the Step 2a response. For every linked ticket, fetch it now using `mcp__atlassian__getJiraIssue`.
+
+**Do not proceed to Step 3 until all linked tickets have been fetched.** If there are many linked tickets, you may need to run multiple `mcp__atlassian__getJiraIssue` calls in parallel. If any linked ticket is inaccessible, warn the user and skip it, but continue with the review. If there are no linked tickets, note that and continue.
+
+Use the linked tickets description, attachments, AC, and all comments as additional context when performing the AC check in Step 4.
+
+### Step 3: Discover the project - **THIS SECTION WILL PROBABLY NEED TO BE REDONE AFTER UPDATE ROADMAP**
 
 Before judging anything, work out how this project does things. Read what exists; do not assume:
 
@@ -61,7 +101,16 @@ The checks below describe intent. Map them onto whatever the project actually us
 
 ### Step 4: Acceptance criteria coverage (both modes)
 
-List each acceptance criterion from the ticket. For each, decide whether the PR(s) implement it and whether a test exercises it. Mark each `Covered`, `Partial`, or `Missing`, citing the file and line or test name that shows it. If the ticket has no explicit acceptance criteria, derive them from the description, say so, and ask the user to confirm them before posting.
+Review the PR diff itself for implementation-level issues (distinct from missing test coverage, that will be done in Step 5) or missing spec documentation (Step 7). These are gaps in the actual code, migration, or config change. For example: incorrect logic, a fix applied inconsistently accross sibling modules/entities, an incomplete migration backfill, a missing config/documentation update. List each acceptance criterion from the ticket. For each, decide whether the PR(s) implement it. Mark each `Covered`, `Partial`, or `Missing`, citing the file and line or test name that shows it. If the ticket has no explicit acceptance criteria, derive them from the description, say so, and ask the user to confirm them before posting.
+
+Load this repo's `qa-review-patterns` file and the **Implementation Gaps** section as a checklist before concluding. If you are about to move on without flagging anything, scan that list first.
+
+- When a bug fix, new field, or new validation constant is applied to one module/entity/handler among several siblings, grep the sibling entities and confim the same change was actually *applied* everywhere its needed, not just tested everywhere (thats Step 5's job).
+- When a migration backfills a column and then adds a stricter contraint, (`FOREIGN KEY`/`CHECK`/`NOT NULL`) in the same `up()`, check whether the backfill's match condition covers the column's full historical value space, not just a freshly-seeded reference table.
+- When new compose files, scripts, or environment variables are added, check that `README.md` and `.env.example` (if applicable) were updated to match.
+- When an AC item or test step described behavior the code doesn't actually implement (or actively contradicts), flag it directly. Do not assume the AC is wrong.
+
+This step applies in *both* `initial` and `final` modes. Implementation-level issues are visible from the PR diff alone and don't require a live test run.
 
 ### Step 5: Unit test coverage (both modes)
 

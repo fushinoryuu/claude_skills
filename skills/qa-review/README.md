@@ -8,6 +8,7 @@ This skill assumes that you have the following tools already setup and fully ath
 
 - Atlassian MCP with write access to post comments
 - Github CLI
+- Set effort level to `high` before running skill
 
 ### Review modes
 There are two modes, used at different points in the ticket lifecycle:
@@ -20,7 +21,7 @@ There are two modes, used at different points in the ticket lifecycle:
 ### Usage
 
 ```
-/qa-review <mode> <JIRA-TICKET> <PR#> [PR#2 PR#3 ...]
+/qa-review <MODE> <JIRA-TICKET> <PR#> [PR#2 PR#3 ...]
 ```
 
 **Examples:**
