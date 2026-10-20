@@ -31,7 +31,7 @@ Set up with [uv](https://docs.astral.sh/uv/): `uv sync` installs the pinned Pyth
 | `uv run poe test`                           | All tests                                                                                                                           |
 | `uv run poe fmt-tables`                     | Align the columns of every Markdown table in the repo                                                                               |
 | `uv run poe check-tables`                   | Check that the tables are aligned, without changing any file                                                                        |
-| `uv run poe check`                          | Lint, the table check, then all tests. Covers everything CI runs, plus the table check.                                             |
+| `uv run poe check`                          | Lint, the table check, then all tests. Same coverage as CI.                                                                         |
 | `uv run poe eval --skill <name> [--runs N]` | Run a skill's eval cases against the model. Add `--triggers` for the trigger tests, or `--dry-run` to preview the prompts for free. |
 | `uv run poe eval-sample`                    | Run the eval cases of the sample skill used to test the runner                                                                      |
 | `uv run poe triggers-sample`                | Run the trigger tests of the sample skill                                                                                           |
