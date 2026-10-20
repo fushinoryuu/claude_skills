@@ -170,12 +170,12 @@ Fix remaining test and documentation gaps in this session where possible, follow
 
 Use `mcp__atlassian__addCommentToJiraIssue` to post a comment on the Jira ticket using the template for the active mode:
 
-1. **`initial` mode** → [templates/initial-comment.md](templates/initial-comment.md)
-2. **`final` mode AND the verdict is either Option A or B (nothing remains blocking)** → [templates/final-comment.md](templates/final-comment.md)
+1. **`initial` mode** → [assets/initial-comment.md](assets/initial-comment.md)
+2. **`final` mode AND the verdict is either Option A or B (nothing remains blocking)** → [assets/final-comment.md](assets/final-comment.md)
 3. **`final` mode AND the verdict is either Option C or D (any gaps remain unresolved and the ticket must go back to dev)** → DO NOT post a "Final" comment. A final review that finds a gap didn't actually reach a final, ready-to-close state (this endedup being another initial-review cycle), downgrade the review:
    - From the comments already fetched in Step 2a, count how many prior comments on this ticket have a title matching `Initial QA Review`.
    - Set `N` = that count + 1.
-   - Post using [templates/initial-comment.md](templates/initial-comment.md), titled `Initial QA Review` if `N` is 1, otherwise `{{N}}{{ordinal suffix e.g. 2nd, 3rd, 4th, ...}} Initial QA Review`.
+   - Post using [assets/initial-comment.md](assets/initial-comment.md), titled `Initial QA Review` if `N` is 1, otherwise `{{N}}{{ordinal suffix e.g. 2nd, 3rd, 4th, ...}} Initial QA Review`.
    - Follow the initial template's structure and rules exactly. Fold anything closed from the prior rounds into the *Implementation* narration. Any new gap found in Steps 4-7 (including ones surfaced via functional/integration testing) is reported as a plain `Gap:` entry in the matching section (*Tests*, *Interfaces and Documentation*, or *Other Findings*) with the recommendation worded into the description.
    - This relabeling changes only how the comment is posted (steps 3-8 still ran in full `final`-mode depth) and the *next* review of this ticket is still invoked as `/qa-review final ...` once dev addresses the gaps.
 
