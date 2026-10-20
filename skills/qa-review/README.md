@@ -43,11 +43,12 @@ There are two modes, used at different points in the ticket lifecycle:
 2. Fetch the Jira ticket, its linked tickets, and the PR diffs
 3. Understand the change and select lenses
 4. Check acceptance criteria coverage and the implementation
-5. Identify test coverage gaps (reports only - does not fix)
+5. Identify test coverage gaps
 6. _(Functional/Integration tests skipped)_
-7. Check interfaces and documentation (reports only - does not fix)
-8. Sanity-check each gap against the current main branch
-9. Post an initial review comment to the Jira ticket and stop
+7. Check interfaces and documentation
+8. Sanity-check each gap against the current base branch
+9. _(Nothing is fixed in `initial` mode, every open gap is reported)_
+10. Post an initial review comment to the Jira ticket and stop
 
 **`final` review:**
 
@@ -56,10 +57,10 @@ There are two modes, used at different points in the ticket lifecycle:
 3. Understand the change and select lenses
 4. Check acceptance criteria coverage and the implementation; verify initial review gaps are closed and identify any new gaps
 5. Check test coverage
-6. Evaluate and implement functional/integration tests
-7. Check interfaces and documentation; fix if needed
-8. Sanity-check each gap against the current main branch
-9. Fix test and documentation gaps in session where possible
+6. Check for missing functional/integration tests
+7. Check interfaces and documentation
+8. Sanity-check each gap against the current base branch
+9. Fix the test and documentation gaps that step 8 confirmed are still open, where possible without touching production code. This includes writing the functional/integration tests
 10. Post a final review comment to the Jira ticket. If gaps remain for dev, the comment is posted as another initial-style review instead.
 
 ## What it checks

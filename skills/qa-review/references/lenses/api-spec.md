@@ -15,4 +15,4 @@ Extra checks on top of `references/qa-core.md` for a project that documents its 
 - **Spec updated for the change.** The spec source files for the routes or domains the change touches are updated where necessary. Edit the source files, not a generated bundle. *Evidence:* a changed or new route with no matching change in the spec.
 - **New surface documented.** New query parameters, request body fields, and response codes (including error responses) are documented.
 - **Spec validation.** If the project has a spec validation script or linter (for example spectral), run it. It must finish with 0 errors.
-- **By mode.** In `initial` mode, report gaps only. In `final` mode, fix the spec files where needed and re-run validation.
+- **By mode.** Record the gaps in this step. In `initial` mode, report them only. In `final` mode, Step 9 fixes the spec files for the gaps that are still open and re-runs validation.

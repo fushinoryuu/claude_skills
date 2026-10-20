@@ -38,8 +38,9 @@ If a specific finding is genuinely ambiguous (a contested AC interpretation, a s
 ## Ground rules
 
 - Tools: Jira through the Atlassian MCP server, GitHub through the `gh` CLI. If either is unavailable or unauthenticated, stop and tell the user. Do not work around it.
-- Never run `git commit`, `git push`, `git add`, or any other command that records or publishes changes. The engineer controls commits. Leave edits in the working tree and list the files changed in your summary.
-- Never modify production code. Only test files, test fixtures, and interface documentation or contract files (such as an API spec) may be edited, and only in `final` mode.
+- Never run `git commit`, `git push`, `git add`, or any other command that records or publishes changes (`git fetch` is fine, it only updates remote-tracking refs). The engineer controls commits. Leave edits in the working tree and list the files changed in your summary.
+- Never modify production code. Only test files, test fixtures, and interface documentation or contract files (such as an API spec) may be edited, and only in `final` mode during Step 9.
+- Find first, fix later. Steps 4 to 7 only find gaps and record each one: what is wrong, where, and what change would close it. Step 8 checks which of those gaps are still open. Step 9 is the only step that edits a file or writes a test, and it acts only on gaps that Step 8 confirmed. Do not fix a gap at the moment you find it.
 - Do not create files in the repo other than the tests and documentation or contract updates required by the review. Review state lives in Claude Code memory, not in the repo.
 - Post comments to the Jira ticket only. Do not comment on the PRs.
 - Do not transition the ticket's status unless the user asks.
@@ -54,7 +55,7 @@ Immediately after parsing arguments (before Step 1), create a todo list with `To
 3. Understand the change and select lenses
 4. Acceptance criteria and implementation check
 5. Test coverage
-6. Functional/Integration testing
+6. Functional/Integration test check
 7. Interfaces and documentation check
 8. Sanity check
 9. Handle gaps
@@ -131,17 +132,15 @@ Report implementation-level findings under *Other Findings* in the comment. This
 
 Check the changed code against the *Test coverage* section of [references/qa-core.md](references/qa-core.md), plus the Step 5 checks of every lens you applied.
 
-Every gap gets: what is untested, where (file and symbol), and what test would close it.
+Every gap gets: what is untested, where (file and symbol), and what test would close it. Record the gap only. Do not write the test here (see Step 9).
 
 ### Step 6: Functional/integration tests
 
 In `initial` mode skip this step and say it was skipped.
 
-In `final` mode, evaluate whether observable behaviour is covered at the project's higher test level, using the *Higher-level tests* section of [references/qa-core.md](references/qa-core.md) plus the Step 6 checks of every lens you applied. Use the project's own designated directory and style for these tests.
+In `final` mode, evaluate whether observable behaviour is covered at the project's higher test level, using the *Higher-level tests* section of [references/qa-core.md](references/qa-core.md) plus the Step 6 checks of every lens you applied.
 
-- Write the missing tests.
-- If a test cannot be written right now (missing environment, dependency, credentials), add a `.todo` stub (or the framework's equivalent) so the gap is tracked in source control, and record why in the review comment.
-- Run the new tests with the project's test command and report the result honestly.
+Only evaluate here. For each behavior with no higher-level test, record a gap: the behavior, the project's own directory and style where the test belongs, and the test that would close it. If you can already tell that the test cannot be written right now (missing environment, dependency, credentials), note why. Writing the tests, adding `.todo` stubs and running them all happen in Step 9, after Step 8 has confirmed the gap is still open.
 
 ### Step 7: Interfaces and documentation
 
@@ -149,22 +148,39 @@ Check the *Interfaces and documentation* section of [references/qa-core.md](refe
 
 Report this step as not applicable if the change touches no externally visible interface and no user-facing behavior.
 
-In `initial` mode, report gaps only. In `final` mode, fix the documentation, spec, or contract files where needed and re-run any validation the project has.
+In both modes, only record the gaps here: what is missing or wrong, in which documentation, spec, or contract file, and what change would close it. In `final` mode the fixes are made in Step 9.
 
-### Step 8: Sanity-check gaps against current main branch
+### Step 8: Sanity-check gaps against the current base branch
 
-Before reporting  or fixing any gap, verify it still exists in the current state of the repository. A gap identified in the PR diff may have already been resolved by a subsequent commit or PR merged after the one under review.
+Before reporting or fixing any gap, verify it still exists on the PR's base branch as it is now. A gap identified in the PR diff may have already been resolved by a commit or PR merged after the one under review. No gap has been fixed at this point: Steps 4 to 7 only record them.
+
+The base branch is the `baseRefName` from the `gh pr view` result in Step 2a. Do not read the files on disk for this check: the working tree is usually on the PR's own branch, so it shows the PR's version and the gap would always look open. Read the base branch from git instead:
+
+1. Run `git fetch origin <base>` so the base branch is current. This only updates the remote-tracking ref and does not touch the working tree.
+2. Read a file with `git show origin/<base>:<path>`, or search with `git grep -n <pattern> origin/<base> -- <path>`.
+3. If `git fetch` is not possible, use `gh api repos/{owner}/{repo}/contents/<path>?ref=<base>` instead. If neither works, say that Step 8 could not be run and keep every gap open.
 
 For each gap found in previous steps:
 
 1. Identify the specific file and the change that would close the gap (e.g. a test describe block that should exist, a spec parameter that should be present, etc.).
-2. Read that file from disk (current main branch) or `grep` for the expected pattern and check whether the fix is already present.
-3. If that fix is already in the main branch: mark the gap **"already fixed in main - skip"** and exclude it from the report and from any in-session fixes.
-4. If the fix is not in the main branch: carry it forward to the next step as normal.
+2. Read that file on the base branch, or search it for the expected pattern, and check whether the fix is already present. A file that does not exist on the base branch means the fix is not there.
+3. If that fix is already on the base branch: mark the gap **"already fixed on the base branch - skip"** and exclude it from the report and from any in-session fixes.
+4. If the fix is not on the base branch: carry it forward to the next step as normal.
+
+If the PR is already merged, the base branch contains the PR itself. A gap is then still open only if the change that closes it is missing from the base branch as it stands now.
 
 ### Step 9: Handle gaps
 
-Fix remaining test and documentation gaps in this session where possible, following the ground rules (no production code changes, no commits). Run the relevant tests and validation afterwards. Anything that needs a production code change goes into the comment as a gap for dev.
+This is the only step that changes files. Work only on the gaps that Step 8 confirmed are still open. Leave alone any gap marked "already fixed on the base branch - skip".
+
+In `initial` mode, change nothing. Every open gap goes into the comment for dev.
+
+In `final` mode, fix the open gaps that the ground rules allow (test files, test fixtures, documentation and contract files; no production code, no commits):
+
+- **Missing tests (Steps 5 and 6).** Write them in the project's own test directory and style. If a test cannot be written right now (missing environment, dependency, credentials), add a `.todo` stub (or the framework's equivalent) so the gap is tracked in source control, and record why in the comment.
+- **Documentation, spec, or contract gaps (Step 7).** Update the files.
+- **Verify the fixes.** Run the new and changed tests with the project's test command, and re-run any validation the project has (such as a spec linter). Report the results honestly. A fix that fails verification does not count: report that gap as still open.
+- **Anything that needs a production code change** is not fixed here. It goes into the comment as a gap for dev, which includes the implementation findings from Step 4.
 
 ### Step 10: Post Jira comment
 
@@ -177,7 +193,7 @@ Use `mcp__atlassian__addCommentToJiraIssue` to post a comment on the Jira ticket
    - Set `N` = that count + 1.
    - Post using [assets/initial-comment.md](assets/initial-comment.md), titled `Initial QA Review` if `N` is 1, otherwise `{{N}}{{ordinal suffix e.g. 2nd, 3rd, 4th, ...}} Initial QA Review`.
    - Follow the initial template's structure and rules exactly. Fold anything closed from the prior rounds into the *Implementation* narration. Any new gap found in Steps 4-7 (including ones surfaced via functional/integration testing) is reported as a plain `Gap:` entry in the matching section (*Tests*, *Interfaces and Documentation*, or *Other Findings*) with the recommendation worded into the description.
-   - This relabeling changes only how the comment is posted (steps 3-8 still ran in full `final`-mode depth) and the *next* review of this ticket is still invoked as `/qa-review final ...` once dev addresses the gaps.
+   - This relabeling changes only how the comment is posted (steps 3-9 still ran in full `final`-mode depth) and the *next* review of this ticket is still invoked as `/qa-review final ...` once dev addresses the gaps.
 
 Post only the text under the "Template" heading, and follow the rules section of the template. Fill in every `{{ placeholder }}`, keep only the applicable verdict and the applicable branch of each conditional (delete the `{{ ... }}` marker lines), and remove no sections (write "None" or "Not applicable" instead). Keep it scannable: facts and file names, no padding.
 

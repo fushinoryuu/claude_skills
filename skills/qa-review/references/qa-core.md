@@ -33,8 +33,8 @@ How to use it:
 
 - Observable behavior that the acceptance criteria describe and lower-level tests cannot fully verify is covered at the project's own higher level (whatever it calls functional, integration, or end-to-end tests), in its designated location and style.
 - Test data a test creates is removed afterwards (for example with setup and teardown pairs). Check existing tests touched by the change as well as new ones.
-- When a needed test cannot be written now (missing environment, dependency, or credentials), add a pending stub in the framework's own style so the gap is tracked in source control, and record why.
-- Run the new tests with the project's test command and report the result honestly.
+- When a needed test cannot be written now (missing environment, dependency, or credentials), the gap is still recorded with the reason. Step 9 adds a pending stub in the framework's own style so the gap is tracked in source control.
+- Only evaluate in this step. Step 9 writes the tests and runs them with the project's test command, and reports the result honestly.
 
 ## Interfaces and documentation (Step 7)
 
