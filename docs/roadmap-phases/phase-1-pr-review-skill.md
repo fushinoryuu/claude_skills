@@ -117,7 +117,7 @@ For each script:
 
 Each fixture is a small PR (diff, description, ticket). Planted defects:
 
-| Fixture | Planted defect | Expected category |
+| Fixture                     | Planted defect                             | Expected category            |
 | --------------------------- | ------------------------------------------ | ---------------------------- |
 | `missing-tests`             | New service function with no test changes  | `missing-unit-tests`         |
 | `criterion-not-implemented` | Ticket lists 4 criteria, diff implements 3 | `unmet-acceptance-criterion` |

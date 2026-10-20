@@ -30,8 +30,11 @@ lint = "ruff check ."
 unit = "pytest tests/unit"
 structure = "pytest tests/structure"
 test = "pytest"
-check = ["lint", "test"]
-# Extra arguments are appended: `uv run poe eval --skill pr-review --runs 3`
+# Align Markdown tables in every tracked .md file; check-tables only reports (see tools/format_tables.py)
+fmt-tables = "python -m tools.format_tables"
+check-tables = "python -m tools.format_tables --check"
+check = ["lint", "check-tables", "test"]
+# Extra arguments are appended: `uv run poe eval --skill qa-review --runs 3`
 eval = "python -m evals.runner"
 # The sample skill used to test the runner (no real skills needed)
 eval-sample = "python -m evals.runner --skill todo-check --skills-dir tests/data/eval-sample/skills --evals-dir tests/data/eval-sample/evals"
