@@ -151,7 +151,7 @@ Each reference is a checklist the agent applies, with the reasoning behind each 
 
 ### 4. Scripts (deterministic only)
 
-| Script | Purpose |
+| Script                  | Purpose                                                                                                                                                                                                                               |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `changed_interfaces.py` | Best-effort listing of externally visible interfaces touched by a diff (for example HTTP routes, CLI flags, config keys, schema files). Reports "could not tell" instead of guessing                                                  |
 | `missing_tests.py`      | Given changed source files, report which have no matching test file changes. Test file patterns are configurable, with sensible defaults across common languages                                                                      |
@@ -181,7 +181,7 @@ For each script:
 
 Each fixture is a small PR (diff, description, ticket). Planted defects are described by QA category, not by stack, and the fixtures are deliberately spread across different kinds of projects so the eval set proves the skill is not tied to any one of them.
 
-| Fixture | Project kind | Planted defect | Expected category |
+| Fixture                     | Project kind           | Planted defect                                                            | Expected category              |
 | --------------------------- | ---------------------- | ------------------------------------------------------------------------- | ------------------------------ |
 | `missing-tests`             | Library                | New public function with no test changes                                  | `missing-tests`                |
 | `criterion-not-implemented` | Any (ticket-driven)    | Ticket lists 4 criteria, diff implements 3                                | `unmet-acceptance-criterion`   |

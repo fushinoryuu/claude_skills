@@ -21,9 +21,9 @@ Use this template when posting the Jira comment for an `initial` mode review. Fi
 
 ## Verdict decision guide
 
-| Situation                                    | Verdict  |
-| -------------------------------------------- | -------- |
-| AC met, tests complete, documentation correct, no other findings | Option A |
+| Situation                                                                       | Verdict  |
+| ------------------------------------------------------------------------------- | -------- |
+| AC met, tests complete, documentation correct, no other findings                | Option A |
 | Any gap in: AC coverage, tests, interfaces and documentation, or other findings | Option B |
 
 ---

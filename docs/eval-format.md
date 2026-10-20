@@ -44,17 +44,17 @@ expect:
 tags: [defect]
 ```
 
-| Field | Required | Meaning |
-| ---------------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                   | yes | Unique, and equal to the file name without `.yaml`. Format: `<skill>-<fixture>-<nn>`.                                                                                  |
-| `skill`                | yes | Skill under test. Must exist in `skills/`.                                                                                                                             |
-| `fixture`              | yes | Folder name under `fixtures/`.                                                                                                                                         |
-| `prompt`               | yes | The user message sent with the fixture.                                                                                                                                |
-| `expect.findings`      | yes | Planted defects the skill must report. Empty list for a clean case.                                                                                                    |
-| `expect.must_not_flag` | no  | Values of the skill's key field that must not appear at all (for tricky near-miss fixtures).                                                                           |
-| `expect.max_findings`  | yes | Upper bound on total findings. Guards against noisy output. Keep it low for clean cases.                                                                               |
-| `tags`                 | no  | Free-form. Reserved: `defect`, `clean`, `tricky`, `ambiguous`.                                                                                                         |
-| `scorer`               | no  | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
+| Field                  | Required | Meaning                                                                                                                                                                |
+| ---------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                   | yes      | Unique, and equal to the file name without `.yaml`. Format: `<skill>-<fixture>-<nn>`.                                                                                  |
+| `skill`                | yes      | Skill under test. Must exist in `skills/`.                                                                                                                             |
+| `fixture`              | yes      | Folder name under `fixtures/`.                                                                                                                                         |
+| `prompt`               | yes      | The user message sent with the fixture.                                                                                                                                |
+| `expect.findings`      | yes      | Planted defects the skill must report. Empty list for a clean case.                                                                                                    |
+| `expect.must_not_flag` | no       | Values of the skill's key field that must not appear at all (for tricky near-miss fixtures).                                                                           |
+| `expect.max_findings`  | yes      | Upper bound on total findings. Guards against noisy output. Keep it low for clean cases.                                                                               |
+| `tags`                 | no       | Free-form. Reserved: `defect`, `clean`, `tricky`, `ambiguous`.                                                                                                         |
+| `scorer`               | no       | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
 
 A **clean case** has `expect.findings: []`, a low `max_findings` (0 to 2), and the `clean` tag. Every skill needs at least one, and the structure tests check for it.
 

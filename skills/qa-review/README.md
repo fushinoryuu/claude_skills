@@ -98,9 +98,9 @@ Each lens opens with an `applies_when` block that says which changed files, or w
 
 The lenses included in this folder are examples:
 
-| Lens                                    | Adds checks for                                                                                      |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [service](references/lenses/service.md) | Server-side request handling, data access, and migrations (validation, authorization, idempotency)   |
+| Lens                                      | Adds checks for                                                                                      |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [service](references/lenses/service.md)   | Server-side request handling, data access, and migrations (validation, authorization, idempotency)   |
 | [api-spec](references/lenses/api-spec.md) | Projects that document an HTTP API in an OpenAPI/Swagger spec (spec updated, new surface documented) |
 
 To add a lens for your own stack, see [references/lenses/README.md](references/lenses/README.md).
