@@ -22,6 +22,7 @@ MAX_NAME_LENGTH = 64
 MIN_DESCRIPTION_LENGTH = 30
 MAX_DESCRIPTION_LENGTH = 1024
 MAX_CLEAN_FINDINGS = 2
+LENS_DIR = "references/lenses/"
 
 _KEBAB = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
@@ -105,6 +106,9 @@ def check_references(folder: str, root: Path, text: str) -> list[str]:
         for path in sorted(ref_dir.rglob("*")):
             if path.is_file() and path.name != ".gitkeep":
                 rel = path.relative_to(root).as_posix()
+                # Lenses are discovered by their applies_when block, not named in SKILL.md.
+                if rel.startswith(LENS_DIR):
+                    continue
                 if rel not in refs:
                     problems.append(f"{folder}: {rel} exists but SKILL.md never mentions it")
     return problems
