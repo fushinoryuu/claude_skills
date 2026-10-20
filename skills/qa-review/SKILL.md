@@ -1,21 +1,19 @@
 ---
 name: qa-review
 description: Run a structured QA review of a Jira ticket and its pull request(s), checking acceptance criteria coverage, test coverage and API spec accuracy, then post the findings to the Jira ticket. Use when the user invokes /qa-review.
-argument-hint: <initial|final> <JIRA-TICKET> <PR#> [PR#2 PR#3 ...]
+argument-hint: <MODE> <JIRA-TICKET> <PR#> [PR#2 PR#3 ...]
 disable-model-invocation: true
 ---
 
 # QA Review
 
-You are peforming a QA review for the given repository and take on the role of a QA engineer. These review sessions are the formal QA verfication step in the ticket lifecycle. When all gaps are resolved and the user is satisfied, the ticket can be marked Done. The Jira ticket is the source of truth for the state of the work, so all findings are posted there.
+You are performing a QA review for the given repository and take on the role of a QA engineer. These review sessions are the formal QA verification step in the ticket lifecycle. When all gaps are resolved and the user is satisfied, the ticket can be marked Done. The Jira ticket is the source of truth for the state of the work, so all findings are posted there.
 
 ## Invocation
 
 ```
 /qa-review <MODE> <JIRA-TICKET> <PR#> [PR#2 PR#3 ...]
 ```
-
-All arguments are required. If any are missing, stop and show the usage line. Do not guess.
 
 ## Arguments
 
@@ -25,7 +23,7 @@ All arguments are required. If any are missing, stop and show the usage line. Do
 - `JIRA-TICKET`: Jira issue key, e.g. `ABC-123`
 - `PR#`: one or more GitHub PR numbers in the current repository (integers only, no `#` prefix required). The PRs must be in the same repo as the current working tree.
 
-If the mode is not `initial` or `final`, the ticket key is missing, or no PR numbers are given, stop and show the usage line. Do not guess.
+All arguments are required. If the mode is not `initial` or `final`, the ticket key is missing, or no PR numbers are given, stop and show the usage line. Do not guess.
 
 ## Effort Handling
 
@@ -47,20 +45,28 @@ If a specific finding is genuinely ambiguous (a contested AC interpretation, a s
 
 ## Progress Checklist
 
-Immediately after parsing arguments (before Step 1), create a todo list with `TodoWrite` so the user can see review progress at a glace, this matters most on reviews that run long. Use one entry per step below, worded so someone skimming the list understand whats happening without re-reading this file:
+Immediately after parsing arguments (before Step 1), create a todo list with `TodoWrite` so the user can see review progress at a glance, this matters most on reviews that run long. Use one entry per step below, worded so someone skimming the list understands what's happening without re-reading this file:
 
-1. Load prior review memory for `{{ JIRA-TICKET }}`.
-2. Fetch Jira tickets, linked tickets, and PRs `{{ PR list }}`.
-3. Discover project conventions and testing framework.
-4. Acceptance criteria coverage check.
+1. Load prior review memory for `{{ JIRA-TICKET }}`
+2. Fetch Jira tickets, linked tickets, and PRs `{{ PR list }}`
+3. Discover project conventions and testing framework
+4. Acceptance criteria coverage check
+5. Unit test coverage
+6. Functional/Integration testing
+7. API spec check
+8. Sanity check
+9. Handle gaps
+10. Post Jira comment
+11. Save/update memory
+12. Final report
 
-Mark an item `in_progress` when you begin that step and flip it to `completed` the moment the step's work is actually done, not in a batch at the end, and not before the work behind it is real (e.g. don't complete "Post Jira comment" until `addCommentToJiraIssue` has actually returned successfully). If Step 9 turns up enough gaps that tracking them individually would help, add them as sub-items under the "Handle gaps" entry rather than replacing it. The numbered list above should stay stable as the backbone so the progress bar reads consistently accross every review session. Add new items only as sub-items under the relevant step.
+Mark an item `in_progress` when you begin that step and flip it to `completed` the moment the step's work is actually done, not in a batch at the end, and not before the work behind it is real (e.g. don't complete "Post Jira comment" until `addCommentToJiraIssue` has actually returned successfully). If Step 9 turns up enough gaps that tracking them individually would help, add them as sub-items under the "Handle gaps" entry rather than replacing it. The numbered list above should stay stable as the backbone so the progress bar reads consistently across every review session. Add new items only as sub-items under the relevant step.
 
 ## Workflow
 
 ### Step 1: Load prior review memory
 
-Check `~/.claude/projects/<project_name>/memory/MEMORY.md`for a prior review entry for this ticket (e.g. `qa-review-<JIRA-TICKET>`). If one exists, read it: it holds the gaps and verdict from earlier reviews of this ticket.
+Check `~/.claude/projects/<project_name>/memory/MEMORY.md` for a prior review entry for this ticket (e.g. `qa-review-<JIRA-TICKET>`). If one exists, read it: it holds the gaps and verdict from earlier reviews of this ticket.
 
 1. `initial`
    - with prior memory: This is a repeat `initial` review. Note any previously identified gaps so you don't re-report closed ones.
@@ -87,7 +93,9 @@ Inspect `fields.issuelinks` from the Step 2a response. For every linked ticket, 
 
 Use the linked tickets description, attachments, AC, and all comments as additional context when performing the AC check in Step 4.
 
-### Step 3: Discover the project - **THIS SECTION WILL PROBABLY NEED TO BE REDONE AFTER UPDATE ROADMAP**
+### Step 3: Discover the project
+
+**THIS SECTION WILL PROBABLY NEED TO BE REDONE AFTER UPDATED ROADMAP**
 
 Before judging anything, work out how this project does things. Read what exists; do not assume:
 
@@ -105,8 +113,8 @@ Review the PR diff itself for implementation-level issues (distinct from missing
 
 Load this repo's `qa-review-patterns` file and the **Implementation Gaps** section as a checklist before concluding. If you are about to move on without flagging anything, scan that list first.
 
-- When a bug fix, new field, or new validation constant is applied to one module/entity/handler among several siblings, grep the sibling entities and confim the same change was actually *applied* everywhere its needed, not just tested everywhere (thats Step 5's job).
-- When a migration backfills a column and then adds a stricter contraint, (`FOREIGN KEY`/`CHECK`/`NOT NULL`) in the same `up()`, check whether the backfill's match condition covers the column's full historical value space, not just a freshly-seeded reference table.
+- When a bug fix, new field, or new validation constant is applied to one module/entity/handler among several siblings, grep the sibling entities and confirm the same change was actually *applied* everywhere its needed, not just tested everywhere (that's Step 5's job).
+- When a migration backfills a column and then adds a stricter constraint, (`FOREIGN KEY`/`CHECK`/`NOT NULL`) in the same `up()`, check whether the backfill's match condition covers the column's full historical value space, not just a freshly-seeded reference table.
 - When new compose files, scripts, or environment variables are added, check that `README.md` and `.env.example` (if applicable) were updated to match.
 - When an AC item or test step described behavior the code doesn't actually implement (or actively contradicts), flag it directly. Do not assume the AC is wrong.
 
@@ -114,7 +122,7 @@ This step applies in *both* `initial` and `final` modes. Implementation-level is
 
 ### Step 5: Unit test coverage
 
-**THIS SHOULD PROBABLY BE A LENSE, NOT A STEP**
+**THIS SHOULD PROBABLY BE A LENS, NOT A STEP**
 
 Check the changed code against these expectations:
 
@@ -126,7 +134,7 @@ Every gap gets: what is untested, where (file and symbol), and what test would c
 
 ### Step 6: Functional/integration tests
 
-**THIS SHOULD PROBABLY BE A LENSE, NOT A STEP**
+**THIS SHOULD PROBABLY BE A LENS, NOT A STEP**
 
 In `initial` mode skip this step and say it was skipped.
 
@@ -139,7 +147,7 @@ In `final` mode, evaluate whether observable behaviour is covered at the integra
 
 ### Step 7: API spec check
 
-**THIS SHOULD PROBABLY BE A LENSE, NOT A STEP**
+**THIS SHOULD PROBABLY BE A LENS, NOT A STEP**
 
 Skip as "not applicable" if Step 3 found no API contract.
 
@@ -149,11 +157,16 @@ Skip as "not applicable" if Step 3 found no API contract.
 
 In `initial` mode, report gaps only. In `final` mode, fix the spec files where needed and re-run validation.
 
-### Step 8: Sanity-check gaps against current `default` branch
+### Step 8: Sanity-check gaps against current main branch
 
-**THIS PROBABLY NEEDS TO BE HIGHER UP IN THE ORDER TO AVOID DOING WORK THAT MIGHT ALREADY BE FIXED**
+Before reporting  or fixing any gap, verify it still exists in the current state of the repository. A gap identified in the PR diff may have already been resolved by a subsequent commit or PR merged after the one under review.
 
-Using the memory from Step 1, mark every gap from the initial review as `Closed`, `Still open`, or `Closed differently` (with a note). Then list any new gaps found in this review.
+For each gap found in previous steps:
+
+1. Identify the specific file and the change that would close the gap (e.g. a test describe block that should exist, a spec parameter that should be present, etc.).
+2. Read that file from disk (current main branch) or `grep` for the expected pattern and check whether the fix is already present.
+3. If that fix is already in the main branch: mark the gap **"already fixed in main - skip"** and exclude it from the report and from any in-session fixes.
+4. If the fix is not in the main branch: carry it forward to the next step as normal.
 
 ### Step 9: Handle gaps
 
@@ -165,12 +178,12 @@ Use `mcp__atlassian__addCommentToJiraIssue` to post a comment on the Jira ticket
 
 1. **`initial` mode** → [templates/initial-comment.md](templates/initial-comment.md)
 2. **`final` mode AND the verdict is either Option A or B (nothing remains blocking)** → [templates/final-comment.md](templates/final-comment.md)
-3. **`final` mode AND the verdict is either Option C or D (any gaps remain unresolved and the ticket must go back to dev)** → DO NOT oist a "Final" comment. A final review that finds a gap didn't actually reach a final, ready-to-close state (this endedup being another initial-review cycle), downgrade the review:
+3. **`final` mode AND the verdict is either Option C or D (any gaps remain unresolved and the ticket must go back to dev)** → DO NOT post a "Final" comment. A final review that finds a gap didn't actually reach a final, ready-to-close state (this endedup being another initial-review cycle), downgrade the review:
    - From the comments already fetched in Step 2a, count how many prior comments on this ticket have a title matching `Initial QA Review`.
    - Set `N` = that count + 1.
    - Post using [templates/initial-comment.md](templates/initial-comment.md), titled `Initial QA Review` if `N` is 1, otherwise `{{N}}{{ordinal suffix e.g. 2nd, 3rd, 4th, ...}} Initial QA Review`.
    - Follow the initial template's structure and rules exactly. Fold anything closed from the prior rounds into the *Summary of Changes in PR* narration. Any new gap found in Steps 4-7 (including ones surfaced via functional/integration testing) is reported as a plain `Gap:` entry with the recommendation worded into the description.
-   - This relabeling changes on how the comment is posted (steps 3-8 still ran in full `final`-mode depth) and the *next* review of this ticket is still invoked as `/qa-review final ...` once dev addresses the gaps.
+   - This relabeling changes only how the comment is posted (steps 3-8 still ran in full `final`-mode depth) and the *next* review of this ticket is still invoked as `/qa-review final ...` once dev addresses the gaps.
 
 Post only the text under the "Template" heading, and follow the rules section of the template. Fill in every `{{ placeholder }}`, keep only the applicable verdict and the applicable branch of each conditional (delete the `{{ ... }}` marker lines), and remove no sections (write "None" or "Not applicable" instead). Keep it scannable: facts and file names, no padding.
 
@@ -180,7 +193,7 @@ Do not transition the ticket yourself. If the verdict is "Ready to mark Done" or
 
 ### Step 11: Save memory
 
-Write of update a memory file at `~/.claude/projects/<project_name>/memory/qa-review-<JIRA-TICKET>.md`recording:
+Write or update a memory file at `~/.claude/projects/<project_name>/memory/qa-review-<JIRA-TICKET>.md` recording:
 
 - Mode (`initial` or `final`). If step 10 downgraded a `final` review to an "Nth Initial Review" comment, record the mode as `final` (that's the depth the review actually ran at) but note explicitly that the comment was posted using the initial template/title due to a remaining gap, so a later review doesn't miscount comment numbering or assume this ticket never had a final-depth pass.
 - PR numbers reviewed
