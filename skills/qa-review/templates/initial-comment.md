@@ -23,8 +23,8 @@ Use this template when posting the Jira comment for an `initial` mode review. Fi
 
 | Situation                                    | Verdict  |
 | -------------------------------------------- | -------- |
-| AC met, unit tests complete, spec correct    | Option A |
-| Any gap in: AC coverage, unit tests, or spec | Option B |
+| AC met, tests complete, documentation correct, no other findings | Option A |
+| Any gap in: AC coverage, tests, interfaces and documentation, or other findings | Option B |
 
 ---
 
@@ -35,6 +35,7 @@ Post everything below this line as the comment body. It is plain comment text, n
 Initial QA Review - {{ JIRA TICKET }}
 PRs: {{ PR list, e.g. #123 #456}}
 Reviewed: {{ YYYY-MM-DD }}
+Lenses: {{ names of the lenses applied, or "core only" }}
 
 ---
 
@@ -60,7 +61,7 @@ Reviewed: {{ YYYY-MM-DD }}
 
 ---
 
-*Unit Tests*
+*Tests*
 {{ If no gaps: }}
 No gaps found.
 
@@ -71,17 +72,28 @@ Gap: {{ Describe what is untested }} - `{{ file }}`- {{ Test that would close it
 
 ---
 
-*OpenAPI Spec*
-{{ If project does not contain any API contracts/specs: }}
-Not applicable - no API contract in this project.
+*Interfaces and Documentation*
+{{ If the change touches no externally visible interface or user-facing behavior: }}
+Not applicable - no interface or user-facing change.
 
-{{ If no changes were needed and spec is untouched: }}
-No spec changes required.
+{{ If no changes were needed and documentation is untouched: }}
+No documentation changes required.
 
-{{ If spec was updated correctly by the dev: }}
-Correct. Changes in source files only ({{ list files }}).
+{{ If documentation was updated correctly by the dev: }}
+Correct. Updated: {{ list files }}.
 
 {{ If gaps found (one block per gap): }}
-Gap: {{ What is missing or wrong in the spec }} - `{{ spec file }}` - {{ Change that would close it }}.
+Gap: {{ What is missing or wrong in the documentation or contract }} - `{{ file }}` - {{ Change that would close it }}.
+
+{{ Repeat per gap }}
+
+---
+
+*Other Findings*
+{{ If no other findings: }}
+None.
+
+{{ If findings (one block per finding): }}
+Gap: {{ Describe the implementation-level issue and why it matters }} - `{{ file }}` - {{ Change that would close it }}.
 
 {{ Repeat per gap }}

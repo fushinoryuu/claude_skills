@@ -7,7 +7,7 @@ Use this template when posting the Jira comment for a `final` mode review. Fill 
 ## Rules for final review comments
 
 1. Always include the *Gaps from Previous Review* section, even if there was no prior initial review.
-2. Each new gap entry (Unit Tests and OpenAPI Spec sections) needs both a **Gap** line and an **Action** line - unlike the initial review which only has a Gap line. Gaps from the previous review use the one-line ✓/✗ format instead.
+2. Each new gap entry (Tests, Interfaces and Documentation, and Other Findings sections) needs both a **Gap** line and an **Action** line - unlike the initial review which only has a Gap line. Gaps from the previous review use the one-line ✓/✗ format instead.
 3. Keep each gap description to one sentence: what is untested and why it matters.
 4. Keep each action to one sentence: what was done or why it was sent back.
 5. Use `*Section Name*` for bold headers (Jira rendering).
@@ -42,6 +42,7 @@ Post everything below this line as the comment body. It is plain comment text, n
 Final QA Review - {{ JIRA TICKET }}
 PRs: {{ PR list, e.g. #123 #456}}
 Reviewed: {{ YYYY-MM-DD }}
+Lenses: {{ names of the lenses applied, or "core only" }}
 
 ---
 
@@ -86,7 +87,7 @@ All gaps from previous review confirmed closed.
 
 ---
 
-*Unit Tests*
+*Tests*
 {{ If no new gaps: }}
 No new gaps found.
 
@@ -120,22 +121,34 @@ Added: `{{ test file }}` - {{ behavior it covers }}.
 
 ---
 
-*OpenAPI Spec*
-{{ If project does not contain any API contracts/specs: }}
-Not applicable - no API contract in this project.
+*Interfaces and Documentation*
+{{ If the change touches no externally visible interface or user-facing behavior: }}
+Not applicable - no interface or user-facing change.
 
-{{ If no changes were needed and spec is untouched: }}
-No spec changes required.
+{{ If no changes were needed and documentation is untouched: }}
+No documentation changes required.
 
-{{ If spec was updated correctly by the dev: }}
-Correct. Changes in source files only ({{ list files }}).
+{{ If documentation was updated correctly by the dev: }}
+Correct. Updated: {{ list files }}.
 
 {{ If new gaps found and fixed in this session (one block per gap): }}
-Gap: {{ What was missing or wrong in the spec }} - `{{ spec file }}`.
-Action: Fixed in this session - {{ describe the change, e.g. "added missing response code" }}
+Gap: {{ What was missing or wrong in the documentation or contract }} - `{{ file }}`.
+Action: Fixed in this session - {{ describe the change, e.g. "added the missing response code to the spec" }}
 
 {{ If new gaps found but not fixable (one block per gap): }}
-Gap: {{ What is missing or wrong in the spec }} - `{{ spec file }}`.
+Gap: {{ What is missing or wrong in the documentation or contract }} - `{{ file }}`.
 Action: Sent back to dev - {{ brief reason, e.g. "an update to production code would be required" }}
+
+{{ Repeat per gap }}
+
+---
+
+*Other Findings*
+{{ If no other findings: }}
+None.
+
+{{ If findings (one block per finding; they need a developer fix because production code may not be changed in this review): }}
+Gap: {{ Describe the implementation-level issue and why it matters }} - `{{ file }}` - {{ Change that would close it }}.
+Action: Sent back to dev - {{ brief reason }}
 
 {{ Repeat per gap }}
