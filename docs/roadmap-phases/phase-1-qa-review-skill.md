@@ -97,7 +97,7 @@ Deciding which lens to load is real work, and it is done from evidence about the
 ### 1. Write SKILL.md
 
 - [ ] Frontmatter: `name: qa-review` and a `description` that states what it does and when to use it (a QA review of a PR or feature against its ticket, checking test coverage, checking whether interface or contract docs need updating). Include trigger phrases a user would naturally say, and keep the description free of stack-specific words so it triggers on any kind of project.
-- [ ] State near the top of SKILL.md that the skill is project-agnostic and applies to any code or feature a QA engineer would review.
+- [x] State near the top of SKILL.md that the skill is project-agnostic and applies to any code or feature a QA engineer would review.
 - [ ] **Expected tools** section: the `gh` CLI (PR, diff, files, comments, GitHub Issues), the Atlassian MCP server (Jira issue, acceptance criteria), and the paste-the-ticket fallback when Jira is not available.
 - [ ] **Fetching** section, to keep token use down:
   - List the changed files first (`gh pr diff <n> --name-only`, or `gh pr view <n> --json files`) and apply "What to skip" before reading any diff.
@@ -121,18 +121,18 @@ Deciding which lens to load is real work, and it is done from evidence about the
 
 The skill does not classify the project as frontend, backend, or infra before reviewing. It builds a plain-language picture of the change, and picks lenses from what the change touches.
 
-- [ ] Add a short step in SKILL.md: before reviewing, state what the change does, what it touches (user-facing behavior, data, interfaces, configuration, build or deploy, tests, docs), and how it is exercised or tested in this repo.
-- [ ] Infer the test approach from the repo itself (existing test folders, naming patterns, CI config) instead of assuming a framework.
-- [ ] Treat unfamiliar stacks as normal. If the stack is unfamiliar, the skill says so and applies the core checklist rather than guessing at stack conventions.
+- [x] Add a short step in SKILL.md: before reviewing, state what the change does, what it touches (user-facing behavior, data, interfaces, configuration, build or deploy, tests, docs), and how it is exercised or tested in this repo.
+- [x] Infer the test approach from the repo itself (existing test folders, naming patterns, CI config) instead of assuming a framework.
+- [x] Treat unfamiliar stacks as normal. If the stack is unfamiliar, the skill says so and applies the core checklist rather than guessing at stack conventions.
 - [ ] Allow mixed or unusual changes (code plus config plus docs, or a repo that fits no common category) without special handling.
-- [ ] Allow the user to name a lens explicitly, or to say "core only".
+- [x] Allow the user to name a lens explicitly, or to say "core only".
 - [ ] Add a short "Lens selection" step in SKILL.md: run `suggest_lenses.py` on the changed files, read only the lenses it names (plus any the user asked for), apply judgment, and state which lenses were applied and why, or "core only". Any number of lenses, including none, is valid.
 
 ### 3. Write the references
 
 Each reference is a checklist the agent applies, with the reasoning behind each item so the agent can judge edge cases.
 
-- [ ] `qa-core.md` (universal, always applied), written with no stack assumptions. Suggested sections:
+- [x] `qa-core.md` (universal, always applied), written with no stack assumptions. Suggested sections:
   - **Requirements:** every acceptance criterion is implemented and testable; behavior beyond the ticket is called out; unclear requirements are flagged, not assumed.
   - **Test coverage:** new and changed behavior has tests at an appropriate level; tests assert real outcomes; failure paths are tested, not only the happy path.
   - **Edge cases and inputs:** empty, maximum, invalid, duplicate, and concurrent inputs or states, as relevant to the change.
@@ -144,10 +144,10 @@ Each reference is a checklist the agent applies, with the reasoning behind each 
   - **Observability and supportability:** logging, error messages, and enough information to diagnose a failure.
   - **Documentation and release notes:** user-facing or operator-facing changes are documented.
   - **Testability:** whether the change can be tested in this repo's environment, and what a QA engineer needs (test data, flags, environments) to verify it manually.
-- [ ] Mark each core item as "apply when relevant to the change" so the agent skips items that do not apply instead of forcing findings.
-- [ ] `lenses/` (optional, additive): add at most a few short examples to show the pattern, and label them clearly as examples, not requirements. Candidates: a web UI lens (accessibility, loading and error states), a service lens (validation, auth, idempotency), an infrastructure-as-code lens (least privilege, rollback, blast radius). A user can add a lens for any other stack (mobile, game, data pipeline, embedded, ML) by dropping in one file.
-- [ ] Each lens opens with the `applies_when` block (`paths` and `touches`, see "Lens selection"), adds only checks the core does not already cover, and never repeats core items.
-- [ ] `lenses/README.md`: how to add a lens (the file format, the `applies_when` fields, and the rule that a lens only adds to the core). SKILL.md mentions it in one line.
+- [x] Mark each core item as "apply when relevant to the change" so the agent skips items that do not apply instead of forcing findings.
+- [x] `lenses/` (optional, additive): add at most a few short examples to show the pattern, and label them clearly as examples, not requirements. Candidates: a web UI lens (accessibility, loading and error states), a service lens (validation, auth, idempotency), an infrastructure-as-code lens (least privilege, rollback, blast radius). A user can add a lens for any other stack (mobile, game, data pipeline, embedded, ML) by dropping in one file.
+- [x] Each lens opens with the `applies_when` block (`paths` and `touches`, see "Lens selection"), adds only checks the core does not already cover, and never repeats core items.
+- [x] `lenses/README.md`: how to add a lens (the file format, the `applies_when` fields, and the rule that a lens only adds to the core). SKILL.md mentions it in one line.
 - [ ] `output-format.md`: report template and the structured findings block (see Phase 0).
 
 ### 4. Scripts (deterministic only)
@@ -174,7 +174,7 @@ For each script:
 - [ ] Summary line with overall assessment.
 - [ ] Acceptance criteria table: criterion, status (covered, partial, missing, unclear), evidence.
 - [ ] Findings grouped by severity, each with file, line when known, explanation, and suggested fix.
-- [ ] A "Lenses applied" line naming each lens and why, or "core only".
+- [x] A "Lenses applied" line naming each lens and why, or "core only".
 - [ ] Structured findings block at the end for evals. It also carries a `lenses_applied` list (an extra top-level key, which the current scoring ignores).
 - [ ] Keep it short enough that a reviewer reads all of it.
 
@@ -210,7 +210,7 @@ Lenses need two small changes outside the skill itself.
 - [ ] **Decide whether cases can assert lens selection.** For example `expect.lenses`, compared with the reported `lenses_applied`. This is the only eval signal for the agent's selection judgment, since the script's own behavior is covered by its unit tests.
 - [ ] **Structure tests for lenses**, in `evals/structure.py`:
   - Every file in `references/lenses/` has valid `applies_when` frontmatter (`paths` as a list of globs, and `touches`), and lens names are unique.
-  - The orphan-reference rule exempts lens files. They are discovered by `suggest_lenses.py`, not named in SKILL.md, so today's rule would flag every one of them.
+  - The orphan-reference rule exempts lens files (done). They are discovered by `suggest_lenses.py`, not named in SKILL.md, so today's rule would flag every one of them.
   - SKILL.md and `qa-core.md` link to no specific lens file, so removing the `lenses/` folder cannot break them.
   - The stack-term scan (see Risks) skips lens files.
 
