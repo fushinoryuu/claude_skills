@@ -156,6 +156,8 @@ should_not_trigger:
 
 Run with `python -m evals.runner --skill <skill> --triggers [--runs N]`.
 
+A skill that sets `disable-model-invocation: true` in its frontmatter only runs when the user types its slash command, so its description never selects it. Such a skill needs no `triggers.yaml`, and the structure check does not require one. It still needs its cases, fixtures and category list.
+
 The runner builds a router prompt from the `name` and `description` in the frontmatter of **every** skill under `skills/`, never the skill bodies. Each trigger prompt is sent as the user message. The model thinks briefly if it wants to, then gives the exact skill name or `none` on its final line. Showing the whole catalog means a near-miss prompt tests the real choice: the model must prefer the right skill, not just any skill. Include 8 to 10 prompts of each kind, with near-misses. Prompts that belong to another skill in the repo go in that skill's `should_trigger` and in this skill's `should_not_trigger`.
 
 Scoring:
