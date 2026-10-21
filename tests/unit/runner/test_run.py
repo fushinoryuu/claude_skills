@@ -1,4 +1,7 @@
+import io
 import json
+import shutil
+import sys
 
 import pytest
 
@@ -144,6 +147,17 @@ def test_cli_dry_run_prints_prompts_without_calling_the_model(skills_dir, evals_
     assert "=== USER (todo-check-has-todo-01) ===" in out
     assert client.calls == []
     assert not (tmp_path / "results").exists()
+
+
+def test_cli_dry_run_prints_non_ascii_skill_text_on_a_legacy_console(skills_dir, evals_dir, tmp_path, monkeypatch):
+    skills = tmp_path / "skills"
+    shutil.copytree(skills_dir, skills)
+    with (skills / "todo-check" / "SKILL.md").open("a", encoding="utf-8") as f:
+        f.write("\nStep 1 → step 2 ✓\n")
+    console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252", write_through=True)
+    monkeypatch.setattr(sys, "stdout", console)
+    assert cli(skills, evals_dir, tmp_path, "--dry-run", client=FakeClient()) == 0
+    assert "Step 1 → step 2 ✓" in console.buffer.getvalue().decode("utf-8")
 
 
 @pytest.mark.parametrize("flag, value", [("--runs", "0"), ("--threshold", "1")])

@@ -38,8 +38,8 @@ def assert_problem(tree, text: str):
     assert any(text in p for p in found), f"expected a problem containing {text!r}, got {found}"
 
 
-def write_skill_md(tree, *, name="todo-check", description=DESCRIPTION, body="See references/notes.md.\n"):
-    meta = {"name": name, "description": description}
+def write_skill_md(tree, *, name="todo-check", description=DESCRIPTION, body="See references/notes.md.\n", **extra):
+    meta = {"name": name, "description": description, **extra}
     frontmatter = "".join(f"{k}: {v!r}\n" for k, v in meta.items() if v is not None)
     (tree.skill / "SKILL.md").write_text(f"---\n{frontmatter}---\n\n{body}")
 
@@ -253,6 +253,29 @@ def test_missing_triggers_file(tree):
 def test_triggers_need_both_kinds(tree, content, message):
     (tree.kit / "triggers.yaml").write_text(content)
     assert_problem(tree, message)
+
+
+def write_manual_only_skill_md(tree, value):
+    # The key has hyphens, so it cannot be a keyword argument.
+    write_skill_md(tree, **{"disable-model-invocation": value})
+
+
+def test_manual_only_skill_needs_no_triggers_file(tree):
+    write_manual_only_skill_md(tree, True)
+    (tree.kit / "triggers.yaml").unlink()
+    assert problems(tree) == []
+
+
+def test_skill_that_can_be_auto_selected_still_needs_triggers(tree):
+    write_manual_only_skill_md(tree, False)
+    (tree.kit / "triggers.yaml").unlink()
+    assert_problem(tree, "triggers.yaml")
+
+
+def test_manual_only_skill_still_needs_its_cases(tree):
+    write_manual_only_skill_md(tree, True)
+    (tree.kit / "cases").rename(tree.kit / "cases-gone")
+    assert_problem(tree, "cases")
 
 
 def test_all_problems_are_reported_together(tree):

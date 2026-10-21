@@ -114,7 +114,15 @@ def check_references(folder: str, root: Path, text: str) -> list[str]:
     return problems
 
 
-def check_evals(folder: str, evals_dir: Path) -> list[str]:
+def is_manual_only(text: str) -> bool:
+    """True when SKILL.md sets disable-model-invocation: the description never selects the skill, so trigger tests would test nothing."""
+    try:
+        return parse_frontmatter(text).get("disable-model-invocation") is True
+    except EvalConfigError:
+        return False
+
+
+def check_evals(folder: str, evals_dir: Path, *, manual_only: bool = False) -> list[str]:
     problems = []
     try:
         vocab = load_vocabulary(evals_dir, folder)
@@ -139,6 +147,9 @@ def check_evals(folder: str, evals_dir: Path) -> list[str]:
             f"{folder}: needs a clean case (tag 'clean', findings: [], max_findings <= {MAX_CLEAN_FINDINGS})"
         )
 
+    if manual_only:
+        return problems
+
     try:
         prompts = load_triggers(evals_dir, folder)
     except EvalConfigError as e:
@@ -162,5 +173,5 @@ def check_skill(skills_dir: Path, evals_dir: Path, folder: str) -> list[str]:
         check_frontmatter(folder, text)
         + check_size(folder, text)
         + check_references(folder, root, text)
-        + check_evals(folder, evals_dir)
+        + check_evals(folder, evals_dir, manual_only=is_manual_only(text))
     )

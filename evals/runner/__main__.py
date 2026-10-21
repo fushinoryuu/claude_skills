@@ -55,6 +55,9 @@ def _progress(msg: str) -> None:
 
 
 def _dry_run(args: argparse.Namespace) -> None:
+    # Skill text can hold characters (arrows, check marks) that a Windows console encoding cannot print.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     if args.triggers:
         catalog, _, prompts = prepare_triggers(args.skills_dir, args.evals_dir, args.skill)
         print(f"=== SYSTEM ===\n{build_router_prompt(catalog)}")
