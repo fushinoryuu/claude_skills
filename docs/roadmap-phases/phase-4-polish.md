@@ -23,7 +23,7 @@ Make the repo easy to understand, easy to try, and easy to talk about. A reviewe
 
 ### 1. Per-skill documentation
 
-For each skill (`pr-review` including its extensions, `failure-analysis`, `defect-drafting`, `regression-selection`), write `docs/skills/<skill>.md` with:
+For each skill (`qa-review` including its extensions, `failure-analysis`, `defect-drafting`, `regression-selection`), write `docs/skills/<skill>.md` with:
 
 - [ ] **Purpose:** two or three sentences on the problem it solves.
 - [ ] **When it triggers:** a few example prompts.
@@ -48,7 +48,7 @@ Keep each doc to roughly one page. Link to the SKILL.md and references rather th
 
 Pick one format and do it well:
 
-- **Terminal or chat recording (GIF):** one scenario, under a minute, showing a PR review that catches a planted defect.
+- **Terminal or chat recording (GIF):** one scenario, under a minute, showing a QA review that catches a planted defect.
 - **Annotated transcript:** the prompt, the output, and short callouts on what the skill did and why.
 
 Suggested scenario: a PR with a missing unit test and an undocumented endpoint, reviewed against its ticket, followed by a failure-analysis run on a failing test report. This shows two skills and the handoff idea.
@@ -82,7 +82,7 @@ Suggested scenario: a PR with a missing unit test and an undocumented endpoint, 
 
 Draft a few bullets and revise to fit the resume. Examples of the shape (adjust the specifics to what was actually built and measured):
 
-- Built a multi-skill QA automation toolkit for AI coding agents covering PR review, failure triage, defect drafting, and regression test selection, with an eval harness using planted-defect fixtures and CI.
+- Built a multi-skill QA automation toolkit for AI coding agents covering QA review, failure triage, defect drafting, and regression test selection, with an eval harness using planted-defect fixtures and CI.
 - Designed deterministic scripts for diff analysis, OpenAPI breaking-change detection, and test-to-module mapping, with unit tests running in CI.
 - Measured skill quality with repeated eval runs, tracking recall and false-positive rate per skill.
 
