@@ -1,0 +1,10 @@
+key_field: category
+values:
+  - missing-tests
+  - unmet-acceptance-criterion
+  - missing-interface-doc-update
+  - missing-input-validation
+  - missing-error-handling
+  - unsafe-data-change
+  - excessive-permissions
+  - missing-edge-case-coverage
