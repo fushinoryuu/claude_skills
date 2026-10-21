@@ -1,6 +1,6 @@
-# Phase 2: Extensions to PR Review
+# Phase 2: Extensions to QA Review
 
-Three capabilities that extend the Phase 1 skill instead of becoming separate skills. They share its tooling (`gh` and the Atlassian MCP server), its eval runner, and its output format.
+Three capabilities that extend the Phase 1 skill instead of becoming separate skills. They share its adapters/tooling (`gh` and the Atlassian MCP server), its eval runner, and its output format.
 
 - **#4 Automation Code Review:** review test code itself.
 - **#1 Requirement Review:** review the ticket before code is written.
@@ -30,8 +30,8 @@ When a PR contains automation or test code, review it for the problems that make
 
 ### Tasks
 
-- [ ] Add `skills/pr-review/references/test-code.md` with the checklist above, including why each item matters and when it is acceptable (for example, a fixed wait inside a retry utility).
-- [ ] Add a project-type detection rule: changed files under test directories, or matching test naming patterns, load this reference.
+- [ ] Add `skills/qa-review/references/test-code.md` with the checklist above, including why each item matters and when it is acceptable (for example, a fixed wait inside a retry utility).
+- [ ] Add a loading rule: when the change includes test or automation code (files under test directories, or matching the repo's test naming patterns), apply this reference in addition to the core checklist. This is based on what the change contains, not on a project type.
 - [ ] Make the reference framework-neutral, with short examples for common stacks you actually use (for example Playwright, Selenium, pytest, REST client tests). Keep examples to a few lines each.
 - [ ] Optional script `scripts/scan_test_smells.py`: regex-based detection of obvious fixed waits and hardcoded URLs. It is a hint generator for the agent, not a verdict. Unit test it.
 - [ ] Add finding categories: `hardcoded-test-data`, `weak-assertion`, `unstable-locator`, `fixed-wait`, `duplicate-code`, `test-dependency`, `missing-cleanup`.
@@ -53,7 +53,7 @@ When a PR contains automation or test code, review it for the problems that make
 
 ### Goal
 
-Review a ticket or user story before implementation and identify missing acceptance criteria, unhandled edge cases, and unclear requirements. This is the same logic the PR review uses to extract criteria, run earlier in the lifecycle.
+Review a ticket or user story before implementation and identify missing acceptance criteria, unhandled edge cases, and unclear requirements. This is the same logic the QA review uses to extract criteria, run earlier in the lifecycle.
 
 ### What it produces
 
@@ -64,7 +64,7 @@ Review a ticket or user story before implementation and identify missing accepta
 
 ### Tasks
 
-- [ ] Add `skills/pr-review/references/requirement-review.md` covering a story-quality checklist: clear actor and goal, testable criteria, defined error behavior, non-functional needs, dependencies, out-of-scope statement.
+- [ ] Add `skills/qa-review/references/requirement-review.md` covering a story-quality checklist: clear actor and goal, testable criteria, defined error behavior, non-functional needs, dependencies, out-of-scope statement.
 - [ ] Add a "Requirement review" entry point in SKILL.md, triggered when the user asks to review a ticket or story with no PR attached.
 - [ ] Share the criterion-extraction step with the PR workflow so there is one definition of "acceptance criterion".
 - [ ] Define how clarifying questions are phrased: specific, answerable, grouped by theme, with a suggested default when one is reasonable.
@@ -102,7 +102,7 @@ Analyze an API specification (usually OpenAPI) and its changes, then suggest req
 
 ### Tasks
 
-- [ ] Add `skills/pr-review/references/api-contract.md` with the checklist and a test-suggestion matrix (field type to negative cases).
+- [ ] Add `skills/qa-review/references/api-contract.md` with the checklist and a test-suggestion matrix (field type to negative cases).
 - [ ] Write `scripts/openapi_diff.py` that compares two OpenAPI documents and outputs JSON:
   - [ ] Added, removed, and changed paths and methods.
   - [ ] Parameter changes (added required parameter, type change, removed parameter).
@@ -131,6 +131,6 @@ Analyze an API specification (usually OpenAPI) and its changes, then suggest req
 ## Phase 2 exit checklist
 
 - [ ] All three extensions have references, fixtures, cases, and trigger prompts.
-- [ ] Trigger tests confirm the skill still activates for plain PR review and does not misfire on unrelated requests.
+- [ ] Trigger tests confirm the skill still activates for plain QA review and does not misfire on unrelated requests.
 - [ ] SKILL.md remains under the line budget. If it does not, move workflow detail into references.
 - [ ] Re-run the full Phase 1 eval set to confirm nothing regressed.

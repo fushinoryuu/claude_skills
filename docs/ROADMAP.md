@@ -1,6 +1,6 @@
 # QA Skills Roadmap
 
-Build order for the PR-review skill and its related QA skills. Every skill gets the same eval kit: planted-defect fixtures, a clean case that should produce no findings, and trigger prompts.
+Build order for the qa-review skill and its related QA skills. Every skill gets the same eval kit: planted-defect fixtures, a clean case that should produce no findings, and trigger prompts.
 
 ## Phase 0: Foundation
 
@@ -10,14 +10,14 @@ Build order for the PR-review skill and its related QA skills. Every skill gets 
 - [x] README lists the expected tooling: Atlassian MCP server and GitHub CLI
 - [x] Short task commands for lint, tests, and evals (`uv run poe <task>`), documented in the README
 
-## Phase 1: PR-review skill (the base)
+## Phase 1: QA-review skill (the base)
 
 - [ ] SKILL.md with an "Expected tools" section
-- [ ] References for frontend, backend, and infra
+- [ ] Project-agnostic core QA checklist (works on any kind of project), plus optional stack lenses (chosen from what the change touches) as examples
 - [ ] Scripts only for deterministic work (changed endpoints, missing test files)
 - [ ] Fixtures: PRs with planted defects, plus one clean PR
 
-## Phase 2: Extensions to PR review
+## Phase 2: Extensions to QA review
 
 - [ ] **#4 Automation Code Review**
   - [ ] Add a test-code reference covering hardcoded data, weak assertions, unstable locators, fixed waits, and duplicate code
