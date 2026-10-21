@@ -5,5 +5,5 @@ prompt: "/qa-review initial LFMT-12 42. The ticket and the PR are in the files p
 expect:
   findings: []
   must_not_flag: []
-  max_findings: 2
+  max_findings: 1
 tags: [clean]

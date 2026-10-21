@@ -12,4 +12,4 @@ Adds `--sort {name,size}` to `listfmt`.
 - The option uses argparse `choices`, so any other value prints the valid choices and exits with code 2.
 - README option table updated.
 
-Tests: sort by name and by size, no sort key, empty input, an unknown key, and the invalid value on the command line.
+Tests: sort by name and by size, no sort key, empty input, an unknown key, the invalid value on the command line (exit code 2 and the valid choices in the message), and `--sort` combined with `--long`.
