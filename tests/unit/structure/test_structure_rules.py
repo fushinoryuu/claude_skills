@@ -156,6 +156,20 @@ def test_orphaned_reference(tree):
     assert_problem(tree, "references/extra.md exists but SKILL.md never mentions it")
 
 
+def test_lens_files_are_not_orphans(tree):
+    lenses = tree.skill / "references" / "lenses"
+    lenses.mkdir()
+    (lenses / "web-ui.md").write_text("lens\n")
+    assert problems(tree) == []
+
+
+def test_other_nested_reference_files_are_still_orphans(tree):
+    nested = tree.skill / "references" / "extra"
+    nested.mkdir()
+    (nested / "deep.md").write_text("never linked\n")
+    assert_problem(tree, "references/extra/deep.md exists but SKILL.md never mentions it")
+
+
 def test_gitkeep_in_references_is_not_an_orphan(tree):
     (tree.skill / "references" / ".gitkeep").write_text("")
     assert problems(tree) == []

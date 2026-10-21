@@ -34,3 +34,20 @@ def test_system_prompt_contains_preamble_skill_and_references(skills_dir):
 def test_user_message_wraps_files_in_order_then_prompt():
     message = build_user_message({"a.diff": "one\n", "b.md": "two"}, "Review this.")
     assert message == '<file name="a.diff">\none\n</file>\n\n<file name="b.md">\ntwo\n</file>\n\nReview this.'
+
+
+def test_loads_text_assets_and_skips_binary_ones(tmp_path):
+    assets = tmp_path / "s" / "assets"
+    assets.mkdir(parents=True)
+    (tmp_path / "s" / "SKILL.md").write_text("---\nname: s\n---\nbody")
+    (assets / "comment.md").write_text("template")
+    (assets / "logo.png").write_bytes(b"\x89PNG\xff\xfe")
+    assert load_skill(tmp_path, "s").assets == {"assets/comment.md": "template"}
+
+
+def test_system_prompt_contains_assets(tmp_path):
+    (tmp_path / "s" / "assets").mkdir(parents=True)
+    (tmp_path / "s" / "SKILL.md").write_text("---\nname: s\n---\nbody")
+    (tmp_path / "s" / "assets" / "comment.md").write_text("template\n")
+    system = build_system_prompt(load_skill(tmp_path, "s"))
+    assert '<asset path="assets/comment.md">\ntemplate\n</asset>' in system
