@@ -16,7 +16,7 @@ What this means in practice:
 
 ## Goals
 
-- Review a pull request or feature against the requirements in its linked ticket (Jira or GitHub Issue), on any kind of project.
+- Review a pull request or feature against the requirements in its linked Jira ticket (or the ticket text pasted in), on any kind of project. GitHub Issues as a ticket source come in Phase 2, with the Requirement Review extension.
 - Check acceptance criteria coverage, test coverage, and whether any interface or contract documentation needs updating (for example an API spec, a CLI help text, a schema, or a README).
 - Apply a universal QA checklist, and layer on optional stack-specific lenses when they exist, without bloating SKILL.md.
 - Produce findings in a consistent human-readable format plus a machine-readable block for evals.
@@ -54,10 +54,25 @@ SKILL.md carries these rules (see Task 1): list the changed files first, request
 
 Carried over from the work version of the skill:
 
-- **Initial review.** Check acceptance criteria, unit-test coverage, and API spec needs. Report findings and, if configured, comment on the ticket or PR.
-- **Final review.** Run the same checks, address lingering gaps, and update a living document of recurring review issues.
+- **Initial review.** Check acceptance criteria, test coverage, and interface documentation. Report the gaps, changing nothing.
+- **Final review.** Run the same checks, then fix the test and documentation gaps that the sanity check confirmed are still open. Recurring gap patterns are suggested for the team's patterns file in the final report, never written by the skill.
 
-Decide how the mode is selected (explicit user phrase, or inferred from PR state) and document it in SKILL.md.
+The mode is the first argument (`initial` or `final`), chosen by the user. It is never inferred from the PR state.
+
+### Decisions
+
+Settled before the remaining Phase 1 work, so later PRs do not reopen them:
+
+- **Slash-only.** The skill sets `disable-model-invocation: true` and runs only when the user types `/qa-review`. Its description never selects it, so it has no trigger phrases and no `triggers.yaml`. The structure check exempts skills like this.
+- **Ticket source.** The Jira key is a required argument and the ticket is read through the Atlassian MCP server. If that tool is not available, the skill asks the user to paste the ticket text and shows the comment as a draft instead of stopping. GitHub Issues are a Phase 2 source.
+- **Posting.** The skill shows the draft comment and waits for the user's yes before posting it to Jira.
+- **Review state.** The per-ticket gaps and verdict live in Claude Code memory. The "living document" of recurring issues is the patterns file below.
+- **Project extensions.** A team puts its own files in `.claude/qa-review/` in the repo being reviewed, committed so the whole team shares them: `patterns.md` (known recurring gaps) and later `lenses/` (project-specific lenses). The skill only reads them. The patterns file is read in Step 4 and optional. New patterns are suggested in the final report for a person to commit. The rules for finding and ranking bundled and project lenses are settled with lens selection.
+- **Report format.** The Jira comment templates are the report. Each acceptance criterion is one line, and there are no tables and no line numbers, because Jira renders them badly and line numbers go stale. Severity appears only in the structured findings block.
+- **Findings block.** The structured block is shown at the end of every session and never posted to Jira. The category list includes an `other` catch-all, so the model does not invent a name when none fits.
+- **Templates.** They keep the *Other Findings* section and the `Lenses:` header line.
+- **Uncertainty.** When the ticket has no acceptance criteria, the skill derives them from the description, marks each one as derived and not stated in the ticket, never reports a derived criterion as a gap, and asks the user to confirm them before posting.
+- **Scripts.** Standard library only, runnable with a plain `python3`, and a script that cannot run never stops the review.
 
 ### Progressive disclosure
 
@@ -96,26 +111,19 @@ Deciding which lens to load is real work, and it is done from evidence about the
 
 ### 1. Write SKILL.md
 
-- [ ] Frontmatter: `name: qa-review` and a `description` that states what it does and when to use it (a QA review of a PR or feature against its ticket, checking test coverage, checking whether interface or contract docs need updating). Include trigger phrases a user would naturally say, and keep the description free of stack-specific words so it triggers on any kind of project.
+- [x] Frontmatter: `name: qa-review` and a `description` that states what it does, when to use it, and that it works on any kind of project, with no stack-specific words. The skill is slash-only, so the description needs no trigger phrases.
 - [x] State near the top of SKILL.md that the skill is project-agnostic and applies to any code or feature a QA engineer would review.
-- [ ] **Expected tools** section: the `gh` CLI (PR, diff, files, comments, GitHub Issues), the Atlassian MCP server (Jira issue, acceptance criteria), and the paste-the-ticket fallback when Jira is not available.
+- [ ] **Expected tools** section: the `gh` CLI (PR, diff, files, comments), the Atlassian MCP server (Jira issue, acceptance criteria, posting the comment), and the paste-the-ticket fallback when Jira is not available.
 - [ ] **Fetching** section, to keep token use down:
   - List the changed files first (`gh pr diff <n> --name-only`, or `gh pr view <n> --json files`) and apply "What to skip" before reading any diff.
   - Request only the fields needed (`gh pr view <n> --json title,body,files`), not the full object.
   - Read diffs only for the files that matter, filtering by path with shell tools or `gh api` with `--jq`. Never fetch lockfile or generated-file diffs.
   - Fetch the ticket and the PR once per review and work from the extracted criteria and file list, not repeated fetches.
   - When the diff is too large to review carefully, review the highest-risk files first and say which files were skipped. Do not silently truncate.
-- [ ] **Workflow** section, in order:
-  1. Identify the PR (or feature) and the linked ticket.
-  2. Read the change and its surroundings to understand what it touches (see "Understanding the change" below).
-  3. Extract acceptance criteria from the ticket.
-  4. Map each criterion to code and tests in the diff.
-  5. Run the deterministic scripts, including the lens hint.
-  6. Select lenses (see "Lens selection"), then apply the core QA checklist plus any selected lens.
-  7. Produce the report.
+- [x] **Workflow** section. The 12 steps in SKILL.md replace the earlier 7-step outline: load memory, gather context, understand the change and select lenses, criteria and implementation, test coverage, higher-level tests, interfaces and documentation, sanity check, handle gaps, post the comment, save memory, report. The scripts join Steps 3 to 7 as they land.
 - [ ] **Modes** section describing initial and final behavior.
 - [ ] **What to skip** section (style nitpicks a linter owns, generated files, lockfiles) to keep reviews focused.
-- [ ] **Uncertainty rule:** when the ticket has no acceptance criteria, say so and flag it, do not invent criteria.
+- [ ] **Uncertainty rule:** when the ticket has no acceptance criteria, say so, derive them from the description, mark each as derived, never report one as a gap, and ask the user to confirm them before posting.
 
 ### 2. Understanding the change and selecting lenses (replaces project-type detection)
 
@@ -148,7 +156,7 @@ Each reference is a checklist the agent applies, with the reasoning behind each 
 - [x] `lenses/` (optional, additive): add at most a few short examples to show the pattern, and label them clearly as examples, not requirements. Candidates: a web UI lens (accessibility, loading and error states), a service lens (validation, auth, idempotency), an infrastructure-as-code lens (least privilege, rollback, blast radius). A user can add a lens for any other stack (mobile, game, data pipeline, embedded, ML) by dropping in one file.
 - [x] Each lens opens with the `applies_when` block (`paths` and `touches`, see "Lens selection"), adds only checks the core does not already cover, and never repeats core items.
 - [x] `lenses/README.md`: how to add a lens (the file format, the `applies_when` fields, and the rule that a lens only adds to the core). SKILL.md mentions it in one line.
-- [ ] `output-format.md`: report template and the structured findings block (see Phase 0).
+- [x] `output-format.md`: the structured findings block (shape, fields, the category table, severity guide, which gaps to list). The report itself is the Jira comment templates. A structure check keeps its Categories table equal to `evals/qa-review/categories.yaml`.
 
 ### 4. Scripts (deterministic only)
 
@@ -171,11 +179,13 @@ For each script:
 
 ### 5. Report format
 
-- [ ] Summary line with overall assessment.
-- [ ] Acceptance criteria table: criterion, status (covered, partial, missing, unclear), evidence.
-- [ ] Findings grouped by severity, each with file, line when known, explanation, and suggested fix.
-- [x] A "Lenses applied" line naming each lens and why, or "core only".
-- [ ] Structured findings block at the end for evals. It also carries a `lenses_applied` list (an extra top-level key, which the current scoring ignores).
+The Jira comment templates in `assets/` are the report (see "Decisions").
+
+- [x] Verdict line with the overall assessment.
+- [x] Acceptance criteria, one line each: met or not met, with a brief reason. No table.
+- [x] Gaps grouped by section (*Tests*, *Interfaces and Documentation*, *Other Findings*), each naming the file and the change that would close it. No line numbers.
+- [x] A "Lenses applied" line naming each lens, or "core only".
+- [x] Structured findings block at the end of the session, described in `references/output-format.md`. It carries `category`, `file`, `severity` and `summary` per finding, and a `lenses_applied` list (an extra top-level key, which the current scoring ignores). Never posted to Jira.
 - [ ] Keep it short enough that a reviewer reads all of it.
 
 ### 6. Fixtures and cases
@@ -200,7 +210,7 @@ Each fixture is a small PR (diff, description, ticket). Planted defects are desc
 - [ ] Include at least one fixture on an unfamiliar or unusual stack, expecting a core-only review that states the stack was unfamiliar instead of inventing stack conventions.
 - [ ] Include at least one case run with an optional lens enabled and the same case run core-only, to confirm the core finds the defect either way.
 - [ ] Cover lens selection in the fixtures: a mixed change (for example code plus an infrastructure file) that should select more than one lens, and the docs-only change, which should select none and say "core only". Fixtures supply the output of `suggest_lenses.py` as a file, since scripts are not run in evals.
-- [ ] Write 8 to 10 trigger prompts of each kind, including prompts that name different stacks and prompts that name none.
+The skill is slash-only, so it has no trigger prompts and no `triggers.yaml`.
 
 ### 7. Runner and structure support for lenses
 
@@ -208,11 +218,11 @@ Lenses need two small changes outside the skill itself.
 
 - [ ] **Per-case lens control in the eval runner.** The runner currently pastes every file under `references/`, lenses included, and the model cannot read files during an eval. Add a per-case option (for example a `lenses:` list naming the lens files to include, with `[]` meaning core only), so the same fixture can run with and without a lens. Update `evals/runner/loader.py` and `prompt.py`, add unit tests, and document the option in `docs/eval-format.md`.
 - [ ] **Decide whether cases can assert lens selection.** For example `expect.lenses`, compared with the reported `lenses_applied`. This is the only eval signal for the agent's selection judgment, since the script's own behavior is covered by its unit tests.
-- [ ] **Structure tests for lenses**, in `evals/structure.py`:
-  - Every file in `references/lenses/` has valid `applies_when` frontmatter (`paths` as a list of globs, and `touches`), and lens names are unique.
-  - The orphan-reference rule exempts lens files (done). They are discovered by `suggest_lenses.py`, not named in SKILL.md, so today's rule would flag every one of them.
-  - SKILL.md and `qa-core.md` link to no specific lens file, so removing the `lenses/` folder cannot break them.
-  - The stack-term scan (see Risks) skips lens files.
+- [x] **Structure tests for lenses**, in `evals/structure.py`. They apply to any skill that has a `references/lenses/` folder:
+  - Every lens file (the folder's `README.md` aside) has valid frontmatter: `name` equal to the file name, which makes names unique, a `description`, and `applies_when` with `paths` as a non-empty list of globs and a `touches` line.
+  - The orphan-reference rule exempts lens files. They are discovered by `suggest_lenses.py`, not named in SKILL.md, so the rule would flag every one of them.
+  - SKILL.md and the references outside `lenses/` name no specific lens file (the lenses `README.md` may be linked), so removing the `lenses/` folder cannot break them.
+  - The stack-term scan (see Risks) covers the same core files and skips lens files. The word list is `STACK_TERMS` in `evals/structure.py`.
 
 ## Acceptance criteria
 
