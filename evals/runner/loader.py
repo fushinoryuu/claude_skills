@@ -36,6 +36,7 @@ class Case:
     prompt: str
     expect: Expect
     tags: tuple[str, ...]
+    lenses: tuple[str, ...] | None = None  # None: every lens is loaded. (): core only.
 
 
 def _read_yaml(path: Path) -> dict:
@@ -99,6 +100,12 @@ def _parse_case(path: Path, skill: str, vocab: Vocabulary) -> Case:
     if not isinstance(max_findings, int) or isinstance(max_findings, bool) or max_findings < 0:
         raise fail("'expect.max_findings' must be an integer >= 0")
 
+    lenses = data.get("lenses")
+    if lenses is not None and (
+        not isinstance(lenses, list) or not all(isinstance(n, str) for n in lenses) or len(set(lenses)) != len(lenses)
+    ):
+        raise fail("'lenses' must be a list of unique lens names (use [] for the core only)")
+
     return Case(
         id=data["id"],
         skill=skill,
@@ -110,6 +117,7 @@ def _parse_case(path: Path, skill: str, vocab: Vocabulary) -> Case:
             max_findings=max_findings,
         ),
         tags=tuple(data.get("tags") or ()),
+        lenses=None if lenses is None else tuple(lenses),
     )
 
 

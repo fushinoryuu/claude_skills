@@ -54,10 +54,25 @@ tags: [defect]
 | `expect.findings`      | yes      | Planted defects the skill must report. Empty list for a clean case.                                                                                                    |
 | `expect.must_not_flag` | no       | Values of the skill's key field that must not appear at all (for tricky near-miss fixtures).                                                                           |
 | `expect.max_findings`  | yes      | Upper bound on total findings. Guards against noisy output. Keep it low for clean cases.                                                                               |
+| `lenses`               | no       | Names of the lens files the skill may see for this case. Left out: every lens is loaded. `[]`: the core only. See "Lenses" below.                                      |
 | `tags`                 | no       | Free-form. Reserved: `defect`, `clean`, `tricky`, `ambiguous`.                                                                                                         |
 | `scorer`               | no       | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
 
 A **clean case** has `expect.findings: []`, a low `max_findings` (0 to 2), and the `clean` tag. Every skill needs at least one, and the structure tests check for it.
+
+### Lenses
+
+A skill with a `references/lenses/` folder loads every lens file into the prompt by default. A case can narrow that with `lenses:`, so one fixture can be tested with a lens present and again with it absent.
+
+```yaml
+lenses: [service]   # only service.md is loaded
+lenses: []          # core only, no lens file
+```
+
+- Names are lens file names without `.md`. A name the skill does not have is a setup error, reported before any model call.
+- The lens folder's `README.md` is not a lens. It stays in the prompt whatever the list says.
+- `--dry-run` prints one system prompt for each distinct set of lenses, and says which cases use it.
+- This only controls what the model can see. Scoring which lenses the model reported is a separate step.
 
 ## Structured findings block
 

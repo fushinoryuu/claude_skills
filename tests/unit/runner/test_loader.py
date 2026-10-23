@@ -143,3 +143,21 @@ def test_invalid_yaml(tmp_path):
     (evals / "s" / "cases" / "s-f-01.yaml").write_text("id: [unclosed")
     with pytest.raises(EvalConfigError, match="invalid YAML"):
         load_cases(evals, "s", load_vocabulary(evals, "s"))
+
+
+def test_lenses_default_to_none_which_means_every_lens(tmp_path):
+    assert load(tmp_path, good_case())[0].lenses is None
+
+
+def test_lenses_list_loads_as_a_tuple(tmp_path):
+    assert load(tmp_path, good_case(lenses=["service", "api-spec"]))[0].lenses == ("service", "api-spec")
+
+
+def test_empty_lenses_list_means_core_only(tmp_path):
+    assert load(tmp_path, good_case(lenses=[]))[0].lenses == ()
+
+
+@pytest.mark.parametrize("bad", ["service", [1], ["a", "a"], {"a": 1}])
+def test_lenses_must_be_a_list_of_unique_names(tmp_path, bad):
+    with pytest.raises(EvalConfigError, match="'lenses' must be a list"):
+        load(tmp_path, good_case(lenses=bad))
