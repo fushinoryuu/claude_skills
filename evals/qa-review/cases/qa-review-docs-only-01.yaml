@@ -1,0 +1,9 @@
+id: qa-review-docs-only-01
+skill: qa-review
+fixture: docs-only
+prompt: "/qa-review initial TT-8 9. The ticket and the PR are in the files provided."
+expect:
+  findings: []
+  must_not_flag: [missing-tests, missing-edge-case-coverage, missing-error-handling]
+  max_findings: 1
+tags: [clean]

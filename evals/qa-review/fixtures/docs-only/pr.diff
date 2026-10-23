@@ -1,0 +1,40 @@
+diff --git a/README.md b/README.md
+index e49d07e..49674fd 100644
+--- a/README.md
++++ b/README.md
+@@ -2,7 +2,7 @@
+ 
+ A small command line tool for keeping a to-do list in a plain text file.
+ 
+-Requires Python 3.10 or newer. See [docs/install.md](docs/install.md) to install it.
++Requires Python 3.11 or newer. See [docs/install.md](docs/install.md) to install it.
+ 
+ ```
+ tasktrack add "Write the report"
+diff --git a/docs/install.md b/docs/install.md
+index f1fbe3a..8e0e6e7 100644
+--- a/docs/install.md
++++ b/docs/install.md
+@@ -2,7 +2,7 @@
+ 
+ ## Requirements
+ 
+-- Python 3.10 or newer
++- Python 3.11 or newer
+ 
+ ## Install
+ 
+@@ -15,3 +15,13 @@ pip install tasktrack
+ ```
+ tasktrack --version
+ ```
++
++## Troubleshooting
++
++### `tasktrack: command not found`
++
++`pip` put the program in a folder that is not on your `PATH`. Run `python -m pip show -f tasktrack` to see where it was installed, and add the folder that holds the `tasktrack` program to your `PATH`.
++
++### `requires a different Python`
++
++Your Python is older than 3.11. Check it with `python --version`, and install a newer one.
