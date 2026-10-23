@@ -1,0 +1,13 @@
+id: qa-review-mixed-two-defects-01
+skill: qa-review
+fixture: mixed-two-defects
+prompt: "/qa-review initial PK-9 22. The ticket and the PR are in the files provided."
+expect:
+  findings:
+    - category: missing-tests
+      file: src/pricekit/discount.py
+    - category: missing-interface-doc-update
+      file: README.md
+  must_not_flag: []
+  max_findings: 4
+tags: [defect]

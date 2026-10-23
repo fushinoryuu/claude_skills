@@ -1,0 +1,40 @@
+diff --git a/README.md b/README.md
+index a9289fb..3b7a205 100644
+--- a/README.md
++++ b/README.md
+@@ -10,4 +10,14 @@ Makes the first letter upper case and the rest lower case.
+ wordkit.capitalize("hELLO") // "Hello"
+ ```
+ 
++## `pluralize(count, word)`
++
++Writes a count with its word. The word gets an "s" unless the count is exactly one.
++
++```gleam
++wordkit.pluralize(1, "item") // "1 item"
++wordkit.pluralize(0, "item") // "0 items"
++wordkit.pluralize(3, "item") // "3 items"
++```
++
+ Run the tests with `gleam test`.
+diff --git a/src/wordkit.gleam b/src/wordkit.gleam
+index 6f2b088..66889fa 100644
+--- a/src/wordkit.gleam
++++ b/src/wordkit.gleam
+@@ -1,6 +1,16 @@
++import gleam/int
+ import gleam/string
+ 
+ /// Make the first letter of a word upper case and the rest lower case.
+ pub fn capitalize(word: String) -> String {
+   string.capitalise(word)
+ }
++
++/// Write a count with its word, adding an "s" unless the count is exactly one.
++/// A negative count is written with its sign, for example "-2 items".
++pub fn pluralize(count: Int, word: String) -> String {
++  case count {
++    1 -> "1 " <> word
++    _ -> int.to_string(count) <> " " <> word <> "s"
++  }
++}
