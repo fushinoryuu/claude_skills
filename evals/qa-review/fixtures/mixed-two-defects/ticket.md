@@ -10,7 +10,6 @@ Acceptance criteria:
 1. `apply_discount(price_cents, percent)` returns the discounted price in cents, rounded to the nearest cent.
 2. A percent outside 0 to 100 raises `ValueError`.
 3. The function is importable from `pricekit`.
-4. The README documents the function.
 
 Linked issues: none
 

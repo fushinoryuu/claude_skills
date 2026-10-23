@@ -12,4 +12,4 @@ Adds `forecast.client` with `fetch_forecast(city)` and a command line entry poin
 - The result is formatted with the existing `render_forecast`.
 - README shows how to run it.
 
-Tests use a fake response, so they do not call the network. They cover the returned days, the encoded URL, and the printed output.
+Tests use a fake response, so they do not call the network. They cover the returned days, the encoded URLs (a name with a space and an accented name), and the printed output.

@@ -1,5 +1,5 @@
 diff --git a/README.md b/README.md
-index 57cfa99..70561fa 100644
+index 57cfa99..e49290a 100644
 --- a/README.md
 +++ b/README.md
 @@ -3,3 +3,5 @@
@@ -7,7 +7,7 @@ index 57cfa99..70561fa 100644
  
  `total_count(inventory)` returns how many items the player holds.
 +
-+`add_item(inventory, item, count)` adds items to a stack. A stack holds at most 99 items. Whatever does not fit is returned, so nothing is lost silently. Adding zero changes nothing, and a negative count raises `ValueError`.
++`add_item(inventory, item, count, limit=99)` adds items to a stack. A stack holds at most `limit` items, which is 99 unless you pass another limit. Whatever does not fit is returned, so nothing is lost silently. Adding zero changes nothing, and a negative count raises `ValueError`.
 diff --git a/src/inventory/__init__.py b/src/inventory/__init__.py
 index d87c9de..881b188 100644
 --- a/src/inventory/__init__.py

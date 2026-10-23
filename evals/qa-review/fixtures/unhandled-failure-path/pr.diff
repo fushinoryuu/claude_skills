@@ -14,10 +14,10 @@ index 0d046bc..593a8a8 100644
 +`forecast.render.render_forecast(days)` turns a list of days (date, summary, high, low) into text. An empty list gives "No forecast available."
 diff --git a/src/forecast/client.py b/src/forecast/client.py
 new file mode 100644
-index 0000000..13f4768
+index 0000000..fb24e24
 --- /dev/null
 +++ b/src/forecast/client.py
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,28 @@
 +"""Fetch a forecast from the weather service and print it."""
 +
 +import argparse
@@ -42,12 +42,16 @@ index 0000000..13f4768
 +    args = parser.parse_args(argv)
 +    print(render_forecast(fetch_forecast(args.city)))
 +    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
 diff --git a/tests/test_client.py b/tests/test_client.py
 new file mode 100644
-index 0000000..32ccb33
+index 0000000..65e24a7
 --- /dev/null
 +++ b/tests/test_client.py
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,48 @@
 +import io
 +import json
 +
@@ -89,3 +93,10 @@ index 0000000..32ccb33
 +    monkeypatch.setattr(client, "urlopen", fake_urlopen({"days": DAYS}))
 +    assert client.main(["Madrid"]) == 0
 +    assert capsys.readouterr().out.strip() == "2026-03-02: Sunny, 18/7 C"
++
++
++def test_accented_city_names_are_encoded(monkeypatch):
++    seen = []
++    monkeypatch.setattr(client, "urlopen", fake_urlopen({"days": DAYS}, seen))
++    client.fetch_forecast("São Paulo")
++    assert seen == ["https://weather.example.com/forecast?city=S%C3%A3o%20Paulo"]

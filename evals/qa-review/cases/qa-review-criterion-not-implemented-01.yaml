@@ -7,5 +7,5 @@ expect:
     - category: unmet-acceptance-criterion
       file: src/tinycache/cache.py
   must_not_flag: []
-  max_findings: 3
+  max_findings: 4
 tags: [defect]

@@ -25,13 +25,28 @@ index 0000000..768fa54
 +    """Create an order from the request body. Returns (status code, response body)."""
 +    order = store.add(sku=body["sku"], quantity=body["quantity"])
 +    return 201, order
+diff --git a/src/orders/routes.py b/src/orders/routes.py
+index 0ce6f01..66952a8 100644
+--- a/src/orders/routes.py
++++ b/src/orders/routes.py
+@@ -1,7 +1,9 @@
+ """The route table: (method, path) to the handler that serves it."""
+ 
++from orders.handlers.create_order import create_order
+ from orders.handlers.get_order import get_order
+ 
+ ROUTES = {
+     ("GET", "/orders/<id>"): get_order,
++    ("POST", "/orders"): create_order,
+ }
 diff --git a/tests/test_create_order.py b/tests/test_create_order.py
 new file mode 100644
-index 0000000..0911958
+index 0000000..1e9e03c
 --- /dev/null
 +++ b/tests/test_create_order.py
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,20 @@
 +from orders.handlers.create_order import create_order
++from orders.routes import ROUTES
 +from orders.store import OrderStore
 +
 +
@@ -46,3 +61,7 @@ index 0000000..0911958
 +    store = OrderStore()
 +    _, body = create_order(store, {"sku": "A-1", "quantity": 2})
 +    assert store.get(body["id"]) == body
++
++
++def test_the_route_is_registered():
++    assert ROUTES[("POST", "/orders")] is create_order
