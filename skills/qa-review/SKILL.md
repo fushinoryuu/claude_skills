@@ -218,6 +218,8 @@ Follow the memory file format from the system prompt (frontmatter plus body). Up
 
 End with a short summary: verdict, number of gaps by status, files modified in the working tree (`final` only, uncommitted), commands run with pass/fail, and a link to the posted comment.
 
+After the summary, print the structured findings block described in [references/output-format.md](references/output-format.md). It is for the session and for tools only. Never include it in the Jira comment.
+
 `/compact` cannot be triggered automatically. As the final action of every review, output the following message to the user verbatim, they can run the command as-is to cleanup the session with a consistent focus and memory state:
 
 ```

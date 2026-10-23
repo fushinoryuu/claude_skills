@@ -100,6 +100,7 @@ values:
 
 - The skill's `output-format.md` reference points at this file's slugs, so the skill and the cases use the same names.
 - Structure tests fail if a case uses a slug that is not in `values`, or if `key_field` is missing from a case's expectations.
+- A skill installed on its own does not have this file, so the slugs also live in the skill's `references/output-format.md`, in a `## Categories` table. Structure tests fail if the two lists differ.
 - If a model emits a slug outside the vocabulary, the runner flags it as `invalid_category`. That finding counts as unexpected, and the flag shows category drift.
 - `key_field` is `category` for most skills and `class` for failure analysis. The rest of the format treats it generically.
 

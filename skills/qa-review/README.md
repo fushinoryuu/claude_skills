@@ -63,6 +63,11 @@ There are two modes, used at different points in the ticket lifecycle:
 9. Fix the test and documentation gaps that step 8 confirmed are still open, where possible without touching production code. This includes writing the functional/integration tests
 10. Post a final review comment to the Jira ticket. If gaps remain for dev, the comment is posted as another initial-style review instead.
 
+## What you get
+
+- **A Jira comment** posted to the ticket, in plain text, using the template for the mode. It has the verdict, one line per acceptance criterion, a summary of the change, and the gaps by section.
+- **A findings block** at the end of the session: a short JSON list of the gaps, each with a category, a file, a severity and a one-sentence summary. It is for tools and evals only and is never posted to Jira. Its format is in [references/output-format.md](references/output-format.md).
+
 ## What it checks
 
 ### The core checklist

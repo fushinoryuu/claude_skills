@@ -1,0 +1,50 @@
+diff --git a/README.md b/README.md
+index 0642dd9..b71fdf3 100644
+--- a/README.md
++++ b/README.md
+@@ -12,3 +12,12 @@ Lowercases the text and replaces each run of characters that are not letters or
+ >>> slugify("Hello, World!")
+ 'hello-world'
+ ```
++
++### `truncate_slug(slug, max_length)`
++
++Shortens a slug to at most `max_length` characters. It cuts at the last hyphen that fits, so words are not split, and the result never ends with a hyphen. A single word longer than `max_length` is cut at `max_length`. A `max_length` below 1 raises `ValueError`.
++
++```python
++>>> truncate_slug("hello-world-today", 12)
++'hello-world'
++```
+diff --git a/src/slugkit/__init__.py b/src/slugkit/__init__.py
+index f884a3a..946642b 100644
+--- a/src/slugkit/__init__.py
++++ b/src/slugkit/__init__.py
+@@ -1,3 +1,3 @@
+-from slugkit.text import slugify
++from slugkit.text import slugify, truncate_slug
+ 
+-__all__ = ["slugify"]
++__all__ = ["slugify", "truncate_slug"]
+diff --git a/src/slugkit/text.py b/src/slugkit/text.py
+index 884457d..66291a5 100644
+--- a/src/slugkit/text.py
++++ b/src/slugkit/text.py
+@@ -6,3 +6,18 @@ import re
+ def slugify(text: str) -> str:
+     """Lowercase text with each run of non-alphanumeric characters replaced by one hyphen."""
+     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
++
++
++def truncate_slug(slug: str, max_length: int) -> str:
++    """Shorten a slug to at most max_length characters, cutting at a hyphen when possible.
++
++    The result never ends with a hyphen. A single word longer than max_length is cut at max_length.
++    """
++    if max_length < 1:
++        raise ValueError("max_length must be at least 1")
++    if len(slug) <= max_length:
++        return slug
++    cut = slug[:max_length]
++    if slug[max_length] != "-" and "-" in cut:
++        cut = cut[: cut.rindex("-")]
++    return cut.rstrip("-")
