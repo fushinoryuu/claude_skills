@@ -8,3 +8,4 @@ values:
   - unsafe-data-change
   - excessive-permissions
   - missing-edge-case-coverage
+  - other
