@@ -12,7 +12,7 @@ Build order for the qa-review skill and its related QA skills. Every skill gets 
 
 ## Phase 1: QA-review skill (the base)
 
-- [ ] SKILL.md with an "Expected tools" section
+- [x] SKILL.md with an "Expected tools" section
 - [x] Project-agnostic core QA checklist (works on any kind of project), plus optional stack lenses (chosen from what the change touches) as examples
 - [ ] Scripts only for deterministic work (changed endpoints, missing test files)
 - [ ] Fixtures: PRs with planted defects, plus one clean PR

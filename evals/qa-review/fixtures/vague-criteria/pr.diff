@@ -1,0 +1,180 @@
+diff --git a/README.md b/README.md
+index 918b1e5..fbc5658 100644
+--- a/README.md
++++ b/README.md
+@@ -10,4 +10,32 @@ from notifykit import User, send
+ send(User("ana", timezone="Europe/Madrid"), "Your report is ready", my_transport)
+ ```
+ 
+-`send` calls the transport with the user and the message, and returns `True`.
++`send` calls the transport with the user and the message, and returns `True`. During the user's quiet hours it does nothing and returns `False`.
++
++A `User` must have a valid time zone name. An unknown name raises `ValueError` when the user is created.
++
++## Quiet hours
++
++Each user has quiet hours, from 22:00 to 07:00 in the user's own time zone unless you set `quiet_start` and `quiet_end`. The start is included and the end is not. A window that starts later than it ends runs past midnight, and a window whose start equals its end is empty.
++
++```python
++from datetime import time
++
++from notifykit import User
++
++User("ben", timezone="Asia/Tokyo", quiet_start=time(23, 0), quiet_end=time(6, 30))
++```
++
++`send` takes an optional `now` (an aware datetime) for testing. By default it uses the current time.
++
++### `in_quiet_hours(user, now)`
++
++Returns `True` when `now` falls inside the user's quiet hours. `now` must be a timezone-aware datetime. A naive one raises `ValueError`.
++
++```python
++from datetime import UTC, datetime
++
++from notifykit import User, in_quiet_hours
++
++in_quiet_hours(User("ana"), datetime(2026, 3, 2, 23, 0, tzinfo=UTC))  # True
++```
+diff --git a/src/notifykit/__init__.py b/src/notifykit/__init__.py
+index f6e8099..f94774c 100644
+--- a/src/notifykit/__init__.py
++++ b/src/notifykit/__init__.py
+@@ -1,3 +1,3 @@
+-from notifykit.core import User, send
++from notifykit.core import User, in_quiet_hours, send
+ 
+-__all__ = ["User", "send"]
++__all__ = ["User", "in_quiet_hours", "send"]
+diff --git a/src/notifykit/core.py b/src/notifykit/core.py
+index b27f6c2..26f1acb 100644
+--- a/src/notifykit/core.py
++++ b/src/notifykit/core.py
+@@ -2,18 +2,51 @@
+ 
+ from collections.abc import Callable
+ from dataclasses import dataclass
++from datetime import UTC, datetime, time
++from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
++
++DEFAULT_QUIET_START = time(22, 0)
++DEFAULT_QUIET_END = time(7, 0)
+ 
+ 
+ @dataclass(frozen=True)
+ class User:
+     name: str
+     timezone: str = "UTC"
++    quiet_start: time = DEFAULT_QUIET_START
++    quiet_end: time = DEFAULT_QUIET_END
++
++    def __post_init__(self) -> None:
++        # The time zone was never read before quiet hours existed, so check it when the user is created.
++        try:
++            ZoneInfo(self.timezone)
++        except (ZoneInfoNotFoundError, ValueError) as error:
++            raise ValueError(f"unknown time zone: {self.timezone!r}") from error
+ 
+ 
+ Transport = Callable[[User, str], None]
+ 
+ 
+-def send(user: User, message: str, transport: Transport) -> bool:
+-    """Deliver the message through the transport. Returns True when it was sent."""
++def in_quiet_hours(user: User, now: datetime) -> bool:
++    """True when `now`, an aware datetime, falls inside the user's quiet hours in the user's own time zone.
++
++    The start is included and the end is not. A window whose start is later than its end runs past
++    midnight. If start equals end there are no quiet hours. A naive datetime raises ValueError.
++    """
++    if now.tzinfo is None:
++        raise ValueError("now must be a timezone-aware datetime")
++    local = now.astimezone(ZoneInfo(user.timezone)).time()
++    if user.quiet_start <= user.quiet_end:
++        return user.quiet_start <= local < user.quiet_end
++    return local >= user.quiet_start or local < user.quiet_end
++
++
++def send(user: User, message: str, transport: Transport, now: datetime | None = None) -> bool:
++    """Deliver the message through the transport unless it is the user's quiet hours.
++
++    Returns True when the message was sent, False when it was skipped.
++    """
++    if in_quiet_hours(user, now or datetime.now(UTC)):
++        return False
+     transport(user, message)
+     return True
+diff --git a/tests/test_core.py b/tests/test_core.py
+index 620be2c..f495209 100644
+--- a/tests/test_core.py
++++ b/tests/test_core.py
+@@ -1,8 +1,67 @@
+-from notifykit import User, send
++from datetime import UTC, datetime, time
++
++import pytest
++
++from notifykit import User, in_quiet_hours, send
++
++
++def at(hour, minute=0):
++    return datetime(2026, 3, 2, hour, minute, tzinfo=UTC)
+ 
+ 
+ def test_send_delivers_through_the_transport():
+     sent = []
+     user = User("ana")
+-    assert send(user, "hello", lambda u, m: sent.append((u, m))) is True
++    assert send(user, "hello", lambda u, m: sent.append((u, m)), now=at(12)) is True
+     assert sent == [(user, "hello")]
++
++
++def test_default_quiet_hours_run_from_22_to_07():
++    user = User("ana")
++    assert in_quiet_hours(user, at(23))
++    assert in_quiet_hours(user, at(3))
++    assert not in_quiet_hours(user, at(12))
++
++
++def test_quiet_hours_include_the_start_and_exclude_the_end():
++    user = User("ana")
++    assert in_quiet_hours(user, at(22, 0))
++    assert not in_quiet_hours(user, at(7, 0))
++    assert in_quiet_hours(user, at(6, 59))
++
++
++def test_quiet_hours_are_configurable_per_user():
++    user = User("ben", quiet_start=time(13, 0), quiet_end=time(15, 0))
++    assert in_quiet_hours(user, at(14))
++    assert not in_quiet_hours(user, at(23))
++
++
++def test_quiet_hours_use_the_users_time_zone():
++    # On 2 March New York is UTC-5. These two instants have different answers in UTC and in New York.
++    user = User("carla", timezone="America/New_York")
++    assert in_quiet_hours(user, at(8))  # 03:00 in New York, but 08:00 in UTC
++    assert not in_quiet_hours(user, at(23))  # 18:00 in New York, but 23:00 in UTC
++    assert not in_quiet_hours(User("carla"), at(8))
++    assert in_quiet_hours(User("carla"), at(23))
++
++
++def test_unknown_time_zone_is_rejected_when_the_user_is_created():
++    with pytest.raises(ValueError, match="unknown time zone"):
++        User("ana", timezone="Mars/Olympus")
++
++
++def test_naive_datetime_is_rejected():
++    with pytest.raises(ValueError, match="timezone-aware"):
++        in_quiet_hours(User("ana"), datetime(2026, 3, 2, 23, 0))
++
++
++def test_equal_start_and_end_means_no_quiet_hours():
++    user = User("dan", quiet_start=time(8, 0), quiet_end=time(8, 0))
++    assert not in_quiet_hours(user, at(8))
++    assert not in_quiet_hours(user, at(20))
++
++
++def test_send_skips_the_message_in_quiet_hours():
++    sent = []
++    assert send(User("ana"), "hello", lambda u, m: sent.append(m), now=at(23)) is False
++    assert sent == []
