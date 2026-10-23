@@ -1,0 +1,48 @@
+diff --git a/README.md b/README.md
+index b804fb9..87835e4 100644
+--- a/README.md
++++ b/README.md
+@@ -7,3 +7,7 @@ The orders service.
+ ### `GET /orders/<id>`
+ 
+ Returns the order, or 404 with `{"error": "order not found"}`.
++
++### `POST /orders`
++
++Creates an order from a JSON body with `sku` and `quantity`. Returns 201 with the new order, including its `id`.
+diff --git a/src/orders/handlers/create_order.py b/src/orders/handlers/create_order.py
+new file mode 100644
+index 0000000..768fa54
+--- /dev/null
++++ b/src/orders/handlers/create_order.py
+@@ -0,0 +1,9 @@
++"""POST /orders"""
++
++from orders.store import OrderStore
++
++
++def create_order(store: OrderStore, body: dict) -> tuple[int, dict]:
++    """Create an order from the request body. Returns (status code, response body)."""
++    order = store.add(sku=body["sku"], quantity=body["quantity"])
++    return 201, order
+diff --git a/tests/test_create_order.py b/tests/test_create_order.py
+new file mode 100644
+index 0000000..0911958
+--- /dev/null
++++ b/tests/test_create_order.py
+@@ -0,0 +1,15 @@
++from orders.handlers.create_order import create_order
++from orders.store import OrderStore
++
++
++def test_creates_an_order_and_returns_201():
++    store = OrderStore()
++    status, body = create_order(store, {"sku": "A-1", "quantity": 2})
++    assert status == 201
++    assert body == {"id": 1, "sku": "A-1", "quantity": 2}
++
++
++def test_the_created_order_is_stored():
++    store = OrderStore()
++    _, body = create_order(store, {"sku": "A-1", "quantity": 2})
++    assert store.get(body["id"]) == body

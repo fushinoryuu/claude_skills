@@ -1,0 +1,11 @@
+id: qa-review-untested-edge-case-01
+skill: qa-review
+fixture: untested-edge-case
+prompt: "/qa-review initial GM-30 61. The ticket and the PR are in the files provided."
+expect:
+  findings:
+    - category: missing-edge-case-coverage
+      file: src/inventory/items.py
+  must_not_flag: []
+  max_findings: 3
+tags: [defect]

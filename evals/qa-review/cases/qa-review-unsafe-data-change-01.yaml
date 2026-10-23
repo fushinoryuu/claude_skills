@@ -1,0 +1,11 @@
+id: qa-review-unsafe-data-change-01
+skill: qa-review
+fixture: unsafe-data-change
+prompt: "/qa-review initial OD-21 18. The ticket and the PR are in the files provided."
+expect:
+  findings:
+    - category: unsafe-data-change
+      file: migrations/003_split_customer_name.sql
+  must_not_flag: []
+  max_findings: 3
+tags: [defect]
