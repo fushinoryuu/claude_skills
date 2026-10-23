@@ -113,17 +113,17 @@ Deciding which lens to load is real work, and it is done from evidence about the
 
 - [x] Frontmatter: `name: qa-review` and a `description` that states what it does, when to use it, and that it works on any kind of project, with no stack-specific words. The skill is slash-only, so the description needs no trigger phrases.
 - [x] State near the top of SKILL.md that the skill is project-agnostic and applies to any code or feature a QA engineer would review.
-- [ ] **Expected tools** section: the `gh` CLI (PR, diff, files, comments), the Atlassian MCP server (Jira issue, acceptance criteria, posting the comment), and the paste-the-ticket fallback when Jira is not available.
-- [ ] **Fetching** section, to keep token use down:
+- [x] **Expected tools** section: the `gh` CLI (PR, diff, files, comments), the Atlassian MCP server (Jira issue, acceptance criteria, posting the comment), and the paste-the-ticket fallback when Jira is not available.
+- [x] **Fetching** section, to keep token use down:
   - List the changed files first (`gh pr diff <n> --name-only`, or `gh pr view <n> --json files`) and apply "What to skip" before reading any diff.
   - Request only the fields needed (`gh pr view <n> --json title,body,files`), not the full object.
   - Read diffs only for the files that matter, filtering by path with shell tools or `gh api` with `--jq`. Never fetch lockfile or generated-file diffs.
   - Fetch the ticket and the PR once per review and work from the extracted criteria and file list, not repeated fetches.
   - When the diff is too large to review carefully, review the highest-risk files first and say which files were skipped. Do not silently truncate.
 - [x] **Workflow** section. The 12 steps in SKILL.md replace the earlier 7-step outline: load memory, gather context, understand the change and select lenses, criteria and implementation, test coverage, higher-level tests, interfaces and documentation, sanity check, handle gaps, post the comment, save memory, report. The scripts join Steps 3 to 7 as they land.
-- [ ] **Modes** section describing initial and final behavior.
-- [ ] **What to skip** section (style nitpicks a linter owns, generated files, lockfiles) to keep reviews focused.
-- [ ] **Uncertainty rule:** when the ticket has no acceptance criteria, say so, derive them from the description, mark each as derived, never report one as a gap, and ask the user to confirm them before posting.
+- [x] **Modes** section describing initial and final behavior.
+- [x] **What to skip** section (style nitpicks a linter owns, generated files, lockfiles) to keep reviews focused.
+- [x] **Uncertainty rule:** when the ticket has no acceptance criteria, say so, derive them from the description, mark each as derived, never report one as a gap, and ask the user to confirm them before posting.
 
 ### 2. Understanding the change and selecting lenses (replaces project-type detection)
 
