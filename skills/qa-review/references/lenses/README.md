@@ -20,12 +20,15 @@ Drop one file in this folder. No other file needs editing.
    ---
    ```
 
+   - `name` equals the file name without `.md` (for `web-ui.md`, `web-ui`).
    - `paths` is a list of file globs. A lens is a candidate when a changed file matches one of them.
    - `touches` is one plain-language line describing the kind of change the lens is for. Use it to judge a lens whose paths did not match.
 
 2. Group the checks under the same step names `SKILL.md` uses: **Step 4 (Requirements and implementation)**, **Step 5 (Test coverage)**, **Step 6 (Higher-level tests)**, and **Step 7 (Interfaces and documentation)**. Include only the steps the lens adds to.
 3. Add only checks the core does not already cover, and never repeat a core item.
 4. Say what evidence to look for, as the core does.
+
+Stack-specific words and file names belong here and nowhere else. The structure check fails if `SKILL.md` or another reference outside this folder names a lens file or uses a stack-specific word, so removing this folder never breaks the core.
 
 ## How lenses are chosen
 

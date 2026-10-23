@@ -157,9 +157,7 @@ def test_orphaned_reference(tree):
 
 
 def test_lens_files_are_not_orphans(tree):
-    lenses = tree.skill / "references" / "lenses"
-    lenses.mkdir()
-    (lenses / "web-ui.md").write_text("lens\n")
+    write_lens(tree, name="web-ui")
     assert problems(tree) == []
 
 
@@ -282,3 +280,160 @@ def test_all_problems_are_reported_together(tree):
     write_skill_md(tree, name="wrong", description="Short.")
     (tree.kit / "triggers.yaml").unlink()
     assert len(problems(tree)) >= 3
+
+
+# --- lenses and stack-neutral wording ---
+
+LENS = """\
+---
+name: {name}
+description: Extra checks for one kind of change.
+applies_when:
+  paths: ["**/*.sample"]
+  touches: "a sample kind of change"
+---
+
+# Sample lens
+"""
+
+
+def write_lens(tree, name="sample", text=None):
+    lenses = tree.skill / "references" / "lenses"
+    lenses.mkdir(parents=True, exist_ok=True)
+    (lenses / f"{name}.md").write_text(LENS.format(name=name) if text is None else text)
+
+
+def test_valid_lens_passes(tree):
+    write_lens(tree)
+    assert problems(tree) == []
+
+
+def test_lenses_readme_is_not_checked_as_a_lens(tree):
+    write_lens(tree)
+    (tree.skill / "references" / "lenses" / "README.md").write_text("# How to add a lens\n")
+    assert problems(tree) == []
+
+
+def test_lens_without_frontmatter(tree):
+    write_lens(tree, text="# No frontmatter\n")
+    assert_problem(tree, "references/lenses/sample.md: missing frontmatter")
+
+
+def test_lens_name_must_equal_its_file_name(tree):
+    write_lens(tree, text=LENS.format(name="other"))
+    assert_problem(tree, "'name' must equal the file name 'sample'")
+
+
+def test_lens_needs_a_description(tree):
+    write_lens(tree, text=LENS.replace("description: Extra checks for one kind of change.\n", "").format(name="sample"))
+    assert_problem(tree, "needs a non-empty 'description'")
+
+
+def test_lens_needs_applies_when(tree):
+    write_lens(tree, text="---\nname: sample\ndescription: Extra checks.\n---\n")
+    assert_problem(tree, "needs an 'applies_when' block")
+
+
+@pytest.mark.parametrize(
+    "paths",
+    ['"**/*.sample"', "[]", '["", "a"]', "[1]"],
+    ids=["a string, not a list", "empty list", "blank glob", "not a string"],
+)
+def test_lens_paths_must_be_a_list_of_globs(tree, paths):
+    write_lens(tree, text=LENS.replace('["**/*.sample"]', paths).format(name="sample"))
+    assert_problem(tree, "applies_when.paths must be a non-empty list of file globs")
+
+
+def test_lens_needs_a_touches_line(tree):
+    write_lens(tree, text=LENS.replace('  touches: "a sample kind of change"\n', "").format(name="sample"))
+    assert_problem(tree, "applies_when.touches must be one plain-language line")
+
+
+def test_skill_md_must_not_name_a_specific_lens(tree):
+    write_lens(tree)
+    write_skill_md(tree, body="See references/notes.md and [the lens](references/lenses/sample.md).\n")
+    assert_problem(tree, "SKILL.md names the lens file 'sample.md'")
+
+
+def test_skill_md_may_link_the_lenses_readme(tree):
+    write_lens(tree)
+    write_skill_md(tree, body="See references/notes.md and [lenses](references/lenses/README.md).\n")
+    (tree.skill / "references" / "lenses" / "README.md").write_text("# How to add a lens\n")
+    assert problems(tree) == []
+
+
+def test_core_reference_must_not_name_a_specific_lens(tree):
+    write_lens(tree)
+    (tree.skill / "references" / "notes.md").write_text("Also read lenses/sample.md.\n")
+    assert_problem(tree, "references/notes.md names the lens file 'sample.md'")
+
+
+@pytest.mark.parametrize("word", ["endpoint", "Endpoints", "Terraform", "back-end", "SQL"])
+def test_skill_md_must_not_use_stack_specific_words(tree, word):
+    write_lens(tree)
+    write_skill_md(tree, body=f"See references/notes.md. Check each {word} for gaps.\n")
+    assert_problem(tree, f"SKILL.md uses the stack-specific word '{word.lower().removesuffix('s')}'")
+
+
+def test_core_reference_must_not_use_stack_specific_words(tree):
+    write_lens(tree)
+    (tree.skill / "references" / "notes.md").write_text("Check the Kubernetes manifest.\n")
+    assert_problem(tree, "references/notes.md uses the stack-specific word 'kubernetes'")
+
+
+def test_a_lens_may_use_stack_specific_words(tree):
+    write_lens(tree, text=LENS.format(name="sample") + "Check every endpoint and every SQL migration.\n")
+    assert problems(tree) == []
+
+
+def test_words_that_only_contain_a_stack_term_are_fine(tree):
+    write_lens(tree)
+    write_skill_md(tree, body="See references/notes.md. A reactive, sequel-like cssd result is fine.\n")
+    assert problems(tree) == []
+
+
+def test_skill_without_lenses_is_not_scanned_for_stack_words(tree):
+    write_skill_md(tree, body="See references/notes.md. Check each endpoint.\n")
+    assert problems(tree) == []
+
+
+# --- output format and the category list ---
+
+OUTPUT_FORMAT = """\
+# Findings block
+
+## Categories
+
+| Slug             | Use it when        |
+| ---------------- | ------------------ |
+| `leftover-todo`  | A TODO is left in  |
+
+## Severity
+
+- `high`: a row like | `not-a-category` | here does not count
+"""
+
+
+def write_output_format(tree, text=OUTPUT_FORMAT):
+    (tree.skill / "references" / "output-format.md").write_text(text)
+    write_skill_md(tree, body="See references/notes.md and references/output-format.md.\n")
+
+
+def test_output_format_matching_the_category_list_passes(tree):
+    write_output_format(tree)
+    assert problems(tree) == []
+
+
+def test_category_missing_from_the_output_format(tree):
+    write_output_format(tree, OUTPUT_FORMAT.replace("`leftover-todo`", "`other`"))
+    assert_problem(tree, "categories.yaml has 'leftover-todo', which the Categories table does not")
+
+
+def test_category_in_the_output_format_but_not_in_the_list(tree):
+    write_output_format(tree, OUTPUT_FORMAT.replace("| `leftover-todo`  | A TODO is left in  |\n", "| `leftover-todo` | x |\n| `extra-slug` | y |\n"))
+    assert_problem(tree, "the Categories table has 'extra-slug', which categories.yaml does not")
+
+
+def test_output_format_needs_a_categories_section(tree):
+    write_output_format(tree, "# Findings block\n")
+    assert_problem(tree, "needs a '## Categories' section")
