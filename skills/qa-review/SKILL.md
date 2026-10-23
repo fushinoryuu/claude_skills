@@ -27,6 +27,47 @@ This skill is project-agnostic. It applies to any code or feature a QA engineer 
 
 All arguments are required. If the mode is not `initial` or `final`, the ticket key is missing, or no PR numbers are given, stop and show the usage line. Do not guess.
 
+## Modes
+
+The mode is the first argument, chosen by the user. Never infer it from the state of the PR.
+
+| Step | `initial`: first time the ticket reaches QA | `final`: after dev addressed the initial feedback                      |
+| ---- | ------------------------------------------- | ---------------------------------------------------------------------- |
+| 1-5  | Run in full                                 | Run in full, and check that each gap from the initial review is closed |
+| 6    | Skipped                                     | Evaluates higher-level tests                                           |
+| 7-8  | Run in full                                 | Run in full                                                            |
+| 9    | Changes nothing                             | Fixes test and documentation gaps                                      |
+| 10   | Initial comment                             | Final comment, or an initial-style comment if gaps remain for dev      |
+
+## Expected tools
+
+| Need                                                                             | Tool                                                                                               | If it is not available                                                                                                                                                                               |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The Jira ticket, its linked tickets and comments, and posting the review comment | The Atlassian MCP server (`mcp__atlassian__getJiraIssue`, `mcp__atlassian__addCommentToJiraIssue`) | Ask the user to paste the ticket text: summary, description, acceptance criteria, linked tickets and comments. Work from that, and give the finished comment to the user as a draft to post by hand. |
+| The pull request: description, changed files, diff                               | The GitHub CLI (`gh`), already authenticated                                                       | None. Stop and tell the user.                                                                                                                                                                        |
+
+Do not install tools, change authentication, or look for another way around a missing tool.
+
+## Fetching
+
+Token spend matters, so read only what the review needs.
+
+- Fetch the ticket and each PR once. Afterwards work from the criteria you extracted and the list of changed files, not from repeated fetches.
+- Start with the changed files. Run `gh pr view <PR#> --json title,body,baseRefName,headRefName,state,files` and request only those fields, never the full object.
+- Apply "What to skip" to the list of files before you read any diff.
+- Read the diff of a file only when it matters to the review: `gh api repos/{owner}/{repo}/pulls/<PR#>/files --paginate --jq '.[] | select(.filename == "<path>") | .patch'`. A bare `gh pr diff` of the whole PR is acceptable only when the PR is small.
+- When the diff is too large to review carefully, review the highest-risk files first: changes to data, security, interfaces, and the code the acceptance criteria describe, before tests and documentation. Say in the report which files you did not review and why. Never silently truncate.
+
+## What to skip
+
+Leave these out of the review, and do not fetch their diffs:
+
+- Lockfiles, generated files, bundled or minified output, and snapshots.
+- Formatting, whitespace and naming-style points that the project's linter or formatter owns.
+- Code the PR did not touch. A gap in unchanged code is out of scope unless the change depends on it.
+
+When you skipped files that could have mattered, say so in one line in the report.
+
 ## Effort Handling
 
 Run the review at the session's default effort level. Do not ask the user to raise the session-wide effort setting for a review.
@@ -37,7 +78,7 @@ If a specific finding is genuinely ambiguous (a contested AC interpretation, a s
 
 ## Ground rules
 
-- Tools: Jira through the Atlassian MCP server, GitHub through the `gh` CLI. If either is unavailable or unauthenticated, stop and tell the user. Do not work around it.
+- Tools: see Expected tools. If `gh` is unavailable or unauthenticated, stop and tell the user. If the Atlassian tool is unavailable, use the paste fallback and nothing else.
 - Never run `git commit`, `git push`, `git add`, or any other command that records or publishes changes (`git fetch` is fine, it only updates remote-tracking refs). The engineer controls commits. Leave edits in the working tree and list the files changed in your summary.
 - Never modify production code. Only test files, test fixtures, and interface documentation or contract files (such as an API spec) may be edited, and only in `final` mode during Step 9.
 - Find first, fix later. Steps 4 to 7 only find gaps and record each one: what is wrong, where, and what change would close it. Step 8 checks which of those gaps are still open. Step 9 is the only step that edits a file or writes a test, and it acts only on gaps that Step 8 confirmed. Do not fix a gap at the moment you find it.
@@ -59,11 +100,11 @@ Immediately after parsing arguments (before Step 1), create a todo list with `To
 7. Interfaces and documentation check
 8. Sanity check
 9. Handle gaps
-10. Post Jira comment
+10. Draft the Jira comment, then post it once approved
 11. Save/update memory
 12. Final report
 
-Mark an item `in_progress` when you begin that step and flip it to `completed` the moment the step's work is actually done, not in a batch at the end, and not before the work behind it is real (e.g. don't complete "Post Jira comment" until `addCommentToJiraIssue` has actually returned successfully). If Step 9 turns up enough gaps that tracking them individually would help, add them as sub-items under the "Handle gaps" entry rather than replacing it. The numbered list above should stay stable as the backbone so the progress bar reads consistently across every review session. Add new items only as sub-items under the relevant step.
+Mark an item `in_progress` when you begin that step and flip it to `completed` the moment the step's work is actually done, not in a batch at the end, and not before the work behind it is real (e.g. don't complete the Jira comment entry until the user has approved the draft and `addCommentToJiraIssue` has actually returned successfully, or the draft has been handed over). If Step 9 turns up enough gaps that tracking them individually would help, add them as sub-items under the "Handle gaps" entry rather than replacing it. The numbered list above should stay stable as the backbone so the progress bar reads consistently across every review session. Add new items only as sub-items under the relevant step.
 
 ## Workflow
 
@@ -81,14 +122,16 @@ Check `~/.claude/projects/<project_name>/memory/MEMORY.md` for a prior review en
 
 #### Step 2a: Run all of the following **in parallel**:
 
-1. `mcp__atlassian__getJiraIssue` with the ticket key to fetch the ticket summary, description, acceptance criteria, status, steps to reproduce, test steps, linked issues, and all comments.
-2. For each PR number:
-   - `gh pr view <PR#>` get title, body, baseRefName, headRefName, files, and state in JSON.
-   - `gh pr diff <PR#>` get the full diff.
+1. `mcp__atlassian__getJiraIssue` with the ticket key to fetch the ticket summary, description, acceptance criteria, status, steps to reproduce, test steps, linked issues, and all comments. If the tool is unavailable, ask the user to paste the ticket text (see Expected tools).
+2. For each PR number, `gh pr view <PR#> --json title,body,baseRefName,headRefName,state,files`.
+
+Then read the diffs of the files that matter, following Fetching and What to skip.
 
 If the working tree is not on a PR's head branch and `final` mode needs to edit files, tell the user which branch to check out instead of switching branches yourself.
 
 #### Step 2b: Fetch linked tickets (required before proceeding to Step 3)
+
+If the ticket was pasted, skip this step: linked tickets are only available if the user pastes them too.
 
 Inspect `fields.issuelinks` from the Step 2a response. For every linked ticket, fetch it now using `mcp__atlassian__getJiraIssue`.
 
@@ -118,11 +161,11 @@ Before judging anything, work out what the change is and how this project does t
 
 ### Step 4: Acceptance criteria and implementation
 
-List each acceptance criterion from the main ticket (linked tickets are only for extra context). For each, decide whether the PR(s) implement it. Mark each `Covered`, `Partial`, or `Missing`, citing the file and line or test name that shows it. If the ticket has no explicit acceptance criteria, derive them from the description, say so, and ask the user to confirm them before posting.
+List each acceptance criterion from the main ticket (linked tickets are only for extra context). For each, decide whether the PR(s) implement it. Mark each `Covered`, `Partial`, or `Missing`, citing the file and line or test name that shows it. If the ticket has no explicit acceptance criteria, derive them from the description and say so. Write "(derived from the description)" after each derived criterion in the comment. A derived criterion is a working assumption: if the change does not satisfy one, tell the user, but never list it as an unmet acceptance criterion or count it as a gap. Ask the user to confirm the derived criteria before posting (Step 10).
 
 Then review the PR diff itself for implementation-level issues. These are gaps in the actual change, for example incorrect logic, a fix applied inconsistently across similar places, an incomplete data migration, or a missing config or documentation update. Missing test coverage is Step 5 and missing interface documentation is Step 7. Use the *Requirements and implementation* section of [references/qa-core.md](references/qa-core.md), plus the Step 4 checks of every lens you applied.
 
-If the repo being reviewed has a `qa-review-patterns` file, load its **Implementation Gaps** section as a checklist before concluding. If you are about to move on without flagging anything, scan that list first.
+If the repo being reviewed has `.claude/qa-review/patterns.md`, read its **Implementation Gaps** section as a checklist before concluding. If you are about to move on without flagging anything, scan that list first. The file belongs to the team, so only read it.
 
 When an AC item or test step describes behavior the code doesn't actually implement (or actively contradicts), flag it directly. Do not assume the AC is wrong.
 
@@ -182,9 +225,9 @@ In `final` mode, fix the open gaps that the ground rules allow (test files, test
 - **Verify the fixes.** Run the new and changed tests with the project's test command, and re-run any validation the project has (such as a spec linter). Report the results honestly. A fix that fails verification does not count: report that gap as still open.
 - **Anything that needs a production code change** is not fixed here. It goes into the comment as a gap for dev, which includes the implementation findings from Step 4.
 
-### Step 10: Post Jira comment
+### Step 10: Draft and post the Jira comment
 
-Use `mcp__atlassian__addCommentToJiraIssue` to post a comment on the Jira ticket using the template for the active mode:
+Write the comment for the Jira ticket using the template for the active mode:
 
 1. **`initial` mode** → [assets/initial-comment.md](assets/initial-comment.md)
 2. **`final` mode AND the verdict is either Option A or B (nothing remains blocking)** → [assets/final-comment.md](assets/final-comment.md)
@@ -197,7 +240,7 @@ Use `mcp__atlassian__addCommentToJiraIssue` to post a comment on the Jira ticket
 
 Post only the text under the "Template" heading, and follow the rules section of the template. Fill in every `{{ placeholder }}`, keep only the applicable verdict and the applicable branch of each conditional (delete the `{{ ... }}` marker lines), and remove no sections (write "None" or "Not applicable" instead). Keep it scannable: facts and file names, no padding.
 
-The comment must look like a normal comment from a person. Post it as plain text exactly as the template formats it. Never wrap it in a code fence, code block, `{code}`, `{noformat}` or panel, since Jira renders those as a grey box. Post it to the ticket with the Atlassian MCP, then show the user the same text in the session.
+The comment must look like a normal comment from a person. Post it as plain text exactly as the template formats it. Never wrap it in a code fence, code block, `{code}`, `{noformat}` or panel, since Jira renders those as a grey box. Show the user the finished comment as a draft, and wait for a clear yes before posting. If you derived acceptance criteria, list them under the draft and ask the user to confirm them. If the user wants changes, edit the draft and show it again. When the user agrees, post it with `mcp__atlassian__addCommentToJiraIssue`. If the ticket was pasted or the Atlassian tool is unavailable, do not post: give the draft to the user to post by hand, and say so.
 
 Do not transition the ticket yourself. If the verdict is "Ready to mark Done" or a status change would clearly be next, offer it and wait for the user to say yes.
 
@@ -209,14 +252,16 @@ Write or update a memory file at `~/.claude/projects/<project_name>/memory/qa-re
 - PR numbers reviewed
 - All gaps found (even if none), the final review depends on this list.
 - Actions taken (reported to dev, fixed in session, n/a)
-- The Jira comment ID returned by the post
-- Any patterns specific to this ticket worth remembering for future reviews (e.g. AC misinterpretation, test framework gotchas, etc.). If a new gap pattern was observed and the repo being reviewed has a `qa-review-patterns` file, add it there and note it here.
+- The Jira comment ID returned by the post, or "not posted" if the user posts it by hand
+- Any patterns specific to this ticket worth remembering for future reviews (e.g. AC misinterpretation, test framework gotchas, etc.). If you saw a gap pattern that `.claude/qa-review/patterns.md` does not list, do not edit that file. Note it here and suggest it in the final report (Step 12).
 
 Follow the memory file format from the system prompt (frontmatter plus body). Update the existing memory if there is one rather than creating a second. Update `MEMORY.md` index if a new file was created.
 
 ### Step 12: Report to the user
 
-End with a short summary: verdict, number of gaps by status, files modified in the working tree (`final` only, uncommitted), commands run with pass/fail, and a link to the posted comment.
+End with a short summary: verdict, number of gaps by status, files modified in the working tree (`final` only, uncommitted), commands run with pass/fail, and a link to the posted comment (or a note that it was not posted).
+
+If Step 11 found a gap pattern worth keeping, add a short list headed "Suggested additions to `.claude/qa-review/patterns.md`", one or two lines each, for the team to commit. Only edit that file if the user asks you to.
 
 After the summary, print the structured findings block described in [references/output-format.md](references/output-format.md). It is for the session and for tools only. Never include it in the Jira comment.
 

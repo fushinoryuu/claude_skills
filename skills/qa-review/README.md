@@ -8,9 +8,11 @@ The skill is project-agnostic. It applies to any code or feature a QA engineer w
 
 This skill assumes that you have the following tools already set up and fully authenticated:
 
-- Atlassian MCP with write access to post comments
-- GitHub CLI (`gh`)
+- GitHub CLI (`gh`). The skill needs it to read the pull requests.
+- Atlassian MCP with write access to post comments. Without it, the skill asks you to paste the ticket text and gives you the finished comment to post by hand.
 - Set effort level to `high` before running skill
+
+Optional: put a `.claude/qa-review/patterns.md` file in the repo you are reviewing, with your team's known recurring gaps under an **Implementation Gaps** heading. The skill reads it as a checklist and never edits it. At the end of a review it suggests patterns worth adding, for you to commit.
 
 ## Review modes
 
@@ -48,7 +50,7 @@ There are two modes, used at different points in the ticket lifecycle:
 7. Check interfaces and documentation
 8. Sanity-check each gap against the current base branch
 9. _(Nothing is fixed in `initial` mode, every open gap is reported)_
-10. Post an initial review comment to the Jira ticket and stop
+10. Show the initial review comment as a draft, post it to the Jira ticket after you approve it, and stop
 
 **`final` review:**
 
@@ -61,11 +63,11 @@ There are two modes, used at different points in the ticket lifecycle:
 7. Check interfaces and documentation
 8. Sanity-check each gap against the current base branch
 9. Fix the test and documentation gaps that step 8 confirmed are still open, where possible without touching production code. This includes writing the functional/integration tests
-10. Post a final review comment to the Jira ticket. If gaps remain for dev, the comment is posted as another initial-style review instead.
+10. Show the final review comment as a draft and post it to the Jira ticket after you approve it. If gaps remain for dev, the comment is another initial-style review instead.
 
 ## What you get
 
-- **A Jira comment** posted to the ticket, in plain text, using the template for the mode. It has the verdict, one line per acceptance criterion, a summary of the change, and the gaps by section.
+- **A Jira comment**, in plain text, using the template for the mode. It has the verdict, one line per acceptance criterion, a summary of the change, and the gaps by section. You see it as a draft first, and it is posted only after you say yes. If the ticket has no acceptance criteria, the skill derives them from the description, marks them "(derived from the description)", and asks you to confirm them before posting.
 - **A findings block** at the end of the session: a short JSON list of the gaps, each with a category, a file, a severity and a one-sentence summary. It is for tools and evals only and is never posted to Jira. Its format is in [references/output-format.md](references/output-format.md).
 
 ## What it checks
