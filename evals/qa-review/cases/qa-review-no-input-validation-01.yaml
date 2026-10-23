@@ -1,0 +1,11 @@
+id: qa-review-no-input-validation-01
+skill: qa-review
+fixture: no-input-validation
+prompt: "/qa-review initial OR-17 40. The ticket and the PR are in the files provided."
+expect:
+  findings:
+    - category: missing-input-validation
+      file: src/orders/handlers/create_order.py
+  must_not_flag: []
+  max_findings: 4
+tags: [defect]

@@ -1,0 +1,11 @@
+id: qa-review-criterion-not-implemented-01
+skill: qa-review
+fixture: criterion-not-implemented
+prompt: "/qa-review initial TC-14 33. The ticket and the PR are in the files provided."
+expect:
+  findings:
+    - category: unmet-acceptance-criterion
+      file: src/tinycache/cache.py
+  must_not_flag: []
+  max_findings: 4
+tags: [defect]

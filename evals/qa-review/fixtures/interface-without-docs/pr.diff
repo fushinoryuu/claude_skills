@@ -1,0 +1,71 @@
+diff --git a/src/filecount/cli.py b/src/filecount/cli.py
+index f8fa492..3f843e2 100644
+--- a/src/filecount/cli.py
++++ b/src/filecount/cli.py
+@@ -1,6 +1,7 @@
+ """Command line entry point for filecount."""
+ 
+ import argparse
++from fnmatch import fnmatch
+ from pathlib import Path
+ 
+ 
+@@ -8,15 +9,26 @@ def build_parser() -> argparse.ArgumentParser:
+     parser = argparse.ArgumentParser(prog="filecount", description="Count the files in a folder.")
+     parser.add_argument("folder", help="folder to count")
+     parser.add_argument("--recursive", action="store_true", help="include files in sub-folders")
++    parser.add_argument(
++        "--exclude",
++        action="append",
++        default=[],
++        metavar="PATTERN",
++        help="skip files whose name matches this glob pattern; can be given more than once",
++    )
+     return parser
+ 
+ 
+-def count_files(folder: Path, recursive: bool = False) -> int:
++def count_files(folder: Path, recursive: bool = False, exclude: list[str] | tuple[str, ...] = ()) -> int:
+     pattern = "**/*" if recursive else "*"
+-    return sum(1 for path in folder.glob(pattern) if path.is_file())
++    return sum(
++        1
++        for path in folder.glob(pattern)
++        if path.is_file() and not any(fnmatch(path.name, skip) for skip in exclude)
++    )
+ 
+ 
+ def main(argv: list[str] | None = None) -> int:
+     args = build_parser().parse_args(argv)
+-    print(count_files(Path(args.folder), args.recursive))
++    print(count_files(Path(args.folder), args.recursive, args.exclude))
+     return 0
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 64c2047..6661b1c 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -22,3 +22,24 @@ def test_main_prints_the_count(tmp_path, capsys):
+     make_tree(tmp_path)
+     assert main([str(tmp_path), "--recursive"]) == 0
+     assert capsys.readouterr().out.strip() == "3"
++
++
++def test_exclude_skips_files_matching_the_pattern(tmp_path):
++    make_tree(tmp_path)
++    assert count_files(tmp_path, exclude=["*.log"]) == 1
++
++
++def test_exclude_can_be_given_more_than_once(tmp_path):
++    make_tree(tmp_path)
++    assert count_files(tmp_path, recursive=True, exclude=["*.log", "c.*"]) == 1
++
++
++def test_exclude_that_matches_nothing_changes_nothing(tmp_path):
++    make_tree(tmp_path)
++    assert count_files(tmp_path, exclude=["*.md"]) == 2
++
++
++def test_main_accepts_exclude_more_than_once(tmp_path, capsys):
++    make_tree(tmp_path)
++    assert main([str(tmp_path), "--recursive", "--exclude", "*.log", "--exclude", "*.txt"]) == 0
++    assert capsys.readouterr().out.strip() == "0"

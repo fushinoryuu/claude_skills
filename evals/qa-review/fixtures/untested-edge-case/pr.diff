@@ -1,0 +1,75 @@
+diff --git a/README.md b/README.md
+index 57cfa99..e49290a 100644
+--- a/README.md
++++ b/README.md
+@@ -3,3 +3,5 @@
+ Rules for the player's inventory.
+ 
+ `total_count(inventory)` returns how many items the player holds.
++
++`add_item(inventory, item, count, limit=99)` adds items to a stack. A stack holds at most `limit` items, which is 99 unless you pass another limit. Whatever does not fit is returned, so nothing is lost silently. Adding zero changes nothing, and a negative count raises `ValueError`.
+diff --git a/src/inventory/__init__.py b/src/inventory/__init__.py
+index d87c9de..881b188 100644
+--- a/src/inventory/__init__.py
++++ b/src/inventory/__init__.py
+@@ -1,3 +1,3 @@
+-from inventory.items import total_count
++from inventory.items import add_item, total_count
+ 
+-__all__ = ["total_count"]
++__all__ = ["add_item", "total_count"]
+diff --git a/src/inventory/items.py b/src/inventory/items.py
+index 3f18d68..bf72a63 100644
+--- a/src/inventory/items.py
++++ b/src/inventory/items.py
+@@ -2,7 +2,24 @@
+ 
+ Inventory = dict[str, int]
+ 
++STACK_LIMIT = 99
++
+ 
+ def total_count(inventory: Inventory) -> int:
+     """How many items the player holds, counting every stack."""
+     return sum(inventory.values())
++
++
++def add_item(inventory: Inventory, item: str, count: int, limit: int = STACK_LIMIT) -> int:
++    """Add up to `count` of `item`, never going over `limit` in one stack.
++
++    Returns how many did not fit, so the caller can drop them or offer them elsewhere.
++    Adding zero changes nothing. A negative count raises ValueError.
++    """
++    if count < 0:
++        raise ValueError("count must not be negative")
++    room = max(limit - inventory.get(item, 0), 0)
++    added = min(count, room)
++    if added:
++        inventory[item] = inventory.get(item, 0) + added
++    return count - added
+diff --git a/tests/test_items.py b/tests/test_items.py
+index 9b2ab55..881be35 100644
+--- a/tests/test_items.py
++++ b/tests/test_items.py
+@@ -1,4 +1,4 @@
+-from inventory import total_count
++from inventory import add_item, total_count
+ 
+ 
+ def test_total_count_adds_every_stack():
+@@ -7,3 +7,15 @@ def test_total_count_adds_every_stack():
+ 
+ def test_total_count_of_an_empty_inventory_is_zero():
+     assert total_count({}) == 0
++
++
++def test_add_item_starts_a_new_stack():
++    inventory = {}
++    assert add_item(inventory, "potion", 3) == 0
++    assert inventory == {"potion": 3}
++
++
++def test_add_item_adds_to_an_existing_stack():
++    inventory = {"potion": 3}
++    assert add_item(inventory, "potion", 2) == 0
++    assert inventory == {"potion": 5}

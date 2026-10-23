@@ -205,9 +205,9 @@ Each fixture is a small PR (diff, description, ticket). Planted defects are desc
 | `docs-only`                 | Any                    | Docs-only change, expecting a short review with no invented code findings | none                           |
 | `clean`                     | Any                    | Well-formed change with tests and doc updates                             | none                           |
 
-- [ ] Write each fixture to be realistic but minimal.
-- [ ] Write one case per fixture, plus a mixed fixture with two defects.
-- [ ] Include at least one fixture on an unfamiliar or unusual stack, expecting a core-only review that states the stack was unfamiliar instead of inventing stack conventions.
+- [x] Write each fixture to be realistic but minimal. Each one is a diff taken from a small real project (`git diff`), and where the language could be run, its tests were run.
+- [x] Write one case per fixture, plus a mixed fixture with two defects (`mixed-two-defects`).
+- [x] Include at least one fixture on an unfamiliar or unusual stack (`unfamiliar-stack`, written in Gleam and not run, since no toolchain was available), expecting a core-only review that states the stack was unfamiliar instead of inventing stack conventions.
 - [ ] Include at least one case run with an optional lens enabled and the same case run core-only, to confirm the core finds the defect either way.
 - [ ] Cover lens selection in the fixtures: a mixed change (for example code plus an infrastructure file) that should select more than one lens, and the docs-only change, which should select none and say "core only". Fixtures supply the output of `suggest_lenses.py` as a file, since scripts are not run in evals.
 The skill is slash-only, so it has no trigger prompts and no `triggers.yaml`.

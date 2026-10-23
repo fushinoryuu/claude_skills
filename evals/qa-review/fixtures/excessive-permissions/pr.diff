@@ -1,0 +1,44 @@
+diff --git a/README.md b/README.md
+index 1e38817..2326c52 100644
+--- a/README.md
++++ b/README.md
+@@ -2,6 +2,7 @@
+ 
+ Access policies for the reports bucket.
+ 
+-| Policy                         | Who uses it       | What it allows             |
+-| ------------------------------ | ----------------- | -------------------------- |
+-| `infra/iam/report-reader.json` | The reporting app | Read objects in the bucket |
++| Policy                           | Who uses it          | What it allows               |
++| -------------------------------- | -------------------- | ---------------------------- |
++| `infra/iam/report-reader.json`   | The reporting app    | Read objects in the bucket   |
++| `infra/iam/report-uploader.json` | The nightly exporter | Upload reports to the bucket |
+diff --git a/infra/iam/report-uploader.json b/infra/iam/report-uploader.json
+new file mode 100644
+index 0000000..eda0ba9
+--- /dev/null
++++ b/infra/iam/report-uploader.json
+@@ -0,0 +1,11 @@
++{
++  "Version": "2012-10-17",
++  "Statement": [
++    {
++      "Sid": "UploadReports",
++      "Effect": "Allow",
++      "Action": ["s3:*"],
++      "Resource": ["*"]
++    }
++  ]
++}
+diff --git a/tests/test_policies.py b/tests/test_policies.py
+index 3b9399b..d93ae51 100644
+--- a/tests/test_policies.py
++++ b/tests/test_policies.py
+@@ -27,3 +27,7 @@ def test_every_policy_is_well_formed():
+ 
+ def test_reader_can_read_reports():
+     assert allows(load("report-reader.json"), "s3:GetObject")
++
++
++def test_uploader_can_put_reports():
++    assert allows(load("report-uploader.json"), "s3:PutObject")

@@ -1,0 +1,102 @@
+diff --git a/README.md b/README.md
+index 0d046bc..593a8a8 100644
+--- a/README.md
++++ b/README.md
+@@ -2,4 +2,8 @@
+ 
+ Prints a weather forecast.
+ 
+-`forecast.render.render_forecast(days)` turns a list of days (date, summary, high, low) into text.
++```
++python -m forecast.client Madrid
++```
++
++`forecast.render.render_forecast(days)` turns a list of days (date, summary, high, low) into text. An empty list gives "No forecast available."
+diff --git a/src/forecast/client.py b/src/forecast/client.py
+new file mode 100644
+index 0000000..fb24e24
+--- /dev/null
++++ b/src/forecast/client.py
+@@ -0,0 +1,28 @@
++"""Fetch a forecast from the weather service and print it."""
++
++import argparse
++import json
++from urllib.parse import quote
++from urllib.request import urlopen
++
++from forecast.render import render_forecast
++
++BASE_URL = "https://weather.example.com"
++
++
++def fetch_forecast(city: str, base_url: str = BASE_URL) -> list[dict]:
++    """The forecast days for a city, as returned by the weather service."""
++    with urlopen(f"{base_url}/forecast?city={quote(city)}") as response:
++        return json.load(response)["days"]
++
++
++def main(argv: list[str] | None = None) -> int:
++    parser = argparse.ArgumentParser(prog="forecast", description="Print the forecast for a city.")
++    parser.add_argument("city")
++    args = parser.parse_args(argv)
++    print(render_forecast(fetch_forecast(args.city)))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/tests/test_client.py b/tests/test_client.py
+new file mode 100644
+index 0000000..65e24a7
+--- /dev/null
++++ b/tests/test_client.py
+@@ -0,0 +1,48 @@
++import io
++import json
++
++from forecast import client
++
++DAYS = [{"date": "2026-03-02", "summary": "Sunny", "high": 18, "low": 7}]
++
++
++class FakeResponse(io.BytesIO):
++    def __enter__(self):
++        return self
++
++    def __exit__(self, *exc):
++        return False
++
++
++def fake_urlopen(payload, seen=None):
++    def urlopen(url):
++        if seen is not None:
++            seen.append(url)
++        return FakeResponse(json.dumps(payload).encode())
++
++    return urlopen
++
++
++def test_fetch_forecast_returns_the_days(monkeypatch):
++    monkeypatch.setattr(client, "urlopen", fake_urlopen({"days": DAYS}))
++    assert client.fetch_forecast("Madrid") == DAYS
++
++
++def test_city_is_encoded_in_the_url(monkeypatch):
++    seen = []
++    monkeypatch.setattr(client, "urlopen", fake_urlopen({"days": DAYS}, seen))
++    client.fetch_forecast("New York")
++    assert seen == ["https://weather.example.com/forecast?city=New%20York"]
++
++
++def test_main_prints_the_forecast(monkeypatch, capsys):
++    monkeypatch.setattr(client, "urlopen", fake_urlopen({"days": DAYS}))
++    assert client.main(["Madrid"]) == 0
++    assert capsys.readouterr().out.strip() == "2026-03-02: Sunny, 18/7 C"
++
++
++def test_accented_city_names_are_encoded(monkeypatch):
++    seen = []
++    monkeypatch.setattr(client, "urlopen", fake_urlopen({"days": DAYS}, seen))
++    client.fetch_forecast("São Paulo")
++    assert seen == ["https://weather.example.com/forecast?city=S%C3%A3o%20Paulo"]

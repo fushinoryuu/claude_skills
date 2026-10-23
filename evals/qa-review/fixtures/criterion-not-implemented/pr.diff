@@ -1,0 +1,122 @@
+diff --git a/README.md b/README.md
+index 9b488fe..b306466 100644
+--- a/README.md
++++ b/README.md
+@@ -10,3 +10,15 @@ cache.set("a", 1)
+ cache.get("a")  # 1
+ len(cache)  # 1
+ ```
++
++## Expiry
++
++Entries can expire. Give the cache a default time to live in seconds, and optionally override it per entry:
++
++```python
++cache = Cache(ttl=60)
++cache.set("session", token)  # expires after 60 seconds
++cache.set("flag", True, ttl=5)  # expires after 5 seconds
++```
++
++An entry that has expired is not returned, and it is removed when it is read. Without a `ttl`, entries never expire.
+diff --git a/src/tinycache/cache.py b/src/tinycache/cache.py
+index df4e769..4217c81 100644
+--- a/src/tinycache/cache.py
++++ b/src/tinycache/cache.py
+@@ -1,17 +1,31 @@
+ """A small in-memory cache."""
+ 
++import time
++from collections.abc import Callable
++
+ 
+ class Cache:
+-    """Key-value store held in memory."""
++    """Key-value store held in memory. Entries can expire after a time to live (ttl) in seconds."""
+ 
+-    def __init__(self) -> None:
+-        self._data: dict[str, object] = {}
++    def __init__(self, ttl: float | None = None, clock: Callable[[], float] = time.monotonic) -> None:
++        self._ttl = ttl
++        self._clock = clock
++        self._data: dict[str, tuple[object, float | None]] = {}
+ 
+-    def set(self, key: str, value: object) -> None:
+-        self._data[key] = value
++    def set(self, key: str, value: object, ttl: float | None = None) -> None:
++        lifetime = self._ttl if ttl is None else ttl
++        expires = None if lifetime is None else self._clock() + lifetime
++        self._data[key] = (value, expires)
+ 
+     def get(self, key: str, default: object = None) -> object:
+-        return self._data.get(key, default)
++        entry = self._data.get(key)
++        if entry is None:
++            return default
++        value, expires = entry
++        if expires is not None and self._clock() >= expires:
++            del self._data[key]
++            return default
++        return value
+ 
+     def __len__(self) -> int:
+         return len(self._data)
+diff --git a/tests/test_cache.py b/tests/test_cache.py
+index fb302e0..618a58f 100644
+--- a/tests/test_cache.py
++++ b/tests/test_cache.py
+@@ -1,6 +1,14 @@
+ from tinycache import Cache
+ 
+ 
++class Clock:
++    def __init__(self):
++        self.now = 0.0
++
++    def __call__(self):
++        return self.now
++
++
+ def test_get_returns_what_was_set():
+     cache = Cache()
+     cache.set("a", 1)
+@@ -16,3 +24,40 @@ def test_len_counts_the_entries():
+     cache.set("a", 1)
+     cache.set("b", 2)
+     assert len(cache) == 2
++
++
++def test_entry_is_not_returned_after_its_ttl_and_is_removed_when_read():
++    clock = Clock()
++    cache = Cache(ttl=10, clock=clock)
++    cache.set("a", 1)
++    clock.now = 9.9
++    assert cache.get("a") == 1
++    clock.now = 10.0
++    assert cache.get("a", "gone") == "gone"
++    assert "a" not in cache._data
++
++
++def test_entries_without_a_ttl_never_expire():
++    clock = Clock()
++    cache = Cache(clock=clock)
++    cache.set("a", 1)
++    clock.now = 1_000_000
++    assert cache.get("a") == 1
++
++
++def test_default_ttl_is_set_on_the_cache():
++    clock = Clock()
++    cache = Cache(ttl=5, clock=clock)
++    cache.set("a", 1)
++    clock.now = 5
++    assert cache.get("a") is None
++
++
++def test_ttl_given_to_set_overrides_the_default():
++    clock = Clock()
++    cache = Cache(ttl=5, clock=clock)
++    cache.set("short", 1, ttl=1)
++    cache.set("long", 2, ttl=100)
++    clock.now = 6
++    assert cache.get("short") is None
++    assert cache.get("long") == 2

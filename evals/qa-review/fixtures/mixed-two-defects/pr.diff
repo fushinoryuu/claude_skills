@@ -1,0 +1,27 @@
+diff --git a/src/pricekit/__init__.py b/src/pricekit/__init__.py
+index c02aa58..d337952 100644
+--- a/src/pricekit/__init__.py
++++ b/src/pricekit/__init__.py
+@@ -1,3 +1,4 @@
++from pricekit.discount import apply_discount
+ from pricekit.format import format_price
+ 
+-__all__ = ["format_price"]
++__all__ = ["apply_discount", "format_price"]
+diff --git a/src/pricekit/discount.py b/src/pricekit/discount.py
+new file mode 100644
+index 0000000..1c57e99
+--- /dev/null
++++ b/src/pricekit/discount.py
+@@ -0,0 +1,11 @@
++"""Discounts on prices stored in cents."""
++
++
++def apply_discount(price_cents: int, percent: int) -> int:
++    """The price after taking `percent` off, rounded to the nearest cent (halves round up).
++
++    `percent` must be between 0 and 100, otherwise ValueError is raised.
++    """
++    if not 0 <= percent <= 100:
++        raise ValueError("percent must be between 0 and 100")
++    return (price_cents * (100 - percent) + 50) // 100

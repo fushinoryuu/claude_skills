@@ -1,0 +1,11 @@
+id: qa-review-excessive-permissions-01
+skill: qa-review
+fixture: excessive-permissions
+prompt: "/qa-review initial RI-4 5. The ticket and the PR are in the files provided."
+expect:
+  findings:
+    - category: excessive-permissions
+      file: infra/iam/report-uploader.json
+  must_not_flag: []
+  max_findings: 3
+tags: [defect]
