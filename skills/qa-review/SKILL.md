@@ -45,6 +45,7 @@ The mode is the first argument, chosen by the user. Never infer it from the stat
 | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The Jira ticket, its linked tickets and comments, and posting the review comment | The Atlassian MCP server (`mcp__atlassian__getJiraIssue`, `mcp__atlassian__addCommentToJiraIssue`) | Ask the user to paste the ticket text: summary, description, acceptance criteria, linked tickets and comments. Work from that, and give the finished comment to the user as a draft to post by hand. |
 | The pull request: description, changed files, diff                               | The GitHub CLI (`gh`), already authenticated                                                       | None. Stop and tell the user.                                                                                                                                                                        |
+| A first pass at choosing lenses (Step 3)                                         | `python3`, running `scripts/suggest_lenses.py`                                                     | Choose the lenses by hand from their `applies_when` blocks, and say so in one line.                                                                                                                  |
 
 Do not install tools, change authentication, or look for another way around a missing tool.
 
@@ -153,10 +154,12 @@ Before judging anything, work out what the change is and how this project does t
 
    If the stack is unfamiliar, say so and apply the core checklist instead of guessing at the stack's conventions.
 3. **Read the core checklist.** [references/qa-core.md](references/qa-core.md) always applies, whatever the project. Steps 4 to 7 point at its sections.
-4. **Select lenses.** A lens is an optional file of extra checks for one kind of change. See [references/lenses/README.md](references/lenses/README.md) for the format.
-   - Each file in `references/lenses/` opens with an `applies_when` block. A lens is a candidate when a changed file matches one of its `paths`. When no path matches, use its `touches` line to judge whether the lens still fits.
+4. **Select lenses.** A lens is an optional file of extra checks for one kind of change. See [references/lenses/README.md](references/lenses/README.md) for the format. Lenses come from two places: the skill's own `references/lenses/` and the reviewed repo's `.claude/qa-review/lenses/`. If both have a lens with the same name, the repo's lens replaces the skill's.
+   - **Run the script.** List the changed files of every PR (`gh pr diff <PR#> --name-only`) and pipe the combined list into `python3 ${CLAUDE_SKILL_DIR}/scripts/suggest_lenses.py`. It prints JSON: `matched` lenses with the changed files that matched their `paths`, and `unmatched` lenses with their `touches` line. Each entry has a `source` (`bundled` or `project`) that says which folder holds the lens file.
+   - **Treat the output as a signal, not a verdict.** Read each matched lens and keep it only if it fits the change. For an unmatched lens, use its `touches` line to judge whether it still fits. A change can need several lenses, one, or none, and an unusual change may match nothing and still deserve a lens.
+   - **If the script cannot run** (no `python3`, an error, or `status` is `no_input`), say so in one line and decide by hand. Read the `applies_when` block at the top of each file in the two lens folders and apply the same judgment.
    - Read only the lenses that apply. Any number of lenses, including none, is valid.
-   - If the user names a lens, load it. If the user asks for the core only, load none.
+   - If the user names a lens, load it. If the user asks for the core only, load none, whatever the script suggested.
    - State which lenses you applied and why, or "core only". The core review stands on its own when no lens applies.
 
 ### Step 4: Acceptance criteria and implementation

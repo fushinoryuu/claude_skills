@@ -30,6 +30,13 @@ Drop one file in this folder. No other file needs editing.
 
 Stack-specific words and file names belong here and nowhere else. The structure check fails if `SKILL.md` or another reference outside this folder names a lens file or uses a stack-specific word, so removing this folder never breaks the core.
 
+## Where lenses live
+
+- **Bundled** lenses are the files in this folder. They come with the skill.
+- **Project** lenses live in the reviewed repo at `.claude/qa-review/lenses/`, committed so the whole team shares them. They use the same format.
+- A project lens with the same `name` as a bundled lens replaces it. A project lens with a new name is added.
+- The skill only reads them.
+
 ## How lenses are chosen
 
-Lenses are chosen from what the change touches, never from a project label. Any number of lenses, including none, can apply to one review, and the report names each lens applied and why, or says "core only". The user can also name a lens, or ask for the core only.
+Lenses are chosen from what the change touches, never from a project label. `scripts/suggest_lenses.py` matches the changed files against every lens's `paths` as a first pass, and the agent makes the final call. Any number of lenses, including none, can apply to one review, and the report names each lens applied and why, or says "core only". The user can also name a lens, or ask for the core only.
