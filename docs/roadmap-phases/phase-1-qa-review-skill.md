@@ -209,16 +209,16 @@ Each fixture is a small PR (diff, description, ticket). Planted defects are desc
 - [x] Write each fixture to be realistic but minimal. Each one is a diff taken from a small real project (`git diff`), and where the language could be run, its tests were run.
 - [x] Write one case per fixture, plus a mixed fixture with two defects (`mixed-two-defects`).
 - [x] Include at least one fixture on an unfamiliar or unusual stack (`unfamiliar-stack`, written in Gleam and not run, since no toolchain was available), expecting a core-only review that states the stack was unfamiliar instead of inventing stack conventions.
-- [ ] Include at least one case run with an optional lens enabled and the same case run core-only, to confirm the core finds the defect either way.
-- [ ] Cover lens selection in the fixtures: a mixed change (for example code plus an infrastructure file) that should select more than one lens, and the docs-only change, which should select none and say "core only". Fixtures supply the output of `suggest_lenses.py` as a file, since scripts are not run in evals.
+- [x] Include at least one case run with an optional lens enabled and the same case run core-only, to confirm the core finds the defect either way (`no-input-validation` cases 01 and 02).
+- [x] Cover lens selection in the fixtures: a mixed change (for example code plus an infrastructure file) that should select more than one lens (`mixed-lens-change`: a handler plus its API spec), and the docs-only change, which should select none and say "core only". Fixtures supply the output of `suggest_lenses.py` as a file, since scripts are not run in evals.
 The skill is slash-only, so it has no trigger prompts and no `triggers.yaml`.
 
 ### 7. Runner and structure support for lenses
 
 Lenses need two small changes outside the skill itself.
 
-- [ ] **Per-case lens control in the eval runner.** The runner currently pastes every file under `references/`, lenses included, and the model cannot read files during an eval. Add a per-case option (for example a `lenses:` list naming the lens files to include, with `[]` meaning core only), so the same fixture can run with and without a lens. Update `evals/runner/loader.py` and `prompt.py`, add unit tests, and document the option in `docs/eval-format.md`.
-- [ ] **Decide whether cases can assert lens selection.** For example `expect.lenses`, compared with the reported `lenses_applied`. This is the only eval signal for the agent's selection judgment, since the script's own behavior is covered by its unit tests.
+- [x] **Per-case lens control in the eval runner.** The runner currently pastes every file under `references/`, lenses included, and the model cannot read files during an eval. Add a per-case option (for example a `lenses:` list naming the lens files to include, with `[]` meaning core only), so the same fixture can run with and without a lens. Update `evals/runner/loader.py` and `prompt.py`, add unit tests, and document the option in `docs/eval-format.md`.
+- [x] **Decide whether cases can assert lens selection.** Decided yes: `expect.lenses`, compared with the reported `lenses_applied` as an exact set (`[]` expects "core only"), and it fails the run when it differs. This is the only eval signal for the agent's selection judgment, since the script's own behavior is covered by its unit tests.
 - [x] **Structure tests for lenses**, in `evals/structure.py`. They apply to any skill that has a `references/lenses/` folder:
   - Every lens file (the folder's `README.md` aside) has valid frontmatter: `name` equal to the file name, which makes names unique, a `description`, and `applies_when` with `paths` as a non-empty list of globs and a `touches` line.
   - The orphan-reference rule exempts lens files. They are discovered by `suggest_lenses.py`, not named in SKILL.md, so the rule would flag every one of them.
