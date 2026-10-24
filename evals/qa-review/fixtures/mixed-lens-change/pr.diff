@@ -1,0 +1,37 @@
+diff --git a/openapi.yaml b/openapi.yaml
+index 35a5c1e..a01d51a 100644
+--- a/openapi.yaml
++++ b/openapi.yaml
+@@ -17,3 +17,16 @@ paths:
+           description: The order
+         "404":
+           description: No order with that id
++    delete:
++      summary: Cancel an order
++      parameters:
++        - name: id
++          in: path
++          required: true
++          schema:
++            type: string
++      responses:
++        "204":
++          description: The order was cancelled
++        "404":
++          description: No order with that id
+diff --git a/src/shop/routes/orders.py b/src/shop/routes/orders.py
+index b2bbdfe..0197c99 100644
+--- a/src/shop/routes/orders.py
++++ b/src/shop/routes/orders.py
+@@ -7,3 +7,11 @@ def get_order(orders: dict, order_id: str) -> tuple[int, dict]:
+     if order is None:
+         return 404, {"error": "order not found"}
+     return 200, order
++
++
++def cancel_order(orders: dict, order_id: str) -> tuple[int, dict]:
++    """DELETE /orders/{id}"""
++    if order_id not in orders:
++        return 404, {"error": "order not found"}
++    del orders[order_id]
++    return 204, {}
