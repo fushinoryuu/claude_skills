@@ -17,6 +17,22 @@ class RunScore:
     max_findings: int
     invalid_categories: tuple[str, ...] = ()
     error: str | None = None
+    lenses_expected: frozenset[str] | None = None
+    lenses_reported: tuple[str, ...] | None = None
+
+    @property
+    def lenses_ok(self) -> bool:
+        """True when the case does not check lenses, or the report lists exactly the expected ones."""
+        if self.lenses_expected is None:
+            return True
+        return self.lenses_reported is not None and set(self.lenses_reported) == self.lenses_expected
+
+    @property
+    def lens_problem(self) -> str | None:
+        if self.lenses_ok:
+            return None
+        reported = "missing" if self.lenses_reported is None else f"[{', '.join(self.lenses_reported)}]"
+        return f"lenses_applied was {reported}, expected [{', '.join(sorted(self.lenses_expected))}]"
 
     @property
     def recall(self) -> float:
@@ -28,6 +44,7 @@ class RunScore:
             self.error is None
             and self.recall == 1.0
             and self.forbidden == 0
+            and self.lenses_ok
             and self.total <= self.max_findings
         )
 
@@ -75,7 +92,9 @@ def _matches(expected: dict, actual: dict) -> bool:
     return True
 
 
-def score_run(case: Case, vocab: Vocabulary, findings: list[dict]) -> RunScore:
+def score_run(
+    case: Case, vocab: Vocabulary, findings: list[dict], lenses_applied: list[str] | None = None
+) -> RunScore:
     """Match findings to expectations one-to-one, most specific expectation first."""
     unused = list(range(len(findings)))
     matched = 0
@@ -94,6 +113,8 @@ def score_run(case: Case, vocab: Vocabulary, findings: list[dict]) -> RunScore:
         forbidden=sum(1 for k in keys if k in case.expect.must_not_flag),
         max_findings=case.expect.max_findings,
         invalid_categories=tuple(sorted({str(k) for k in keys if k not in vocab.values})),
+        lenses_expected=case.expect.lenses,
+        lenses_reported=None if lenses_applied is None else tuple(lenses_applied),
     )
 
 

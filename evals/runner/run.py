@@ -12,7 +12,7 @@ from evals.runner.loader import (
     load_fixture,
     load_vocabulary,
 )
-from evals.runner.parser import ParseError, parse_findings
+from evals.runner.parser import ParseError, parse_findings, parse_lenses_applied
 from evals.runner.prompt import (
     Skill,
     build_system_prompt,
@@ -68,9 +68,10 @@ def execute_run(case: Case, vocab: Vocabulary, system: str, user: str, client: M
         )
     try:
         findings = parse_findings(completion.text)
+        lenses_applied = parse_lenses_applied(completion.text)
     except ParseError as e:
         return RunRecord(score=error_score(case, f"parse_error: {e}"), output=completion.text, **usage)
-    return RunRecord(score=score_run(case, vocab, findings), output=completion.text, **usage)
+    return RunRecord(score=score_run(case, vocab, findings, lenses_applied), output=completion.text, **usage)
 
 
 def prepare(skills_dir: Path, evals_dir: Path, skill_name: str, case_id: str | None):
@@ -104,7 +105,8 @@ def run_skill(
         for i in range(1, runs + 1):
             record = execute_run(case, vocab, systems[case.id], prompts[case.id], client)
             records.append(record)
-            status = "pass" if record.score.passed else f"FAIL ({record.score.error or 'see output'})"
+            reason = record.score.error or record.score.lens_problem or "see output"
+            status = "pass" if record.score.passed else f"FAIL ({reason})"
             progress(f"{case.id} run {i}/{runs}: {status}")
         results.append(summarize_case(case, records, threshold))
     return SkillRun(skill=skill_name, cases=results, summary=summarize_skill(results))

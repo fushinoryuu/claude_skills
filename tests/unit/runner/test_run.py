@@ -207,3 +207,21 @@ def test_cli_dry_run_prints_each_distinct_system_prompt_once(lens_sample, tmp_pa
     assert out.count("=== SYSTEM (for ") == 2
     assert "=== SYSTEM (for todo-check-has-todo-01) ===" in out
     assert "=== SYSTEM (for todo-check-no-todo-01) ===" in out
+
+
+def test_a_run_that_reports_the_wrong_lenses_fails_and_says_why(lens_sample):
+    skills, evals = lens_sample
+    case = evals / "todo-check" / "cases" / "todo-check-no-todo-01.yaml"
+    case.write_text(case.read_text().replace("max_findings: 0", "max_findings: 0\n  lenses: []"))
+    reply = '```json\n{"lenses_applied": ["web"], "findings": []}\n```'
+    messages = []
+    result = run_skill(
+        "todo-check",
+        skills_dir=skills,
+        evals_dir=evals,
+        client=FakeClient({"*": reply}),
+        case_id="todo-check-no-todo-01",
+        progress=messages.append,
+    )
+    assert not result.passed
+    assert messages == ["todo-check-no-todo-01 run 1/1: FAIL (lenses_applied was [web], expected [])"]

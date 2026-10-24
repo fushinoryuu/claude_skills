@@ -10,12 +10,8 @@ class ParseError(Exception):
     """No valid findings block in the output."""
 
 
-def parse_findings(text: str) -> list[dict]:
-    """Return the findings list from the last fenced json block that holds one.
-
-    Earlier JSON in the explanation is ignored. Raises ParseError when no block
-    parses to an object with a `findings` list of objects.
-    """
+def _report(text: str) -> dict:
+    """The last fenced json block that is an object with a `findings` list of objects."""
     blocks = _FENCE.findall(text)
     if not blocks:
         raise ParseError("no fenced json block in output")
@@ -28,5 +24,22 @@ def parse_findings(text: str) -> list[dict]:
             continue
         findings = data.get("findings")
         if isinstance(findings, list) and all(isinstance(f, dict) for f in findings):
-            return findings
+            return data
     raise ParseError("no json block with a 'findings' list of objects")
+
+
+def parse_findings(text: str) -> list[dict]:
+    """Return the findings list from the last fenced json block that holds one.
+
+    Earlier JSON in the explanation is ignored. Raises ParseError when no block
+    parses to an object with a `findings` list of objects.
+    """
+    return _report(text)["findings"]
+
+
+def parse_lenses_applied(text: str) -> list[str] | None:
+    """The `lenses_applied` list from the same block, or None when it is missing or is not a list of names."""
+    lenses = _report(text).get("lenses_applied")
+    if isinstance(lenses, list) and all(isinstance(n, str) for n in lenses):
+        return lenses
+    return None
