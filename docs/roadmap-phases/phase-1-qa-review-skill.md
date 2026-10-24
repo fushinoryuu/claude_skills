@@ -67,7 +67,7 @@ Settled before the remaining Phase 1 work, so later PRs do not reopen them:
 - **Ticket source.** The Jira key is a required argument and the ticket is read through the Atlassian MCP server. If that tool is not available, the skill asks the user to paste the ticket text and shows the comment as a draft instead of stopping. GitHub Issues are a Phase 2 source.
 - **Posting.** The skill shows the draft comment and waits for the user's yes before posting it to Jira.
 - **Review state.** The per-ticket gaps and verdict live in Claude Code memory. The "living document" of recurring issues is the patterns file below.
-- **Project extensions.** A team puts its own files in `.claude/qa-review/` in the repo being reviewed, committed so the whole team shares them: `patterns.md` (known recurring gaps) and later `lenses/` (project-specific lenses). The skill only reads them. The patterns file is read in Step 4 and optional. New patterns are suggested in the final report for a person to commit. The rules for finding and ranking bundled and project lenses are settled with lens selection.
+- **Project extensions.** A team puts its own files in `.claude/qa-review/` in the repo being reviewed, committed so the whole team shares them: `patterns.md` (known recurring gaps) and later `lenses/` (project-specific lenses). The skill only reads them. The patterns file is read in Step 4 and optional. New patterns are suggested in the final report for a person to commit. Bundled lenses live in the skill's `references/lenses/` and project lenses in `.claude/qa-review/lenses/`. When both have a lens with the same name, the project lens wins, so a team can replace a default without editing the skill. A project lens with a new name is added to the bundled ones.
 - **Report format.** The Jira comment templates are the report. Each acceptance criterion is one line, and there are no tables and no line numbers, because Jira renders them badly and line numbers go stale. Severity appears only in the structured findings block.
 - **Findings block.** The structured block is shown at the end of every session and never posted to Jira. The category list includes an `other` catch-all, so the model does not invent a name when none fits.
 - **Templates.** They keep the *Other Findings* section and the `Lenses:` header line.
@@ -101,7 +101,8 @@ Deciding which lens to load is real work, and it is done from evidence about the
   ---
   ```
 
-- **Deterministic hint.** `suggest_lenses.py` matches the changed-file list against every lens's `paths` and prints the candidate lenses with the files that matched. Like the other scripts, its output is a signal, not a verdict.
+- **Deterministic hint.** `suggest_lenses.py` matches the changed-file list against every lens's `paths` and prints the candidate lenses with the files that matched, and the remaining lenses with their `touches` line so the agent can judge them. It reads a diff or a plain list of paths, from a file or stdin, and looks for lenses in both the bundled folder and `.claude/qa-review/lenses/`. Like the other scripts, its output is a signal, not a verdict.
+- **Finding the script.** `SKILL.md` runs it as `${CLAUDE_SKILL_DIR}/scripts/suggest_lenses.py`. Claude Code replaces `${CLAUDE_SKILL_DIR}` with the folder that holds `SKILL.md`, so the path is right for a global install, a repo install, and any working directory.
 - **Judgment and transparency.** The agent decides: it may apply several lenses, one, or none. The report names each lens applied and why, or says "core only".
 - **Lazy loading.** Only the lenses that matched are read, so unmatched lenses cost no tokens.
 - **Overrides.** The user can name a lens, or say "core only".
