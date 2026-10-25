@@ -9,7 +9,7 @@ The skill is project-agnostic. It applies to any code or feature a QA engineer w
 This skill assumes that you have the following tools already set up and fully authenticated:
 
 - GitHub CLI (`gh`). The skill needs it to read the pull requests.
-- Atlassian MCP with write access to post comments. Without it, the skill asks you to paste the ticket text and gives you the finished comment to post by hand.
+- Atlassian MCP with write access to post comments (setup is in the repository README). Without it, the skill asks you to paste the ticket text and gives you the finished comment to post by hand.
 - Optional: `python3`. The skill runs a small script that suggests which lenses fit the change. Without Python it chooses lenses by hand.
 - Set effort level to `high` before running skill
 

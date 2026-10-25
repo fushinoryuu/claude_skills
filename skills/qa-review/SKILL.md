@@ -41,11 +41,11 @@ The mode is the first argument, chosen by the user. Never infer it from the stat
 
 ## Expected tools
 
-| Need                                                                             | Tool                                                                                               | If it is not available                                                                                                                                                                               |
-| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The Jira ticket, its linked tickets and comments, and posting the review comment | The Atlassian MCP server (`mcp__atlassian__getJiraIssue`, `mcp__atlassian__addCommentToJiraIssue`) | Ask the user to paste the ticket text: summary, description, acceptance criteria, linked tickets and comments. Work from that, and give the finished comment to the user as a draft to post by hand. |
-| The pull request: description, changed files, diff                               | The GitHub CLI (`gh`), already authenticated                                                       | None. Stop and tell the user.                                                                                                                                                                        |
-| A first pass at choosing lenses (Step 3)                                         | `python3`, running `scripts/suggest_lenses.py`                                                     | Choose the lenses by hand from their `applies_when` blocks, and say so in one line.                                                                                                                  |
+| Need                                                                             | Tool                                                                                                                                  | If it is not available                                                                                                                                                                               |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The Jira ticket, its linked tickets and comments, and posting the review comment | The Atlassian MCP server (`mcp__atlassian__getJiraIssue`, `mcp__atlassian__executeRead`, `mcp__atlassian__addOrEditJiraIssueComment`) | Ask the user to paste the ticket text: summary, description, acceptance criteria, linked tickets and comments. Work from that, and give the finished comment to the user as a draft to post by hand. |
+| The pull request: description, changed files, diff                               | The GitHub CLI (`gh`), already authenticated                                                                                          | None. Stop and tell the user.                                                                                                                                                                        |
+| A first pass at choosing lenses (Step 3)                                         | `python3`, running `scripts/suggest_lenses.py`                                                                                        | Choose the lenses by hand from their `applies_when` blocks, and say so in one line.                                                                                                                  |
 
 Do not install tools, change authentication, or look for another way around a missing tool.
 
@@ -105,7 +105,7 @@ Immediately after parsing arguments (before Step 1), create a todo list with `To
 11. Save/update memory
 12. Final report
 
-Mark an item `in_progress` when you begin that step and flip it to `completed` the moment the step's work is actually done, not in a batch at the end, and not before the work behind it is real (e.g. don't complete the Jira comment entry until the user has approved the draft and `addCommentToJiraIssue` has actually returned successfully, or the draft has been handed over). If Step 9 turns up enough gaps that tracking them individually would help, add them as sub-items under the "Handle gaps" entry rather than replacing it. The numbered list above should stay stable as the backbone so the progress bar reads consistently across every review session. Add new items only as sub-items under the relevant step.
+Mark an item `in_progress` when you begin that step and flip it to `completed` the moment the step's work is actually done, not in a batch at the end, and not before the work behind it is real (e.g. don't complete the Jira comment entry until the user has approved the draft and `addOrEditJiraIssueComment` has actually returned successfully, or the draft has been handed over). If Step 9 turns up enough gaps that tracking them individually would help, add them as sub-items under the "Handle gaps" entry rather than replacing it. The numbered list above should stay stable as the backbone so the progress bar reads consistently across every review session. Add new items only as sub-items under the relevant step.
 
 ## Workflow
 
@@ -123,7 +123,9 @@ Check `~/.claude/projects/<project_name>/memory/MEMORY.md` for a prior review en
 
 #### Step 2a: Run all of the following **in parallel**:
 
-1. `mcp__atlassian__getJiraIssue` with the ticket key to fetch the ticket summary, description, acceptance criteria, status, steps to reproduce, test steps, linked issues, and all comments. If the tool is unavailable, ask the user to paste the ticket text (see Expected tools).
+1. Jira, in two moves. If the tool is unavailable or a call fails, ask the user to paste the ticket text (see Expected tools).
+   - Call `mcp__atlassian__getAccessibleAtlassianResources` once and keep the `cloudId`. Pass it on every Atlassian call, as its own argument. If the account has more than one site, use the one the ticket belongs to, and ask the user when that is unclear.
+   - Then, in parallel, call `mcp__atlassian__getJiraIssue` with the ticket key and `view: "evidence"`, which returns the summary, description (acceptance criteria are usually in it), status, and `fields.issuelinks`, and read the comments. The issue call reports only how many comments there are, so read them with `mcp__atlassian__executeRead` using `name: "listJiraIssueComments"`, the `cloudId`, and `inputs` holding `issueIdOrKey` and `orderBy: "created"`. Page with `startAt` until `isLast` is true. Where a comment has a visibility restriction, do not quote it.
 2. For each PR number, `gh pr view <PR#> --json title,body,baseRefName,headRefName,state,files`.
 
 Then read the diffs of the files that matter, following Fetching and What to skip.
@@ -134,9 +136,9 @@ If the working tree is not on a PR's head branch and `final` mode needs to edit 
 
 If the ticket was pasted, skip this step: linked tickets are only available if the user pastes them too.
 
-Inspect `fields.issuelinks` from the Step 2a response. For every linked ticket, fetch it now using `mcp__atlassian__getJiraIssue`.
+Inspect `fields.issuelinks` from the Step 2a response. For every linked ticket, fetch it now the same way as the main ticket: `mcp__atlassian__getJiraIssue` with the `cloudId` and `view: "evidence"`, and its comments.
 
-**Do not proceed to Step 3 until all linked tickets have been fetched.** If there are many linked tickets, you may need to run multiple `mcp__atlassian__getJiraIssue` calls in parallel. If any linked ticket is inaccessible, warn the user and skip it, but continue with the review. If there are no linked tickets, note that and continue.
+**Do not proceed to Step 3 until all linked tickets have been fetched.** If there are many linked tickets, you may need to run these calls in parallel. If any linked ticket is inaccessible, warn the user and skip it, but continue with the review. If there are no linked tickets, note that and continue.
 
 Use the linked tickets description, attachments, AC, and all comments as additional context when performing the AC check in Step 4.
 
@@ -243,7 +245,7 @@ Write the comment for the Jira ticket using the template for the active mode:
 
 Post only the text under the "Template" heading, and follow the rules section of the template. Fill in every `{{ placeholder }}`, keep only the applicable verdict and the applicable branch of each conditional (delete the `{{ ... }}` marker lines), and remove no sections (write "None" or "Not applicable" instead). Keep it scannable: facts and file names, no padding.
 
-The comment must look like a normal comment from a person. Post it as plain text exactly as the template formats it. Never wrap it in a code fence, code block, `{code}`, `{noformat}` or panel, since Jira renders those as a grey box. Show the user the finished comment as a draft, and wait for a clear yes before posting. If you derived acceptance criteria, list them under the draft and ask the user to confirm them. If the user wants changes, edit the draft and show it again. When the user agrees, post it with `mcp__atlassian__addCommentToJiraIssue`. If the ticket was pasted or the Atlassian tool is unavailable, do not post: give the draft to the user to post by hand, and say so.
+The comment must look like a normal comment from a person. Post it as plain text exactly as the template formats it. Never wrap it in a code fence, code block, `{code}`, `{noformat}` or panel, since Jira renders those as a grey box. Show the user the finished comment as a draft, and wait for a clear yes before posting. If you derived acceptance criteria, list them under the draft and ask the user to confirm them. If the user wants changes, edit the draft and show it again. When the user agrees, post it with `mcp__atlassian__addOrEditJiraIssueComment`, giving the `cloudId`, `issueIdOrKey` and `commentBody`. Never pass `commentId`: that edits an existing comment, and this skill only adds new ones. Keep the `commentId` the call returns for Step 11. If the ticket was pasted or the Atlassian tool is unavailable, do not post: give the draft to the user to post by hand, and say so.
 
 Do not transition the ticket yourself. If the verdict is "Ready to mark Done" or a status change would clearly be next, offer it and wait for the user to say yes.
 
