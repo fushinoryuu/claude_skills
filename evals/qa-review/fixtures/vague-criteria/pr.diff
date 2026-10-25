@@ -105,10 +105,10 @@ index b27f6c2..26f1acb 100644
      transport(user, message)
      return True
 diff --git a/tests/test_core.py b/tests/test_core.py
-index 620be2c..f495209 100644
+index 620be2c..9ba6344 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
-@@ -1,8 +1,67 @@
+@@ -1,8 +1,92 @@
 -from notifykit import User, send
 +from datetime import UTC, datetime, time
 +
@@ -149,6 +149,14 @@ index 620be2c..f495209 100644
 +    assert not in_quiet_hours(user, at(23))
 +
 +
++def test_a_same_day_window_includes_the_start_and_excludes_the_end():
++    user = User("ben", quiet_start=time(13, 0), quiet_end=time(15, 0))
++    assert not in_quiet_hours(user, at(12, 59))
++    assert in_quiet_hours(user, at(13, 0))
++    assert in_quiet_hours(user, at(14, 59))
++    assert not in_quiet_hours(user, at(15, 0))
++
++
 +def test_quiet_hours_use_the_users_time_zone():
 +    # On 2 March New York is UTC-5. These two instants have different answers in UTC and in New York.
 +    user = User("carla", timezone="America/New_York")
@@ -178,3 +186,20 @@ index 620be2c..f495209 100644
 +    sent = []
 +    assert send(User("ana"), "hello", lambda u, m: sent.append(m), now=at(23)) is False
 +    assert sent == []
++
++
++def test_send_uses_the_current_time_when_now_is_omitted(monkeypatch):
++    class FrozenDatetime(datetime):
++        @classmethod
++        def now(cls, tz=None):
++            return at(23)
++
++    monkeypatch.setattr("notifykit.core.datetime", FrozenDatetime)
++    sent = []
++    assert send(User("ana"), "hello", lambda u, m: sent.append(m)) is False
++    assert sent == []
++
++
++def test_send_rejects_a_naive_datetime():
++    with pytest.raises(ValueError, match="timezone-aware"):
++        send(User("ana"), "hello", lambda u, m: None, now=datetime(2026, 3, 2, 23, 0))
