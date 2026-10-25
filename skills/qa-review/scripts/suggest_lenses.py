@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Suggest which review lenses may apply to a change. A signal for the reviewer, not a verdict.
 
 Reads the change from a file or stdin. The input is either a unified diff (the changed paths are
