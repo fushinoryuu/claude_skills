@@ -1,4 +1,6 @@
 key_field: category
+# The line that opens the Jira comment the skill drafts (the title line, which may be bold or numbered).
+comment_start: '^[^\w\n]*(?:\d+(?:st|nd|rd|th) )?(?:Initial|Final) QA Review - '
 values:
   - missing-tests
   - unmet-acceptance-criterion

@@ -19,6 +19,8 @@ class RunScore:
     error: str | None = None
     lenses_expected: frozenset[str] | None = None
     lenses_reported: tuple[str, ...] | None = None
+    comment_limit: int | None = None
+    comment_words: int | None = None
 
     @property
     def lenses_ok(self) -> bool:
@@ -39,12 +41,28 @@ class RunScore:
         return self.matched / self.expected if self.expected else 1.0
 
     @property
+    def comment_ok(self) -> bool:
+        """True when the case sets no comment limit, or the comment was found and is within it."""
+        if self.comment_limit is None:
+            return True
+        return self.comment_words is not None and self.comment_words <= self.comment_limit
+
+    @property
+    def comment_problem(self) -> str | None:
+        if self.comment_ok:
+            return None
+        if self.comment_words is None:
+            return "the comment was not found in the output"
+        return f"the comment has {self.comment_words} words, limit {self.comment_limit}"
+
+    @property
     def passed(self) -> bool:
         return (
             self.error is None
             and self.recall == 1.0
             and self.forbidden == 0
             and self.lenses_ok
+            and self.comment_ok
             and self.total <= self.max_findings
         )
 
@@ -93,7 +111,11 @@ def _matches(expected: dict, actual: dict) -> bool:
 
 
 def score_run(
-    case: Case, vocab: Vocabulary, findings: list[dict], lenses_applied: list[str] | None = None
+    case: Case,
+    vocab: Vocabulary,
+    findings: list[dict],
+    lenses_applied: list[str] | None = None,
+    comment_words: int | None = None,
 ) -> RunScore:
     """Match findings to expectations one-to-one, most specific expectation first."""
     unused = list(range(len(findings)))
@@ -115,6 +137,8 @@ def score_run(
         invalid_categories=tuple(sorted({str(k) for k in keys if k not in vocab.values})),
         lenses_expected=case.expect.lenses,
         lenses_reported=None if lenses_applied is None else tuple(lenses_applied),
+        comment_limit=case.expect.max_comment_words,
+        comment_words=comment_words,
     )
 
 

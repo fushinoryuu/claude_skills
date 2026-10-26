@@ -2,7 +2,7 @@
 
 At the end of every review, after the summary in Step 12, print one structured block listing the gaps found. Tools and the eval runner read it, so its shape is fixed.
 
-The block is for the session only. **Never put it in the Jira comment**: the Jira comment is plain text and must not contain a code fence (see the comment templates).
+The block is for the session only. **Never put it in the Jira comment**: the Jira comment is Markdown text and must not contain a code fence (see the comment templates).
 
 ## Shape
 

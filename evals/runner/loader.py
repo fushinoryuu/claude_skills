@@ -3,6 +3,7 @@
 The on-disk format is specified in docs/eval-format.md.
 """
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,6 +20,7 @@ class EvalConfigError(Exception):
 class Vocabulary:
     key_field: str
     values: frozenset[str]
+    comment_start: str | None = None  # regex for the line that opens the text the skill posts
 
 
 @dataclass(frozen=True)
@@ -27,6 +29,7 @@ class Expect:
     must_not_flag: frozenset[str]
     max_findings: int
     lenses: frozenset[str] | None = None  # lens names the report must list in lenses_applied. None: not checked.
+    max_comment_words: int | None = None  # upper bound on the words of the posted comment. None: not checked.
 
 
 @dataclass(frozen=True)
@@ -63,7 +66,13 @@ def load_vocabulary(evals_dir: Path, skill: str) -> Vocabulary:
         raise EvalConfigError(f"{path}: 'key_field' must be a non-empty string")
     if not isinstance(values, list) or not values or not all(isinstance(v, str) for v in values):
         raise EvalConfigError(f"{path}: 'values' must be a non-empty list of strings")
-    return Vocabulary(key_field=key_field, values=frozenset(values))
+    comment_start = data.get("comment_start")
+    if comment_start is not None:
+        try:
+            re.compile(comment_start, re.MULTILINE)
+        except (re.error, TypeError) as e:
+            raise EvalConfigError(f"{path}: 'comment_start' must be a regular expression: {e}") from e
+    return Vocabulary(key_field=key_field, values=frozenset(values), comment_start=comment_start)
 
 
 def _parse_case(path: Path, skill: str, vocab: Vocabulary) -> Case:
@@ -107,6 +116,13 @@ def _parse_case(path: Path, skill: str, vocab: Vocabulary) -> Case:
     ):
         raise fail("'expect.lenses' must be a list of lens names (use [] to expect none)")
 
+    max_comment_words = expect.get("max_comment_words")
+    if max_comment_words is not None:
+        if not isinstance(max_comment_words, int) or isinstance(max_comment_words, bool) or max_comment_words < 1:
+            raise fail("'expect.max_comment_words' must be an integer >= 1")
+        if vocab.comment_start is None:
+            raise fail("'expect.max_comment_words' needs 'comment_start' in categories.yaml, to find the comment")
+
     lenses = data.get("lenses")
     if lenses is not None and (
         not isinstance(lenses, list) or not all(isinstance(n, str) for n in lenses) or len(set(lenses)) != len(lenses)
@@ -123,6 +139,7 @@ def _parse_case(path: Path, skill: str, vocab: Vocabulary) -> Case:
             must_not_flag=frozenset(must_not_flag),
             max_findings=max_findings,
             lenses=None if expected_lenses is None else frozenset(expected_lenses),
+            max_comment_words=max_comment_words,
         ),
         tags=tuple(data.get("tags") or ()),
         lenses=None if lenses is None else tuple(lenses),

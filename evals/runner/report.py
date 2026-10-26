@@ -87,6 +87,8 @@ def build_payload(result: SkillRun, meta: RunMeta) -> dict:
                         "invalid_categories": list(r.score.invalid_categories),
                         "lenses_reported": None if r.score.lenses_reported is None else list(r.score.lenses_reported),
                         "lenses_ok": r.score.lenses_ok,
+                        "comment_words": r.score.comment_words,
+                        "comment_ok": r.score.comment_ok,
                         "error": r.score.error,
                         "output": r.output,
                     }

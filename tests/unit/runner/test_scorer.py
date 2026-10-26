@@ -201,3 +201,41 @@ def test_wrong_or_missing_lenses_fail_the_run_even_with_perfect_findings(reporte
     assert score.recall == 1.0
     assert not score.lenses_ok
     assert not score.passed
+
+
+# --- comment length ---
+
+
+def limited_case(limit):
+    case = make_case()
+    return Case(
+        id=case.id,
+        skill=case.skill,
+        fixture=case.fixture,
+        prompt=case.prompt,
+        expect=Expect(
+            findings=case.expect.findings,
+            must_not_flag=case.expect.must_not_flag,
+            max_findings=case.expect.max_findings,
+            max_comment_words=limit,
+        ),
+        tags=case.tags,
+    )
+
+
+def test_comment_length_is_not_checked_unless_the_case_asks():
+    assert score_run(make_case(), VOCAB, [], None, comment_words=10_000).passed
+
+
+def test_a_comment_within_the_limit_passes_and_one_over_fails():
+    case = limited_case(300)
+    assert score_run(case, VOCAB, [], None, 300).passed
+    score = score_run(case, VOCAB, [], None, 301)
+    assert not score.passed
+    assert score.comment_problem == "the comment has 301 words, limit 300"
+
+
+def test_a_missing_comment_fails_when_a_limit_is_set():
+    score = score_run(limited_case(300), VOCAB, [], None, None)
+    assert not score.passed
+    assert score.comment_problem == "the comment was not found in the output"

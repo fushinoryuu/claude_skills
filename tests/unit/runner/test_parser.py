@@ -1,6 +1,11 @@
 import pytest
 
-from evals.runner.parser import ParseError, parse_findings, parse_lenses_applied
+from evals.runner.parser import (
+    ParseError,
+    extract_comment,
+    parse_findings,
+    parse_lenses_applied,
+)
 
 BLOCK = '```json\n{"findings": [{"category": "a", "file": "x.py"}]}\n```'
 
@@ -66,3 +71,49 @@ def test_empty_lenses_applied_means_core_only():
 @pytest.mark.parametrize("extra", ["", ', "lenses_applied": "service"', ', "lenses_applied": [1]'])
 def test_missing_or_malformed_lenses_applied_is_none(extra):
     assert parse_lenses_applied('```json\n{"findings": []' + extra + "}\n```") is None
+
+
+# --- the drafted comment ---
+
+START = r"^[^\w\n]*(?:\d+(?:st|nd|rd|th) )?(?:Initial|Final) QA Review - "
+
+OUTPUT = """Here is my review. I will post it as the Initial QA Review - X after you agree.
+
+---
+
+Initial QA Review - T-1
+PRs: #1
+
+---
+
+*Verdict*
+Fine.
+
+---
+
+## Summary
+
+- done
+
+```json
+{"findings": []}
+```
+"""
+
+
+def test_comment_runs_from_its_title_to_the_next_heading_without_trailing_rules():
+    assert extract_comment(OUTPUT, START) == "Initial QA Review - T-1\nPRs: #1\n\n---\n\n*Verdict*\nFine."
+
+
+def test_comment_title_may_be_bold_or_numbered():
+    assert extract_comment("**2nd Initial QA Review - T-1**\n\nbody", START) == "**2nd Initial QA Review - T-1**\n\nbody"
+    assert extract_comment("**Final QA Review - T-1**\nbody\n```json\n{}\n```", START) == "**Final QA Review - T-1**\nbody"
+
+
+def test_comment_uses_the_last_title_and_ignores_mentions_inside_a_line():
+    text = "Initial QA Review - A\nold draft\n\n## Revised\n\nInitial QA Review - B\nnew draft"
+    assert extract_comment(text, START) == "Initial QA Review - B\nnew draft"
+
+
+def test_no_comment_when_no_line_starts_with_the_title():
+    assert extract_comment("I will post the Initial QA Review - X later.", START) is None
