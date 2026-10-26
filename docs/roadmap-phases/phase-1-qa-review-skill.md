@@ -133,9 +133,9 @@ The skill does not classify the project as frontend, backend, or infra before re
 - [x] Add a short step in SKILL.md: before reviewing, state what the change does, what it touches (user-facing behavior, data, interfaces, configuration, build or deploy, tests, docs), and how it is exercised or tested in this repo.
 - [x] Infer the test approach from the repo itself (existing test folders, naming patterns, CI config) instead of assuming a framework.
 - [x] Treat unfamiliar stacks as normal. If the stack is unfamiliar, the skill says so and applies the core checklist rather than guessing at stack conventions.
-- [ ] Allow mixed or unusual changes (code plus config plus docs, or a repo that fits no common category) without special handling.
+- [x] Allow mixed or unusual changes (code plus config plus docs, or a repo that fits no common category) without special handling.
 - [x] Allow the user to name a lens explicitly, or to say "core only".
-- [ ] Add a short "Lens selection" step in SKILL.md: run `suggest_lenses.py` on the changed files, read only the lenses it names (plus any the user asked for), apply judgment, and state which lenses were applied and why, or "core only". Any number of lenses, including none, is valid.
+- [x] Add a short "Lens selection" step in SKILL.md: run `suggest_lenses.py` on the changed files, read only the lenses it names (plus any the user asked for), apply judgment, and state which lenses were applied and why, or "core only". Any number of lenses, including none, is valid.
 
 ### 3. Write the references
 
@@ -187,7 +187,7 @@ The Jira comment templates in `assets/` are the report (see "Decisions").
 - [x] Gaps grouped by section (*Tests*, *Interfaces and Documentation*, *Other Findings*), each naming the file and the change that would close it. No line numbers.
 - [x] A "Lenses applied" line naming each lens, or "core only".
 - [x] Structured findings block at the end of the session, described in `references/output-format.md`. It carries `category`, `file`, `severity` and `summary` per finding, and a `lenses_applied` list (an extra top-level key, which the current scoring ignores). Never posted to Jira.
-- [ ] Keep it short enough that a reviewer reads all of it.
+- [x] Keep it short enough that a reviewer reads all of it (500 words for an initial comment, 600 for a final one, enforced in the evals by `expect.max_comment_words`).
 
 ### 6. Fixtures and cases
 
