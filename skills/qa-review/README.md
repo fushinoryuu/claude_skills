@@ -113,3 +113,18 @@ The lenses included in this folder are examples:
 | [api-spec](references/lenses/api-spec.md) | Projects that document an HTTP API in an OpenAPI/Swagger spec (spec updated, new surface documented) |
 
 To add a lens for your own stack, see [references/lenses/README.md](references/lenses/README.md). A team can also keep its own lenses in `.claude/qa-review/lenses/` in the repo being reviewed, in the same format. A lens there replaces a bundled lens with the same name.
+
+### Test patterns
+
+Step 5 starts with a script (`scripts/missing_tests.py`) that lists changed source files with no matching test file in the change. It compares file names and folders, it never reads a test, and the skill treats its output as a signal. Out of the box it knows the usual test names for Python, JavaScript and TypeScript, Java, Kotlin, Go, Ruby, C#, PHP and Swift. If your project names or places its tests differently, commit a file named `.claude/qa-review/test-patterns` in the repo being reviewed. The script reads it on every run:
+
+```
+# One pattern per line. {name} is the source file's name without its extension.
+spec/{name}_spec.rb
+checks/{name}.check.py
+
+# Add source extensions the script does not know.
+source-ext: .gleam, .res
+```
+
+A pattern is a glob: `*` stays inside one folder, `**` crosses folders, and `?` is one character. A pattern without `{name}` only marks files as tests. To run the script by hand, use `--test-pattern GLOB` (repeatable) to add a pattern, `--no-default-patterns` to use only your own, `--source-ext .EXT` to add a source extension, and `--project-patterns FILE` to read the patterns from another file. `--help` lists the output.
