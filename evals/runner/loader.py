@@ -146,7 +146,14 @@ def _parse_case(path: Path, skill: str, vocab: Vocabulary) -> Case:
     )
 
 
-def load_cases(evals_dir: Path, skill: str, vocab: Vocabulary, case_id: str | None = None) -> list[Case]:
+def load_cases(
+    evals_dir: Path,
+    skill: str,
+    vocab: Vocabulary,
+    case_id: str | None = None,
+    tags: tuple[str, ...] = (),
+) -> list[Case]:
+    """Every case of the skill, or the one named `case_id`, or the cases that have any of `tags`."""
     cases_dir = evals_dir / skill / "cases"
     if case_id is not None:
         path = cases_dir / f"{case_id}.yaml"
@@ -157,7 +164,26 @@ def load_cases(evals_dir: Path, skill: str, vocab: Vocabulary, case_id: str | No
     cases = [_parse_case(p, skill, vocab) for p in sorted(cases_dir.glob("*.yaml"))]
     if not cases:
         raise EvalConfigError(f"no cases found in {cases_dir}")
-    return cases
+    return select_by_tags(cases, tags)
+
+
+def select_by_tags(cases: list[Case], tags: tuple[str, ...]) -> list[Case]:
+    """The cases that have at least one of `tags`, in their original order. No tags: all of them.
+
+    A tag that no case has is an error, so a typo does not quietly run fewer cases.
+    """
+    if not tags:
+        return cases
+    in_use = {tag for case in cases for tag in case.tags}
+    for tag in tags:
+        if tag not in in_use:
+            raise EvalConfigError(f"no case has the tag '{tag}' (tags in use: {', '.join(sorted(in_use)) or 'none'})")
+    return [case for case in cases if set(tags) & set(case.tags)]
+
+
+def count_cases(evals_dir: Path, skill: str) -> int:
+    """How many case files the skill has, so a partial run can say what share of them it ran."""
+    return len(list((evals_dir / skill / "cases").glob("*.yaml")))
 
 
 def load_fixture(evals_dir: Path, skill: str, name: str) -> dict[str, str]:

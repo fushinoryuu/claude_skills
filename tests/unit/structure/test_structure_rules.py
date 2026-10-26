@@ -236,6 +236,13 @@ def test_case_tagged_clean_must_not_expect_findings(tree):
     assert_problem(tree, "tagged 'clean' but expects findings")
 
 
+def test_case_that_checks_lenses_must_carry_the_lenses_tag(tree):
+    edit_case(tree, "todo-check-has-todo-01", lambda d: d["expect"].update(lenses=[]))
+    assert_problem(tree, "sets expect.lenses but is not tagged 'lenses'")
+    edit_case(tree, "todo-check-has-todo-01", lambda d: d.update(tags=["defect", "lenses"]))
+    assert problems(tree) == []
+
+
 def test_missing_triggers_file(tree):
     (tree.kit / "triggers.yaml").unlink()
     assert_problem(tree, "triggers.yaml")

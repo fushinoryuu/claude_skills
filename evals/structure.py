@@ -224,6 +224,8 @@ def check_evals(folder: str, evals_dir: Path, *, manual_only: bool = False) -> l
             problems.append(f"{folder}: case {case.id}: {e}")
         if "clean" in case.tags and case.expect.findings:
             problems.append(f"{folder}: case {case.id} is tagged 'clean' but expects findings")
+        if case.expect.lenses is not None and "lenses" not in case.tags:
+            problems.append(f"{folder}: case {case.id} sets expect.lenses but is not tagged 'lenses'")
 
     if cases and not any(
         "clean" in c.tags and not c.expect.findings and c.expect.max_findings <= MAX_CLEAN_FINDINGS
