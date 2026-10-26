@@ -170,13 +170,20 @@ Each reference is a checklist the agent applies, with the reasoning behind each 
 
 Scripts must degrade gracefully on any project. A script that does not apply to the repo (no spec file, no recognizable test layout) reports "not applicable" and exits cleanly, and SKILL.md tells the agent to continue with the core review.
 
-For each script:
+Each script:
 
-- [ ] Reads a diff from a file or stdin, prints JSON.
-- [ ] Handles several common languages and frameworks, and says clearly when it cannot tell or when the repo does not fit its assumptions.
-- [ ] Has a `--help` and a documented output schema.
-- [ ] Has unit tests with small hand-written diffs, including empty diffs and malformed input.
-- [ ] SKILL.md tells the agent to run the script and treat its output as a signal, not a verdict.
+- Reads a diff or a path list from a file or stdin, prints JSON.
+- Handles several common languages and frameworks, and says clearly when it cannot tell or when the repo does not fit its assumptions.
+- Has a `--help` and a documented output schema.
+- Has unit tests with small hand-written diffs, including empty diffs and malformed input.
+- Is run from SKILL.md, which says to treat its output as a signal, not a verdict.
+
+Per script:
+
+- [x] `suggest_lenses.py`
+- [x] `missing_tests.py`. It compares file names only. Its test-file patterns have a `{name}` placeholder for the source file's name, and `--test-pattern`, `--no-default-patterns` and `--source-ext` extend or replace them. Default patterns: Python, JavaScript and TypeScript, Java, Kotlin, Go, Ruby, C#, PHP and Swift. Rust and unknown file types are reported as "could not tell". Fixtures `missing-tests`, `clean`, `untested-edge-case` and `docs-only` hold its output as `missing_tests.json`
+- [ ] `changed_interfaces.py`
+- [ ] `openapi_changed.py`
 
 ### 5. Report format
 
