@@ -133,6 +133,22 @@ def test_max_findings_must_be_non_negative_int(tmp_path, bad):
         load(tmp_path, case)
 
 
+def test_expected_lenses_default_to_not_checked_and_load_as_a_set(tmp_path):
+    assert load(tmp_path, good_case())[0].expect.lenses is None
+
+
+def test_expected_lenses_load_as_a_set_and_empty_means_none_expected(tmp_path):
+    expect = {"findings": [], "max_findings": 1, "lenses": ["service", "api-spec"]}
+    assert load(tmp_path, good_case(expect=expect))[0].expect.lenses == {"service", "api-spec"}
+
+
+@pytest.mark.parametrize("bad", ["service", [1], {"a": 1}])
+def test_expected_lenses_must_be_a_list_of_names(tmp_path, bad):
+    expect = {"findings": [], "max_findings": 1, "lenses": bad}
+    with pytest.raises(EvalConfigError, match="expect.lenses"):
+        load(tmp_path, good_case(expect=expect))
+
+
 def test_unsupported_scorer(tmp_path):
     with pytest.raises(EvalConfigError, match="unsupported scorer"):
         load(tmp_path, good_case(scorer="set"))
@@ -143,3 +159,21 @@ def test_invalid_yaml(tmp_path):
     (evals / "s" / "cases" / "s-f-01.yaml").write_text("id: [unclosed")
     with pytest.raises(EvalConfigError, match="invalid YAML"):
         load_cases(evals, "s", load_vocabulary(evals, "s"))
+
+
+def test_lenses_default_to_none_which_means_every_lens(tmp_path):
+    assert load(tmp_path, good_case())[0].lenses is None
+
+
+def test_lenses_list_loads_as_a_tuple(tmp_path):
+    assert load(tmp_path, good_case(lenses=["service", "api-spec"]))[0].lenses == ("service", "api-spec")
+
+
+def test_empty_lenses_list_means_core_only(tmp_path):
+    assert load(tmp_path, good_case(lenses=[]))[0].lenses == ()
+
+
+@pytest.mark.parametrize("bad", ["service", [1], ["a", "a"], {"a": 1}])
+def test_lenses_must_be_a_list_of_unique_names(tmp_path, bad):
+    with pytest.raises(EvalConfigError, match="'lenses' must be a list"):
+        load(tmp_path, good_case(lenses=bad))

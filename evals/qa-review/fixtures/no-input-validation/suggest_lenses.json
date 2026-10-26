@@ -1,0 +1,30 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/orders/handlers/create_order.py",
+    "src/orders/routes.py",
+    "tests/test_create_order.py"
+  ],
+  "matched": [
+    {
+      "name": "service",
+      "source": "bundled",
+      "description": "Extra checks for server-side request handling, data access, and database migrations. Example lens.",
+      "touches": "server-side request handling, persistence, or database schema changes",
+      "matched_files": [
+        "src/orders/handlers/create_order.py"
+      ]
+    }
+  ],
+  "unmatched": [
+    {
+      "name": "api-spec",
+      "source": "bundled",
+      "description": "Extra checks when a project documents an HTTP API with an OpenAPI or Swagger spec. Example lens.",
+      "touches": "an HTTP API that is described by an OpenAPI or Swagger spec"
+    }
+  ],
+  "overridden": [],
+  "skipped": []
+}

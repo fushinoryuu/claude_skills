@@ -1,6 +1,6 @@
 import pytest
 
-from evals.runner.parser import ParseError, parse_findings
+from evals.runner.parser import ParseError, parse_findings, parse_lenses_applied
 
 BLOCK = '```json\n{"findings": [{"category": "a", "file": "x.py"}]}\n```'
 
@@ -52,3 +52,17 @@ def test_windows_line_endings():
 def test_raises_parse_error(text):
     with pytest.raises(ParseError):
         parse_findings(text)
+
+
+def test_lenses_applied_comes_from_the_same_block_as_the_findings():
+    text = '```json\n{"lenses_applied": ["x"], "findings": []}\n```\n\n```json\n{"lenses_applied": ["service"], "findings": []}\n```'
+    assert parse_lenses_applied(text) == ["service"]
+
+
+def test_empty_lenses_applied_means_core_only():
+    assert parse_lenses_applied('```json\n{"lenses_applied": [], "findings": []}\n```') == []
+
+
+@pytest.mark.parametrize("extra", ["", ', "lenses_applied": "service"', ', "lenses_applied": [1]'])
+def test_missing_or_malformed_lenses_applied_is_none(extra):
+    assert parse_lenses_applied('```json\n{"findings": []' + extra + "}\n```") is None

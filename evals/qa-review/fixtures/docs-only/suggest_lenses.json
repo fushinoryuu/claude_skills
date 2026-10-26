@@ -1,0 +1,24 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "docs/install.md"
+  ],
+  "matched": [],
+  "unmatched": [
+    {
+      "name": "api-spec",
+      "source": "bundled",
+      "description": "Extra checks when a project documents an HTTP API with an OpenAPI or Swagger spec. Example lens.",
+      "touches": "an HTTP API that is described by an OpenAPI or Swagger spec"
+    },
+    {
+      "name": "service",
+      "source": "bundled",
+      "description": "Extra checks for server-side request handling, data access, and database migrations. Example lens.",
+      "touches": "server-side request handling, persistence, or database schema changes"
+    }
+  ],
+  "overridden": [],
+  "skipped": []
+}

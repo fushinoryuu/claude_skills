@@ -143,7 +143,7 @@ def test_cli_dry_run_prints_prompts_without_calling_the_model(skills_dir, evals_
     client = FakeClient()
     assert cli(skills_dir, evals_dir, tmp_path, "--dry-run", client=client) == 0
     out = capsys.readouterr().out
-    assert "=== SYSTEM ===" in out
+    assert "=== SYSTEM (for " in out
     assert "=== USER (todo-check-has-todo-01) ===" in out
     assert client.calls == []
     assert not (tmp_path / "results").exists()
@@ -164,3 +164,64 @@ def test_cli_dry_run_prints_non_ascii_skill_text_on_a_legacy_console(skills_dir,
 def test_cli_rejects_bad_numbers(skills_dir, evals_dir, tmp_path, flag, value):
     with pytest.raises(SystemExit):
         cli(skills_dir, evals_dir, tmp_path, flag, value, client=FakeClient())
+
+
+# --- per-case lenses ---
+
+
+@pytest.fixture
+def lens_sample(skills_dir, evals_dir, tmp_path):
+    """The sample eval with two lens files, one case that loads every lens and one that loads none."""
+    skills, evals = tmp_path / "skills", tmp_path / "evals"
+    shutil.copytree(skills_dir, skills)
+    shutil.copytree(evals_dir, evals)
+    lenses = skills / "todo-check" / "references" / "lenses"
+    lenses.mkdir()
+    (lenses / "README.md").write_text("About lenses.")
+    (lenses / "web.md").write_text("Web lens text.")
+    case = evals / "todo-check" / "cases" / "todo-check-no-todo-01.yaml"
+    case.write_text(case.read_text() + "lenses: []\n")
+    return skills, evals
+
+
+def test_each_case_gets_only_the_lenses_it_names(lens_sample):
+    client = FakeClient()
+    run(*lens_sample, client)
+    systems = {("TODO: handle empty names" in user): system for system, user in client.calls}
+    assert "Web lens text." in systems[True]
+    assert "Web lens text." not in systems[False]
+    assert "About lenses." in systems[False]
+
+
+def test_case_naming_a_missing_lens_is_a_setup_error(lens_sample, tmp_path, capsys):
+    skills, evals = lens_sample
+    case = evals / "todo-check" / "cases" / "todo-check-no-todo-01.yaml"
+    case.write_text(case.read_text().replace("lenses: []", "lenses: [ghost]"))
+    assert cli(skills, evals, tmp_path, client=FakeClient()) == 2
+    assert "no lens ghost" in capsys.readouterr().err
+
+
+def test_cli_dry_run_prints_each_distinct_system_prompt_once(lens_sample, tmp_path, capsys):
+    assert cli(*lens_sample, tmp_path, "--dry-run", client=FakeClient()) == 0
+    out = capsys.readouterr().out
+    assert out.count("=== SYSTEM (for ") == 2
+    assert "=== SYSTEM (for todo-check-has-todo-01) ===" in out
+    assert "=== SYSTEM (for todo-check-no-todo-01) ===" in out
+
+
+def test_a_run_that_reports_the_wrong_lenses_fails_and_says_why(lens_sample):
+    skills, evals = lens_sample
+    case = evals / "todo-check" / "cases" / "todo-check-no-todo-01.yaml"
+    case.write_text(case.read_text().replace("max_findings: 0", "max_findings: 0\n  lenses: []"))
+    reply = '```json\n{"lenses_applied": ["web"], "findings": []}\n```'
+    messages = []
+    result = run_skill(
+        "todo-check",
+        skills_dir=skills,
+        evals_dir=evals,
+        client=FakeClient({"*": reply}),
+        case_id="todo-check-no-todo-01",
+        progress=messages.append,
+    )
+    assert not result.passed
+    assert messages == ["todo-check-no-todo-01 run 1/1: FAIL (lenses_applied was [web], expected [])"]

@@ -1,6 +1,6 @@
 """Assemble the eval prompt: skill text as the system prompt, fixture files in the user message."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from evals.runner.loader import EvalConfigError
@@ -14,6 +14,10 @@ End your answer with the structured findings block the skill specifies: one fenc
 
 # Assets may be images or other binary files; only these are text the model can read.
 TEXT_ASSET_SUFFIXES = frozenset({".md", ".txt", ".yaml", ".yml", ".json"})
+
+
+LENS_PREFIX = "references/lenses/"
+LENS_INDEX = "README.md"  # explains lenses to the model; it is not a lens itself
 
 
 @dataclass(frozen=True)
@@ -36,6 +40,28 @@ def load_skill(skills_dir: Path, name: str) -> Skill:
         references=_read_folder(root, "references", None),
         assets=_read_folder(root, "assets", TEXT_ASSET_SUFFIXES),
     )
+
+
+def with_lenses(skill: Skill, names: tuple[str, ...] | None) -> Skill:
+    """Keep only the named lens files, so a case can test a lens being present or absent.
+
+    `None` keeps every lens. An empty tuple leaves the core only. The lens folder's README stays either way.
+    """
+    if names is None:
+        return skill
+    available = {
+        path.removeprefix(LENS_PREFIX).removesuffix(".md"): path
+        for path in skill.references
+        if path.startswith(LENS_PREFIX) and path != LENS_PREFIX + LENS_INDEX
+    }
+    unknown = sorted(set(names) - set(available))
+    if unknown:
+        raise EvalConfigError(
+            f"skill '{skill.name}' has no lens {', '.join(unknown)} (available: {', '.join(sorted(available)) or 'none'})"
+        )
+    dropped = {path for name, path in available.items() if name not in names}
+    references = {path: text for path, text in skill.references.items() if path not in dropped}
+    return replace(skill, references=references)
 
 
 def _read_folder(root: Path, folder: str, suffixes: frozenset[str] | None) -> dict[str, str]:

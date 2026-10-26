@@ -12,12 +12,13 @@ from evals.runner.loader import (
     load_fixture,
     load_vocabulary,
 )
-from evals.runner.parser import ParseError, parse_findings
+from evals.runner.parser import ParseError, parse_findings, parse_lenses_applied
 from evals.runner.prompt import (
     Skill,
     build_system_prompt,
     build_user_message,
     load_skill,
+    with_lenses,
 )
 from evals.runner.scorer import (
     CaseResult,
@@ -67,9 +68,10 @@ def execute_run(case: Case, vocab: Vocabulary, system: str, user: str, client: M
         )
     try:
         findings = parse_findings(completion.text)
+        lenses_applied = parse_lenses_applied(completion.text)
     except ParseError as e:
         return RunRecord(score=error_score(case, f"parse_error: {e}"), output=completion.text, **usage)
-    return RunRecord(score=score_run(case, vocab, findings), output=completion.text, **usage)
+    return RunRecord(score=score_run(case, vocab, findings, lenses_applied), output=completion.text, **usage)
 
 
 def prepare(skills_dir: Path, evals_dir: Path, skill_name: str, case_id: str | None):
@@ -77,12 +79,12 @@ def prepare(skills_dir: Path, evals_dir: Path, skill_name: str, case_id: str | N
     skill: Skill = load_skill(skills_dir, skill_name)
     vocab = load_vocabulary(evals_dir, skill_name)
     cases = load_cases(evals_dir, skill_name, vocab, case_id)
-    system = build_system_prompt(skill)
+    systems = {case.id: build_system_prompt(with_lenses(skill, case.lenses)) for case in cases}
     prompts = {
         case.id: build_user_message(load_fixture(evals_dir, skill_name, case.fixture), case.prompt)
         for case in cases
     }
-    return vocab, cases, system, prompts
+    return vocab, cases, systems, prompts
 
 
 def run_skill(
@@ -96,14 +98,15 @@ def run_skill(
     threshold: float = 0.5,
     progress: Callable[[str], None] = lambda _: None,
 ) -> SkillRun:
-    vocab, cases, system, prompts = prepare(skills_dir, evals_dir, skill_name, case_id)
+    vocab, cases, systems, prompts = prepare(skills_dir, evals_dir, skill_name, case_id)
     results = []
     for case in cases:
         records = []
         for i in range(1, runs + 1):
-            record = execute_run(case, vocab, system, prompts[case.id], client)
+            record = execute_run(case, vocab, systems[case.id], prompts[case.id], client)
             records.append(record)
-            status = "pass" if record.score.passed else f"FAIL ({record.score.error or 'see output'})"
+            reason = record.score.error or record.score.lens_problem or "see output"
+            status = "pass" if record.score.passed else f"FAIL ({reason})"
             progress(f"{case.id} run {i}/{runs}: {status}")
         results.append(summarize_case(case, records, threshold))
     return SkillRun(skill=skill_name, cases=results, summary=summarize_skill(results))

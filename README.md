@@ -4,14 +4,27 @@
 
 ## Expected tools
 
-The skills describe what they need (the PR diff, the linked ticket and its acceptance criteria) and let the agent fetch it with whatever is connected. They expect two tools:
+The skills describe what they need (the PR diff, the linked ticket and its acceptance criteria) and let the agent fetch it with whatever is connected. They expect three tools:
 
-| Need                                                         | Expected                                                                                | Fallback                            |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ----------------------------------- |
-| Pull requests, diffs, changed files, comments, GitHub Issues | The [GitHub CLI](https://cli.github.com/) (`gh pr view`, `gh pr diff`, `gh issue view`) | None                                |
-| Jira issues, acceptance criteria, comments                   | The [Atlassian Rovo MCP server](https://developer.atlassian.com/cloud/rovo-mcp/)        | Paste the ticket text into the chat |
+| Need                                                          | Expected                                                                                                                | Fallback                            |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Running the skills, and adding MCP servers (`claude mcp add`) | The [Claude Code CLI](https://code.claude.com/docs/en/overview) (the VS Code extension and desktop app also run skills) | None                                |
+| Pull requests, diffs, changed files, comments, GitHub Issues  | The [GitHub CLI](https://cli.github.com/) (`gh pr view`, `gh pr diff`, `gh issue view`)                                 | None                                |
+| Jira issues, acceptance criteria, comments                    | The [Atlassian Rovo MCP server](https://developer.atlassian.com/cloud/rovo-mcp/)                                        | Paste the ticket text into the chat |
 
 Without Jira access, a skill still works if you paste the ticket text.
+
+### Connecting Jira
+
+Add the Atlassian server once for your user with the Claude Code CLI, then sign in:
+
+```
+claude mcp add --transport http --scope user atlassian https://mcp.atlassian.com/v2/mcp
+```
+
+Reload the editor or start a new session, run `/mcp`, choose `atlassian`, and finish the browser sign-in. The tools appear as `mcp__atlassian__*`. Every call needs the site's `cloudId`, which `mcp__atlassian__getAccessibleAtlassianResources` returns.
+
+If sign-in fails with `InvalidHTTPResponse`, check whether antivirus software scans HTTPS traffic. One such scanner corrupted the server's replies, and an exception for `*.atlassian.com` fixed it.
 
 ### Credentials
 

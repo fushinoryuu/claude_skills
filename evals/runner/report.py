@@ -85,6 +85,8 @@ def build_payload(result: SkillRun, meta: RunMeta) -> dict:
                         "unexpected": r.score.unexpected,
                         "forbidden": r.score.forbidden,
                         "invalid_categories": list(r.score.invalid_categories),
+                        "lenses_reported": None if r.score.lenses_reported is None else list(r.score.lenses_reported),
+                        "lenses_ok": r.score.lenses_ok,
                         "error": r.score.error,
                         "output": r.output,
                     }

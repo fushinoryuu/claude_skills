@@ -65,10 +65,15 @@ def _dry_run(args: argparse.Namespace) -> None:
             kind = "should_trigger" if prompt.should_trigger else "should_not_trigger"
             print(f"\n=== USER ({kind}) ===\n{prompt.text}")
         return
-    _, cases, system, user_messages = prepare(args.skills_dir, args.evals_dir, args.skill, args.case)
-    print(f"=== SYSTEM ===\n{system}")
+    _, cases, systems, user_messages = prepare(args.skills_dir, args.evals_dir, args.skill, args.case)
+    # Cases that load the same lenses share one system prompt, so print each distinct one once.
+    printed = set()
     for case in cases:
-        print(f"\n=== USER ({case.id}) ===\n{user_messages[case.id]}")
+        if systems[case.id] not in printed:
+            printed.add(systems[case.id])
+            sharing = ", ".join(c.id for c in cases if systems[c.id] == systems[case.id])
+            print(f"=== SYSTEM (for {sharing}) ===\n{systems[case.id]}\n")
+        print(f"=== USER ({case.id}) ===\n{user_messages[case.id]}\n")
 
 
 def main(argv: list[str] | None = None, client: ModelClient | None = None) -> int:

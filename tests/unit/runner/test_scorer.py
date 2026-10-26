@@ -1,3 +1,5 @@
+import pytest
+
 from evals.runner.loader import Case, Expect, Vocabulary
 from evals.runner.scorer import (
     RunRecord,
@@ -10,7 +12,7 @@ from evals.runner.scorer import (
 VOCAB = Vocabulary(key_field="category", values=frozenset({"a", "b", "c"}))
 
 
-def make_case(findings=(), must_not_flag=(), max_findings=5, tags=()):
+def make_case(findings=(), must_not_flag=(), max_findings=5, tags=(), lenses=None):
     return Case(
         id="skill-fixture-01",
         skill="skill",
@@ -20,6 +22,7 @@ def make_case(findings=(), must_not_flag=(), max_findings=5, tags=()):
             findings=tuple(findings),
             must_not_flag=frozenset(must_not_flag),
             max_findings=max_findings,
+            lenses=None if lenses is None else frozenset(lenses),
         ),
         tags=tuple(tags),
     )
@@ -168,3 +171,33 @@ def test_skill_summary_reports_none_when_no_applicable_cases():
     clean = make_case(max_findings=0, tags=["clean"])
     summary = summarize_skill([summarize_case(clean, [record(clean, [])], 0.5)])
     assert summary.recall is None
+
+
+# --- lens selection ---
+
+
+def test_lenses_are_not_checked_unless_the_case_asks():
+    assert score_run(make_case(), VOCAB, [], ["service"]).passed
+    assert score_run(make_case(), VOCAB, [], None).passed
+
+
+def test_matching_lenses_pass_in_any_order():
+    case = make_case(lenses=["service", "api-spec"])
+    assert score_run(case, VOCAB, [], ["api-spec", "service"]).passed
+
+
+def test_an_empty_expectation_requires_a_core_only_report():
+    case = make_case(lenses=[])
+    assert score_run(case, VOCAB, [], []).passed
+    score = score_run(case, VOCAB, [], ["service"])
+    assert not score.passed
+    assert score.lens_problem == "lenses_applied was [service], expected []"
+
+
+@pytest.mark.parametrize("reported", [["service"], ["service", "web"], None])
+def test_wrong_or_missing_lenses_fail_the_run_even_with_perfect_findings(reported):
+    case = make_case([{"category": "a"}], lenses=["service", "api-spec"])
+    score = score_run(case, VOCAB, [finding("a")], reported)
+    assert score.recall == 1.0
+    assert not score.lenses_ok
+    assert not score.passed

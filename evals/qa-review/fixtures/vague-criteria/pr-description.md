@@ -15,4 +15,4 @@ Adds quiet hours to notifykit.
 - The time zone was never read before, so `User` now checks it when it is created. An unknown name raises `ValueError`.
 - `in_quiet_hours` is exported and documented. README has a new Quiet hours section.
 
-Tests cover the default window, the start and end boundaries, per-user hours, time zones (using instants that differ between UTC and New York), an empty window, `send` skipping, the unknown time zone, and the naive datetime.
+Tests cover the default window, the start and end boundaries of an overnight window and of a same-day window, per-user hours, time zones (using instants that differ between UTC and New York), an empty window, `send` skipping, `send` using the current time when `now` is left out, the unknown time zone, and the naive datetime (directly and through `send`).

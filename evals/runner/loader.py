@@ -26,6 +26,7 @@ class Expect:
     findings: tuple[dict, ...]
     must_not_flag: frozenset[str]
     max_findings: int
+    lenses: frozenset[str] | None = None  # lens names the report must list in lenses_applied. None: not checked.
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,7 @@ class Case:
     prompt: str
     expect: Expect
     tags: tuple[str, ...]
+    lenses: tuple[str, ...] | None = None  # None: every lens is loaded. (): core only.
 
 
 def _read_yaml(path: Path) -> dict:
@@ -99,6 +101,18 @@ def _parse_case(path: Path, skill: str, vocab: Vocabulary) -> Case:
     if not isinstance(max_findings, int) or isinstance(max_findings, bool) or max_findings < 0:
         raise fail("'expect.max_findings' must be an integer >= 0")
 
+    expected_lenses = expect.get("lenses")
+    if expected_lenses is not None and (
+        not isinstance(expected_lenses, list) or not all(isinstance(n, str) for n in expected_lenses)
+    ):
+        raise fail("'expect.lenses' must be a list of lens names (use [] to expect none)")
+
+    lenses = data.get("lenses")
+    if lenses is not None and (
+        not isinstance(lenses, list) or not all(isinstance(n, str) for n in lenses) or len(set(lenses)) != len(lenses)
+    ):
+        raise fail("'lenses' must be a list of unique lens names (use [] for the core only)")
+
     return Case(
         id=data["id"],
         skill=skill,
@@ -108,8 +122,10 @@ def _parse_case(path: Path, skill: str, vocab: Vocabulary) -> Case:
             findings=tuple(findings),
             must_not_flag=frozenset(must_not_flag),
             max_findings=max_findings,
+            lenses=None if expected_lenses is None else frozenset(expected_lenses),
         ),
         tags=tuple(data.get("tags") or ()),
+        lenses=None if lenses is None else tuple(lenses),
     )
 
 
