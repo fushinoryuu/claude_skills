@@ -1,0 +1,31 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/slugkit/__init__.py",
+    "src/slugkit/text.py"
+  ],
+  "missing_test_change": [
+    {
+      "file": "src/slugkit/text.py",
+      "language": "python",
+      "expected_tests": [
+        "**/test_text.py",
+        "**/text_test.py"
+      ]
+    }
+  ],
+  "has_test_change": [],
+  "test_files_changed": [],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    },
+    {
+      "file": "src/slugkit/__init__.py",
+      "reason": "package marker"
+    }
+  ]
+}

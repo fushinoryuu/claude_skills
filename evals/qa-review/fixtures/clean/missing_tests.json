@@ -1,0 +1,38 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/listfmt/cli.py",
+    "src/listfmt/core.py",
+    "tests/test_cli.py",
+    "tests/test_core.py"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [
+    {
+      "file": "src/listfmt/cli.py",
+      "language": "python",
+      "tests": [
+        "tests/test_cli.py"
+      ]
+    },
+    {
+      "file": "src/listfmt/core.py",
+      "language": "python",
+      "tests": [
+        "tests/test_core.py"
+      ]
+    }
+  ],
+  "test_files_changed": [
+    "tests/test_cli.py",
+    "tests/test_core.py"
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    }
+  ]
+}

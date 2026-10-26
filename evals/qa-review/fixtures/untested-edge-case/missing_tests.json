@@ -1,0 +1,33 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/inventory/__init__.py",
+    "src/inventory/items.py",
+    "tests/test_items.py"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [
+    {
+      "file": "src/inventory/items.py",
+      "language": "python",
+      "tests": [
+        "tests/test_items.py"
+      ]
+    }
+  ],
+  "test_files_changed": [
+    "tests/test_items.py"
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    },
+    {
+      "file": "src/inventory/__init__.py",
+      "reason": "package marker"
+    }
+  ]
+}
