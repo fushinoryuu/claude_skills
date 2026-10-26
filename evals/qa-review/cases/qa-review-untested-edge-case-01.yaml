@@ -1,7 +1,7 @@
 id: qa-review-untested-edge-case-01
 skill: qa-review
 fixture: untested-edge-case
-prompt: "/qa-review initial GM-30 61. The ticket and the PR are in the files provided."
+prompt: "/qa-review initial GM-30 61. The ticket, the PR and the output of missing_tests.py are in the files provided."
 expect:
   findings:
     - category: missing-edge-case-coverage

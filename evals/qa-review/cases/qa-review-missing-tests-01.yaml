@@ -1,7 +1,7 @@
 id: qa-review-missing-tests-01
 skill: qa-review
 fixture: missing-tests
-prompt: "/qa-review initial SLUG-7 15. The ticket and the PR are in the files provided."
+prompt: "/qa-review initial SLUG-7 15. The ticket, the PR and the output of missing_tests.py are in the files provided."
 expect:
   findings:
     - category: missing-tests
