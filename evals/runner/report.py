@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from evals.runner.run import SkillRun
+from evals.runner.run import Selection, SkillRun
 from evals.runner.triggers import TriggerRun
 
 
@@ -16,10 +16,39 @@ class RunMeta:
     runs: int
     threshold: float
     started: datetime
+    jobs: int = 1
+    cache: bool = True
+    elapsed: float | None = None  # seconds of wall-clock time for the whole run
 
 
 def _pct(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.2f}"
+
+
+def _tokens_line(result: SkillRun | TriggerRun) -> str:
+    # "in" is only the input that was neither written to nor read from the cache.
+    return (
+        f"tokens: {result.input_tokens} in, {result.output_tokens} out, "
+        f"{result.cache_write_tokens} cache write, {result.cache_read_tokens} cache read"
+    )
+
+
+def _run_line(meta: RunMeta) -> str:
+    elapsed = "n/a" if meta.elapsed is None else f"{meta.elapsed:.0f}s"
+    return f"jobs: {meta.jobs}   prompt cache: {'on' if meta.cache else 'off'}   elapsed: {elapsed}"
+
+
+def _selection_line(selection: Selection | None) -> list[str]:
+    if selection is None:
+        return []
+    what = f"case {selection.case}" if selection.case else "tag " + ", ".join(selection.tags)
+    return [f"partial run: {what} (the skill has {selection.available} cases)"]
+
+
+def _selection_payload(selection: Selection | None) -> dict | None:
+    if selection is None:
+        return None
+    return {"case": selection.case, "tags": list(selection.tags), "cases_available": selection.available}
 
 
 def format_summary(result: SkillRun, meta: RunMeta) -> str:
@@ -46,7 +75,9 @@ def format_summary(result: SkillRun, meta: RunMeta) -> str:
             f"recall: {_pct(s.recall)}   false-positive rate: {_pct(s.false_positive_rate)}"
             f"   cases passed: {s.cases_passed}/{s.cases_total}"
         ),
-        f"tokens: {result.input_tokens} in, {result.output_tokens} out",
+        *_selection_line(result.selection),
+        _tokens_line(result),
+        _run_line(meta),
     ]
     return "\n".join(lines)
 
@@ -60,6 +91,10 @@ def build_payload(result: SkillRun, meta: RunMeta) -> dict:
         "date": meta.started.isoformat(),
         "runs_per_case": meta.runs,
         "threshold": meta.threshold,
+        "jobs": meta.jobs,
+        "prompt_cache": meta.cache,
+        "elapsed_seconds": meta.elapsed,
+        "partial": _selection_payload(result.selection),
         "summary": {
             "recall": s.recall,
             "false_positive_rate": s.false_positive_rate,
@@ -67,6 +102,8 @@ def build_payload(result: SkillRun, meta: RunMeta) -> dict:
             "cases_total": s.cases_total,
             "input_tokens": result.input_tokens,
             "output_tokens": result.output_tokens,
+            "cache_write_tokens": result.cache_write_tokens,
+            "cache_read_tokens": result.cache_read_tokens,
         },
         "cases": [
             {
@@ -90,6 +127,8 @@ def build_payload(result: SkillRun, meta: RunMeta) -> dict:
                         "comment_words": r.score.comment_words,
                         "comment_ok": r.score.comment_ok,
                         "error": r.score.error,
+                        "cache_write_tokens": r.cache_write_tokens,
+                        "cache_read_tokens": r.cache_read_tokens,
                         "output": r.output,
                     }
                     for r in c.runs
@@ -133,7 +172,8 @@ def format_trigger_summary(result: TriggerRun, meta: RunMeta) -> str:
             f"accuracy: {_pct(result.accuracy)}   trigger recall: {_pct(result.trigger_recall)}"
             f"   false-trigger rate: {_pct(result.false_trigger_rate)}"
         ),
-        f"tokens: {result.input_tokens} in, {result.output_tokens} out",
+        _tokens_line(result),
+        _run_line(meta),
     ]
     return "\n".join(lines)
 
@@ -148,12 +188,17 @@ def build_trigger_payload(result: TriggerRun, meta: RunMeta) -> dict:
         "date": meta.started.isoformat(),
         "runs_per_prompt": meta.runs,
         "threshold": meta.threshold,
+        "jobs": meta.jobs,
+        "prompt_cache": meta.cache,
+        "elapsed_seconds": meta.elapsed,
         "summary": {
             "accuracy": result.accuracy,
             "trigger_recall": result.trigger_recall,
             "false_trigger_rate": result.false_trigger_rate,
             "input_tokens": result.input_tokens,
             "output_tokens": result.output_tokens,
+            "cache_write_tokens": result.cache_write_tokens,
+            "cache_read_tokens": result.cache_read_tokens,
         },
         "prompts": [
             {
@@ -162,7 +207,14 @@ def build_trigger_payload(result: TriggerRun, meta: RunMeta) -> dict:
                 "passed": p.passed,
                 "pass_rate": p.pass_rate,
                 "runs": [
-                    {"correct": r.correct, "picked": r.picked, "error": r.error, "output": r.output}
+                    {
+                        "correct": r.correct,
+                        "picked": r.picked,
+                        "error": r.error,
+                        "cache_write_tokens": r.cache_write_tokens,
+                        "cache_read_tokens": r.cache_read_tokens,
+                        "output": r.output,
+                    }
                     for r in p.runs
                 ],
             }

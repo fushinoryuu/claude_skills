@@ -5,6 +5,7 @@ import yaml
 
 from evals.runner.loader import (
     EvalConfigError,
+    count_cases,
     load_cases,
     load_fixture,
     load_vocabulary,
@@ -38,6 +39,29 @@ def test_unknown_case_lists_available_ones(evals_dir):
     vocab = load_vocabulary(evals_dir, SKILL)
     with pytest.raises(EvalConfigError, match="todo-check-has-todo-01"):
         load_cases(evals_dir, SKILL, vocab, "nope")
+
+
+def test_tags_select_the_cases_that_have_any_of_them(evals_dir):
+    vocab = load_vocabulary(evals_dir, SKILL)
+    assert [c.id for c in load_cases(evals_dir, SKILL, vocab, tags=("clean",))] == ["todo-check-no-todo-01"]
+    both = load_cases(evals_dir, SKILL, vocab, tags=("clean", "defect"))
+    assert [c.id for c in both] == ["todo-check-has-todo-01", "todo-check-no-todo-01"]
+
+
+def test_a_tag_no_case_has_is_an_error_that_lists_the_tags_in_use(evals_dir):
+    vocab = load_vocabulary(evals_dir, SKILL)
+    with pytest.raises(EvalConfigError, match="no case has the tag 'defekt' .*clean, defect"):
+        load_cases(evals_dir, SKILL, vocab, tags=("defekt",))
+
+
+def test_one_unknown_tag_rejects_the_whole_selection(evals_dir):
+    vocab = load_vocabulary(evals_dir, SKILL)
+    with pytest.raises(EvalConfigError, match="'nope'"):
+        load_cases(evals_dir, SKILL, vocab, tags=("clean", "nope"))
+
+
+def test_counts_the_cases_of_a_skill(evals_dir):
+    assert count_cases(evals_dir, SKILL) == 2
 
 
 def test_loads_fixture_files(evals_dir):
