@@ -225,3 +225,26 @@ def test_a_run_that_reports_the_wrong_lenses_fails_and_says_why(lens_sample):
     )
     assert not result.passed
     assert messages == ["todo-check-no-todo-01 run 1/1: FAIL (lenses_applied was [web], expected [])"]
+
+
+# --- comment length ---
+
+
+def test_a_comment_over_the_limit_fails_the_run_and_says_by_how_much(lens_sample):
+    skills, evals = lens_sample
+    vocab = evals / "todo-check" / "categories.yaml"
+    vocab.write_text(vocab.read_text() + "comment_start: '^Review - '\n")
+    case = evals / "todo-check" / "cases" / "todo-check-no-todo-01.yaml"
+    case.write_text(case.read_text().replace("max_findings: 0", "max_findings: 0\n  max_comment_words: 5"))
+    reply = 'Review - T-1\none two three four five six\n\n## Summary\n\n```json\n{"lenses_applied": [], "findings": []}\n```'
+    messages = []
+    result = run_skill(
+        "todo-check",
+        skills_dir=skills,
+        evals_dir=evals,
+        client=FakeClient({"*": reply}),
+        case_id="todo-check-no-todo-01",
+        progress=messages.append,
+    )
+    assert not result.passed
+    assert messages == ["todo-check-no-todo-01 run 1/1: FAIL (the comment has 9 words, limit 5)"]

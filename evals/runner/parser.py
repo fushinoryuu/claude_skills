@@ -37,6 +37,20 @@ def parse_findings(text: str) -> list[dict]:
     return _report(text)["findings"]
 
 
+def extract_comment(text: str, start_pattern: str) -> str | None:
+    """The comment a skill drafts for posting: from its last line matching `start_pattern` to the next heading or code fence.
+
+    Trailing horizontal rules are dropped. Returns None when no line matches.
+    """
+    starts = list(re.finditer(start_pattern, text, re.MULTILINE))
+    if not starts:
+        return None
+    rest = text[starts[-1].start() :]
+    end = re.search(r"^(?:#{1,6} |```)", rest, re.MULTILINE)
+    body = rest[: end.start()] if end else rest
+    return re.sub(r"(?:\n\s*---\s*)+\s*$", "", body).strip()
+
+
 def parse_lenses_applied(text: str) -> list[str] | None:
     """The `lenses_applied` list from the same block, or None when it is missing or is not a list of names."""
     lenses = _report(text).get("lenses_applied")

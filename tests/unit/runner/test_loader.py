@@ -177,3 +177,49 @@ def test_empty_lenses_list_means_core_only(tmp_path):
 def test_lenses_must_be_a_list_of_unique_names(tmp_path, bad):
     with pytest.raises(EvalConfigError, match="'lenses' must be a list"):
         load(tmp_path, good_case(lenses=bad))
+
+
+# --- comment limit ---
+
+
+def write_comment_eval(tmp_path: Path, case: dict, comment_start: str | None = "^Comment") -> Path:
+    evals = write_eval(tmp_path, case)
+    data = {"key_field": "category", "values": ["a", "b"]}
+    if comment_start is not None:
+        data["comment_start"] = comment_start
+    (evals / "s" / "categories.yaml").write_text(yaml.safe_dump(data))
+    return evals
+
+
+def case_with_limit(limit):
+    return good_case(expect={"findings": [], "max_findings": 1, "max_comment_words": limit})
+
+
+def test_comment_limit_loads_when_the_skill_says_how_to_find_the_comment(tmp_path):
+    evals = write_comment_eval(tmp_path, case_with_limit(300))
+    [case] = load_cases(evals, "s", load_vocabulary(evals, "s"))
+    assert case.expect.max_comment_words == 300
+    assert load_vocabulary(evals, "s").comment_start == "^Comment"
+
+
+def test_comment_limit_defaults_to_not_checked(tmp_path):
+    assert load(tmp_path, good_case())[0].expect.max_comment_words is None
+
+
+@pytest.mark.parametrize("bad", [0, -5, "300", 1.5, True])
+def test_comment_limit_must_be_a_positive_integer(tmp_path, bad):
+    evals = write_comment_eval(tmp_path, case_with_limit(bad))
+    with pytest.raises(EvalConfigError, match="max_comment_words"):
+        load_cases(evals, "s", load_vocabulary(evals, "s"))
+
+
+def test_comment_limit_needs_comment_start_in_the_vocabulary(tmp_path):
+    evals = write_comment_eval(tmp_path, case_with_limit(300), comment_start=None)
+    with pytest.raises(EvalConfigError, match="comment_start"):
+        load_cases(evals, "s", load_vocabulary(evals, "s"))
+
+
+def test_comment_start_must_be_a_valid_regular_expression(tmp_path):
+    evals = write_comment_eval(tmp_path, good_case(), comment_start="(")
+    with pytest.raises(EvalConfigError, match="regular expression"):
+        load_vocabulary(evals, "s")

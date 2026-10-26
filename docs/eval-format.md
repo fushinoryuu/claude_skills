@@ -45,19 +45,20 @@ expect:
 tags: [defect]
 ```
 
-| Field                  | Required | Meaning                                                                                                                                                                |
-| ---------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                   | yes      | Unique, and equal to the file name without `.yaml`. Format: `<skill>-<fixture>-<nn>`.                                                                                  |
-| `skill`                | yes      | Skill under test. Must exist in `skills/`.                                                                                                                             |
-| `fixture`              | yes      | Folder name under `fixtures/`.                                                                                                                                         |
-| `prompt`               | yes      | The user message sent with the fixture.                                                                                                                                |
-| `expect.findings`      | yes      | Planted defects the skill must report. Empty list for a clean case.                                                                                                    |
-| `expect.must_not_flag` | no       | Values of the skill's key field that must not appear at all (for tricky near-miss fixtures).                                                                           |
-| `expect.max_findings`  | yes      | Upper bound on total findings. Guards against noisy output. Keep it low for clean cases.                                                                               |
-| `expect.lenses`        | no       | Lens names the report must list in `lenses_applied`, in any order and nothing more. `[]` expects a core-only report. Left out: not checked. See "Lenses" below.        |
-| `lenses`               | no       | Names of the lens files the skill may see for this case. Left out: every lens is loaded. `[]`: the core only. See "Lenses" below.                                      |
-| `tags`                 | no       | Free-form. Reserved: `defect`, `clean`, `tricky`, `ambiguous`.                                                                                                         |
-| `scorer`               | no       | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
+| Field                      | Required | Meaning                                                                                                                                                                |
+| -------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                       | yes      | Unique, and equal to the file name without `.yaml`. Format: `<skill>-<fixture>-<nn>`.                                                                                  |
+| `skill`                    | yes      | Skill under test. Must exist in `skills/`.                                                                                                                             |
+| `fixture`                  | yes      | Folder name under `fixtures/`.                                                                                                                                         |
+| `prompt`                   | yes      | The user message sent with the fixture.                                                                                                                                |
+| `expect.findings`          | yes      | Planted defects the skill must report. Empty list for a clean case.                                                                                                    |
+| `expect.must_not_flag`     | no       | Values of the skill's key field that must not appear at all (for tricky near-miss fixtures).                                                                           |
+| `expect.max_findings`      | yes      | Upper bound on total findings. Guards against noisy output. Keep it low for clean cases.                                                                               |
+| `expect.lenses`            | no       | Lens names the report must list in `lenses_applied`, in any order and nothing more. `[]` expects a core-only report. Left out: not checked. See "Lenses" below.        |
+| `expect.max_comment_words` | no       | Upper bound on the words of the comment the skill drafts for posting. Needs `comment_start` in `categories.yaml`. Left out: not checked. See "Comment length" below.   |
+| `lenses`                   | no       | Names of the lens files the skill may see for this case. Left out: every lens is loaded. `[]`: the core only. See "Lenses" below.                                      |
+| `tags`                     | no       | Free-form. Reserved: `defect`, `clean`, `tricky`, `ambiguous`.                                                                                                         |
+| `scorer`                   | no       | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
 
 A **clean case** has `expect.findings: []`, a low `max_findings` (0 to 2), and the `clean` tag. Every skill needs at least one, and the structure tests check for it.
 
@@ -83,6 +84,21 @@ expect:
   max_findings: 1
   lenses: []          # the review must say "core only"
 ```
+
+### Comment length
+
+A skill that drafts a comment for posting (the `qa-review` Jira comment) can have its length checked, so reviews stay short enough to read.
+
+```yaml
+expect:
+  max_findings: 4
+  max_comment_words: 500
+```
+
+- The skill's `categories.yaml` says how to find the comment with `comment_start`, a regular expression for the line that opens it (for `qa-review`, the `Initial QA Review - KEY` title line, which may be bold or numbered). A case that sets `max_comment_words` without it is a setup error.
+- The comment runs from the last line that matches to the next heading or code fence, minus trailing rules. Words are counted by splitting on whitespace.
+- The run passes only if the comment is found and has at most that many words. The run's progress line says how many it had.
+- It is checked per case, so a clean case can use a tighter limit than a defect case.
 
 ## Structured findings block
 
@@ -128,6 +144,7 @@ values:
 - Structure tests fail if a case uses a slug that is not in `values`, or if `key_field` is missing from a case's expectations.
 - A skill installed on its own does not have this file, so the slugs also live in the skill's `references/output-format.md`, in a `## Categories` table. Structure tests fail if the two lists differ.
 - If a model emits a slug outside the vocabulary, the runner flags it as `invalid_category`. That finding counts as unexpected, and the flag shows category drift.
+- `comment_start` is optional. It is only needed by skills whose cases set `expect.max_comment_words`.
 - `key_field` is `category` for most skills and `class` for failure analysis. The rest of the format treats it generically.
 
 ## Scoring
