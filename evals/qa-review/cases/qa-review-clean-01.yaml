@@ -6,4 +6,5 @@ expect:
   findings: []
   must_not_flag: []
   max_findings: 1
+  max_comment_words: 500
 tags: [clean]

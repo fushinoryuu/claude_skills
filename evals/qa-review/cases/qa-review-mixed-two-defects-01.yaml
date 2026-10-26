@@ -10,4 +10,5 @@ expect:
       file: README.md
   must_not_flag: []
   max_findings: 4
+  max_comment_words: 500
 tags: [defect]

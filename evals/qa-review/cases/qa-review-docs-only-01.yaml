@@ -6,5 +6,6 @@ expect:
   findings: []
   must_not_flag: [missing-tests, missing-edge-case-coverage, missing-error-handling]
   max_findings: 1
+  max_comment_words: 500
   lenses: []
 tags: [clean]
