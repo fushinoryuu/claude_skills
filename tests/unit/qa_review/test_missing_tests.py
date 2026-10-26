@@ -163,6 +163,51 @@ def test_a_same_named_test_in_another_language_is_not_a_match():
     assert missing(run(["src/text.py", "web/text.test.ts"])) == ["src/text.py"]
 
 
+# --- files with the same name in different folders ---
+
+
+@pytest.mark.parametrize(
+    "source, test, agree",
+    [
+        ("src/a/utils.py", "tests/b/test_utils.py", False),
+        ("src/utils.py", "tests/test_utils.py", True),
+        ("src/a/utils.py", "tests/test_utils.py", True),
+        ("src/pkg/sub/mod.py", "tests/sub/test_mod.py", True),
+        ("src/pkg/mod.py", "tests/other/test_mod.py", False),
+        ("packages/a/src/index.ts", "packages/a/tests/index.test.ts", True),
+        ("packages/a/src/index.ts", "packages/b/src/index.test.ts", False),
+        ("Sources/App/Order.swift", "Tests/AppTests/OrderTests.swift", True),
+        ("src/main/java/com/acme/Order.java", "src/test/java/com/acme/OrderTest.java", True),
+        ("src/main/java/com/acme/Order.java", "src/test/java/com/other/OrderTest.java", False),
+        ("app/models/user.rb", "spec/models/user_spec.rb", True),
+        ("src/unit_tests/x.py", "tests/test_x.py", True),
+    ],
+)
+def test_folders_agree_when_one_path_ends_with_the_other_once_structure_folders_are_ignored(source, test, agree):
+    assert mt.folders_agree(source, test) is agree
+
+
+def test_a_test_in_another_module_does_not_cover_a_same_named_source_file():
+    report = run(["src/a/utils.py", "src/b/utils.py", "tests/b/test_utils.py"])
+    assert missing(report) == ["src/a/utils.py"]
+    assert report["missing_test_change"][0]["same_name_tests_elsewhere"] == ["tests/b/test_utils.py"]
+    assert covered(report) == {"src/b/utils.py": ["tests/b/test_utils.py"]}
+    assert "ambiguous_with" not in report["has_test_change"][0]
+
+
+def test_a_test_with_no_telling_folder_matches_both_files_and_says_so():
+    report = run(["src/a/utils.py", "src/b/utils.py", "tests/test_utils.py"])
+    assert missing(report) == []
+    by_file = {entry["file"]: entry for entry in report["has_test_change"]}
+    assert by_file["src/a/utils.py"]["ambiguous_with"] == ["src/b/utils.py"]
+    assert by_file["src/b/utils.py"]["ambiguous_with"] == ["src/a/utils.py"]
+    assert "may cover only one of them" in report["note"]
+
+
+def test_a_missing_test_without_a_same_name_test_elsewhere_has_no_such_key():
+    assert "same_name_tests_elsewhere" not in run(["src/a.py"])["missing_test_change"][0]
+
+
 # --- files that need no test ---
 
 
@@ -195,6 +240,37 @@ def test_documentation_configuration_lock_and_generated_files_are_not_checked(pa
     assert missing(report) == []
     assert report["status"] == "ok"
     assert report["note"] == "No changed source files to check."
+
+
+@pytest.mark.parametrize(
+    "path, reason",
+    [
+        ("webpack.config.js", "configuration"),
+        ("web/vite.config.ts", "configuration"),
+        ("next.config.mjs", "configuration"),
+        ("jest.setup.js", "configuration"),
+        ("src/types.d.ts", "type declarations"),
+    ],
+)
+def test_javascript_and_typescript_configuration_and_declaration_files_are_not_checked(path, reason):
+    report = run([path])
+    assert not_checked(report) == {path: reason}
+    assert missing(report) == []
+
+
+def test_a_file_that_only_looks_like_configuration_is_still_checked():
+    assert missing(run(["src/config.py", "src/setup_user.js", "src/config/loader.ts"])) == [
+        "src/config.py",
+        "src/setup_user.js",
+        "src/config/loader.ts",
+    ]
+
+
+def test_a_django_style_tests_file_is_a_test_not_a_source_file():
+    report = run(["app/models.py", "app/tests.py"])
+    assert report["test_files_changed"] == ["app/tests.py"]
+    assert missing(report) == ["app/models.py"]
+    assert "read them before reporting a gap" in report["note"]
 
 
 def test_a_deleted_file_needs_no_test():
@@ -234,6 +310,15 @@ def test_a_file_without_an_extension_is_could_not_tell():
     report = run(["bin/tool"])
     assert report["status"] == "could_not_tell"
     assert report["could_not_tell"][0]["reason"] == "unrecognized file type 'bin/tool'"
+
+
+def test_a_change_with_no_test_files_lists_every_source_file_because_the_script_sees_only_the_change():
+    # The script cannot tell a project with no tests from a change that forgot them. Step 5 decides, from Step 3.
+    report = run(["src/a.py", "src/b.py"])
+    assert report["status"] == "ok"
+    assert missing(report) == ["src/a.py", "src/b.py"]
+    assert report["test_files_changed"] == []
+    assert "only the change" in mt.__doc__
 
 
 def test_other_files_are_still_judged_when_one_cannot_be():
@@ -280,6 +365,31 @@ def test_a_pattern_without_a_name_only_marks_test_files():
     assert missing(report) == ["src/a.py"]
 
 
+def test_a_project_patterns_file_gives_patterns_and_source_extensions(tmp_path):
+    path = tmp_path / "test-patterns"
+    path.write_text(
+        "# our layout\n\nspec/{name}_spec.rb\n  checks/{name}.check.py  \nsource-ext: .gleam, res\nSOURCE-EXT: .zig\n",
+        encoding="utf-8",
+    )
+    globs, extensions, problem = mt.read_project_patterns(path)
+    assert globs == ["spec/{name}_spec.rb", "checks/{name}.check.py"]
+    assert extensions == {".gleam", ".res", ".zig"}
+    assert problem == ""
+
+
+def test_a_missing_project_patterns_file_is_fine(tmp_path):
+    assert mt.read_project_patterns(tmp_path / "nope") == ([], set(), "")
+    assert mt.read_project_patterns(tmp_path) == ([], set(), "")  # a folder is not a file
+
+
+def test_an_unreadable_project_patterns_file_is_reported_not_raised(tmp_path):
+    path = tmp_path / "test-patterns"
+    path.write_bytes(b"\xff\xfe\x00bad")
+    globs, extensions, problem = mt.read_project_patterns(path)
+    assert (globs, extensions) == ([], set())
+    assert "Could not read the project patterns file" in problem
+
+
 @pytest.mark.parametrize("pattern", ["", "{name}", "**", "[", "a{name}b{name}c", "(", "*{name}*"])
 def test_odd_patterns_do_not_crash(pattern):
     report = run(["src/a.py", "src/test_a.py"], defaults() + [(None, [pattern])])
@@ -289,10 +399,53 @@ def test_odd_patterns_do_not_crash(pattern):
 # --- the command line ---
 
 
-def run_cli(*args, stdin=None):
+def run_cli(*args, stdin=None, cwd=None):
     return subprocess.run(
-        [sys.executable, str(SCRIPT), *args], input=stdin, capture_output=True, text=True, encoding="utf-8", timeout=30, check=False
+        [sys.executable, str(SCRIPT), *args],
+        input=stdin,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=30,
+        check=False,
+        cwd=cwd,
     )
+
+
+def test_the_project_patterns_file_in_the_current_folder_is_used_without_any_option(tmp_path):
+    (tmp_path / ".claude" / "qa-review").mkdir(parents=True)
+    (tmp_path / ".claude" / "qa-review" / "test-patterns").write_text(
+        "spec/{name}_spec.rb\nsource-ext: .gleam\ntest/{name}_test.gleam\n", encoding="utf-8"
+    )
+    result = run_cli(stdin="lib/b.rb\nspec/b_spec.rb\nsrc/w.gleam\n", cwd=tmp_path)
+    report = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert [e["file"] for e in report["has_test_change"]] == ["lib/b.rb"]
+    assert [e["file"] for e in report["missing_test_change"]] == ["src/w.gleam"]
+    assert report["project_patterns_file"] == ".claude/qa-review/test-patterns"
+
+
+def test_no_project_patterns_file_means_no_extra_key(tmp_path):
+    report = json.loads(run_cli(stdin="src/a.py\n", cwd=tmp_path).stdout)
+    assert "project_patterns_file" not in report
+
+
+def test_the_project_patterns_option_points_at_another_file(tmp_path):
+    other = tmp_path / "mine.txt"
+    other.write_text("checks/{name}.check.py\n", encoding="utf-8")
+    report = json.loads(run_cli("--project-patterns", str(other), stdin="src/a.py\nchecks/a.check.py\n", cwd=tmp_path).stdout)
+    assert [e["file"] for e in report["has_test_change"]] == ["src/a.py"]
+
+
+def test_a_broken_project_patterns_file_still_exits_zero_and_says_so(tmp_path):
+    other = tmp_path / "bad.txt"
+    other.write_bytes(b"\xff\xfe\x00")
+    result = run_cli("--project-patterns", str(other), stdin="src/a.py\n", cwd=tmp_path)
+    report = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert "Could not read the project patterns file" in report["note"]
+    assert report["missing_test_change"][0]["file"] == "src/a.py"
+    assert "project_patterns_file" not in report
 
 
 def test_it_reads_a_diff_from_stdin_and_prints_json():

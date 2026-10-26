@@ -168,7 +168,7 @@ Each reference is a checklist the agent applies, with the reasoning behind each 
 | `openapi_changed.py`    | Optional. Runs only when the repo contains an OpenAPI/Swagger spec, and reports whether interface changes lack a matching spec change                                                                                                 |
 | `suggest_lenses.py`     | Matches the changed-file list against each lens's `applies_when.paths` and prints candidate lenses with the files that matched. Prints an empty list when nothing matches or there is no `lenses/` folder, and never fails the review |
 
-Scripts must degrade gracefully on any project. A script that does not apply to the repo (no spec file, no recognizable test layout) reports "not applicable" and exits cleanly, and SKILL.md tells the agent to continue with the core review.
+Scripts must degrade gracefully on any project. A script that does not apply to the repo (no spec file, or no recognizable test layout in the change) reports "not applicable" or "could not tell" and exits cleanly, and SKILL.md tells the agent to continue with the core review.
 
 Each script:
 
@@ -181,7 +181,7 @@ Each script:
 Per script:
 
 - [x] `suggest_lenses.py`
-- [x] `missing_tests.py`. It compares file names only. Its test-file patterns have a `{name}` placeholder for the source file's name, and `--test-pattern`, `--no-default-patterns` and `--source-ext` extend or replace them. Default patterns: Python, JavaScript and TypeScript, Java, Kotlin, Go, Ruby, C#, PHP and Swift. Rust and unknown file types are reported as "could not tell". Fixtures `missing-tests`, `clean`, `untested-edge-case` and `docs-only` hold its output as `missing_tests.json`
+- [x] `missing_tests.py`. It compares file names and folders only, and sees only the change, not the project (the skill handles a project with no tests in Step 5). Its test-file patterns have a `{name}` placeholder for the source file's name, and `--test-pattern`, `--no-default-patterns` and `--source-ext` extend or replace them. A team keeps its own patterns in `.claude/qa-review/test-patterns`, which the script reads without any option. Default patterns: Python, JavaScript and TypeScript, Java, Kotlin, Go, Ruby, C#, PHP and Swift. Rust and unknown file types are reported as "could not tell". Fixtures `missing-tests`, `clean`, `untested-edge-case` and `docs-only` hold its output as `missing_tests.json`
 - [ ] `changed_interfaces.py`
 - [ ] `openapi_changed.py`
 
