@@ -1,7 +1,9 @@
-"""CLI: python -m evals.runner --skill qa-review [--case ID] [--runs N] [--triggers]"""
+"""CLI: python -m evals.runner --skill qa-review [--case ID | --tag TAG ...] [--runs N] [--jobs N] [--triggers]"""
 
 import argparse
 import sys
+import time
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -10,6 +12,7 @@ from dotenv import load_dotenv
 from evals.runner.client import (
     DEFAULT_MAX_TOKENS,
     DEFAULT_MODEL,
+    PARALLEL_MAX_RETRIES,
     AnthropicClient,
     FatalModelError,
     ModelClient,
@@ -31,7 +34,15 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--skill", required=True, help="skill folder name, e.g. qa-review")
     p.add_argument("--triggers", action="store_true", help="run the trigger tests (triggers.yaml) instead of the cases")
     p.add_argument("--case", help="run only this case id")
+    p.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="run only the cases with this tag; repeat it to run the cases that have any of the tags",
+    )
     p.add_argument("--runs", type=int, default=1, help="runs per case or trigger prompt (default 1)")
+    p.add_argument("--jobs", type=int, default=1, help="model calls to run at the same time (default 1, one after another)")
+    p.add_argument("--no-cache", action="store_true", help="do not mark the system prompt for prompt caching")
     p.add_argument("--threshold", type=float, default=0.5, help="a case or prompt passes when its pass rate is above this (default 0.5)")
     p.add_argument("--model", default=DEFAULT_MODEL, help=f"model id (default {DEFAULT_MODEL})")
     p.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"], help="output_config effort; omitted by default")
@@ -45,8 +56,13 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         p.error("--runs must be at least 1")
     if not 0 <= args.threshold < 1:
         p.error("--threshold must be in [0, 1)")
-    if args.triggers and args.case:
-        p.error("--case cannot be combined with --triggers")
+    if args.jobs < 1:
+        p.error("--jobs must be at least 1")
+    if args.triggers and (args.case or args.tag):
+        p.error("--case and --tag select eval cases, so they cannot be combined with --triggers")
+    if args.case and args.tag:
+        p.error("--case and --tag cannot be combined; use one or the other")
+    args.tag = tuple(dict.fromkeys(args.tag))
     return args
 
 
@@ -65,7 +81,7 @@ def _dry_run(args: argparse.Namespace) -> None:
             kind = "should_trigger" if prompt.should_trigger else "should_not_trigger"
             print(f"\n=== USER ({kind}) ===\n{prompt.text}")
         return
-    _, cases, systems, user_messages = prepare(args.skills_dir, args.evals_dir, args.skill, args.case)
+    _, cases, systems, user_messages = prepare(args.skills_dir, args.evals_dir, args.skill, args.case, args.tag)
     # Cases that load the same lenses share one system prompt, so print each distinct one once.
     printed = set()
     for case in cases:
@@ -87,21 +103,33 @@ def main(argv: list[str] | None = None, client: ModelClient | None = None) -> in
             _dry_run(args)
             return 0
 
-        client = client or AnthropicClient(args.model, args.max_tokens, args.effort)
-        meta = RunMeta(args.model, args.effort, args.runs, args.threshold, datetime.now(UTC))
+        cache = not args.no_cache
+        client = client or AnthropicClient(
+            args.model,
+            args.max_tokens,
+            args.effort,
+            cache=cache,
+            max_retries=PARALLEL_MAX_RETRIES if args.jobs > 1 else None,
+        )
+        meta = RunMeta(args.model, args.effort, args.runs, args.threshold, datetime.now(UTC), args.jobs, cache)
         common = {
             "skills_dir": args.skills_dir,
             "evals_dir": args.evals_dir,
             "client": client,
             "runs": args.runs,
             "threshold": args.threshold,
+            "jobs": args.jobs,
+            "warm_cache": cache,
             "progress": _progress,
         }
+        began = time.monotonic()
         if args.triggers:
             result = run_triggers(args.skill, **common)
+            meta = replace(meta, elapsed=time.monotonic() - began)
             summary, path = format_trigger_summary(result, meta), write_trigger_results(result, meta, results_dir)
         else:
-            result = run_skill(args.skill, case_id=args.case, **common)
+            result = run_skill(args.skill, case_id=args.case, tags=args.tag, **common)
+            meta = replace(meta, elapsed=time.monotonic() - began)
             summary, path = format_summary(result, meta), write_results(result, meta, results_dir)
     except (EvalConfigError, FatalModelError) as e:
         print(f"error: {e}", file=sys.stderr)

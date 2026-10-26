@@ -8,6 +8,7 @@ import yaml
 
 from evals.runner.client import FatalModelError, ModelClient, ModelError
 from evals.runner.loader import EvalConfigError
+from evals.runner.parallel import run_all
 from evals.runner.skills import SkillInfo, load_catalog
 
 ROUTER_PREAMBLE = """\
@@ -31,6 +32,8 @@ class TriggerRecord:
     output: str | None = None
     input_tokens: int = 0
     output_tokens: int = 0
+    cache_write_tokens: int = 0
+    cache_read_tokens: int = 0
 
 
 @dataclass(frozen=True)
@@ -83,6 +86,14 @@ class TriggerRun:
     @property
     def output_tokens(self) -> int:
         return sum(r.output_tokens for r in self._records())
+
+    @property
+    def cache_write_tokens(self) -> int:
+        return sum(r.cache_write_tokens for r in self._records())
+
+    @property
+    def cache_read_tokens(self) -> int:
+        return sum(r.cache_read_tokens for r in self._records())
 
 
 def load_triggers(evals_dir: Path, skill: str) -> list[TriggerPrompt]:
@@ -139,7 +150,12 @@ def _route(system: str, prompt: TriggerPrompt, names: list[str], skill_name: str
     except ModelError as e:
         return TriggerRecord(correct=False, error=str(e))
 
-    usage = {"input_tokens": completion.input_tokens, "output_tokens": completion.output_tokens}
+    usage = {
+        "input_tokens": completion.input_tokens,
+        "output_tokens": completion.output_tokens,
+        "cache_write_tokens": completion.cache_write_tokens,
+        "cache_read_tokens": completion.cache_read_tokens,
+    }
     if completion.stop_reason in ("refusal", "max_tokens"):
         return TriggerRecord(correct=False, error=completion.stop_reason, output=completion.text, **usage)
     try:
@@ -167,16 +183,36 @@ def run_triggers(
     client: ModelClient,
     runs: int = 1,
     threshold: float = 0.5,
+    jobs: int = 1,
+    warm_cache: bool = True,
     progress: Callable[[str], None] = lambda _: None,
 ) -> TriggerRun:
     catalog, under_test, prompts = prepare_triggers(skills_dir, evals_dir, skill)
     system = build_router_prompt(catalog)
     names = [s.name for s in catalog]
 
+    # One call per (prompt, run). Every call shares the router prompt, so with caching the first one goes alone.
+    calls = [(index, prompt) for index, prompt in enumerate(prompts) for _ in range(runs)]
+    finished: dict[int, list[TriggerRecord]] = {}
+
+    def report(call, record):
+        index, prompt = call
+        finished.setdefault(index, []).append(record)
+        if len(finished[index]) == runs:
+            rate = sum(r.correct for r in finished[index]) / runs
+            progress(f"{'trigger' if prompt.should_trigger else 'skip':7} {prompt.text[:60]!r}: {rate:.0%}")
+
+    records = run_all(
+        calls,
+        lambda call: _route(system, call[1], names, under_test.name, client),
+        jobs=jobs,
+        warm_key=(lambda call: system) if warm_cache else None,
+        done=report,
+    )
+
     results = []
-    for prompt in prompts:
-        records = [_route(system, prompt, names, under_test.name, client) for _ in range(runs)]
-        pass_rate = sum(r.correct for r in records) / runs
-        results.append(PromptResult(prompt, tuple(records), pass_rate, pass_rate > threshold))
-        progress(f"{'trigger' if prompt.should_trigger else 'skip':7} {prompt.text[:60]!r}: {pass_rate:.0%}")
+    for index, prompt in enumerate(prompts):
+        own = tuple(record for (i, _), record in zip(calls, records) if i == index)
+        pass_rate = sum(r.correct for r in own) / runs
+        results.append(PromptResult(prompt, own, pass_rate, pass_rate > threshold))
     return TriggerRun(skill, under_test.name, results)

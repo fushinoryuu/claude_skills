@@ -1,12 +1,21 @@
 import io
 import json
+import re
 import shutil
 import sys
+import threading
+import time
+from dataclasses import replace
 
 import pytest
 
 from evals.runner.__main__ import main
-from evals.runner.client import Completion, FatalModelError, ModelError
+from evals.runner.client import (
+    PARALLEL_MAX_RETRIES,
+    Completion,
+    FatalModelError,
+    ModelError,
+)
 from evals.runner.run import run_skill
 
 FOUND = '```json\n{"findings": [{"category": "leftover-todo", "file": "src/app.py", "severity": "low", "summary": "x"}]}\n```'
@@ -248,3 +257,231 @@ def test_a_comment_over_the_limit_fails_the_run_and_says_by_how_much(lens_sample
     )
     assert not result.passed
     assert messages == ["todo-check-no-todo-01 run 1/1: FAIL (the comment has 9 words, limit 5)"]
+
+
+# --- running calls at the same time ---
+
+
+class TimedClient(FakeClient):
+    """A perfect model whose calls log when they start and end, and pause for `delay(user)` seconds."""
+
+    def __init__(self, delay=lambda user: 0.0, **kwargs):
+        super().__init__(**kwargs)
+        self.delay = delay
+        self.events = []
+
+    def complete(self, system, user):
+        self.events.append(("start", user))
+        time.sleep(self.delay(user))
+        completion = super().complete(system, user)
+        self.events.append(("end", user))
+        return completion
+
+
+class MeetingClient(FakeClient):
+    """Every call waits until `n` calls are inside at once, so the run only finishes if they really overlap."""
+
+    def __init__(self, n):
+        super().__init__()
+        self.barrier = threading.Barrier(n, timeout=5)
+
+    def complete(self, system, user):
+        self.barrier.wait()
+        return super().complete(system, user)
+
+
+def test_calls_overlap_when_jobs_is_more_than_one(skills_dir, evals_dir):
+    result = run(skills_dir, evals_dir, MeetingClient(4), runs=2, jobs=4, warm_cache=False)
+    assert result.passed
+
+
+def test_one_job_sends_the_calls_in_the_same_order_as_before(skills_dir, evals_dir):
+    client = FakeClient()
+    run(skills_dir, evals_dir, client, runs=2)
+    found = ["TODO: handle empty names" in user for _, user in client.calls]
+    assert found == [True, True, False, False]
+
+
+def test_results_keep_case_order_when_the_first_case_finishes_last(skills_dir, evals_dir):
+    client = TimedClient(delay=lambda user: 0.15 if "TODO: handle empty names" in user else 0.0)
+    messages = []
+    result = run(skills_dir, evals_dir, client, runs=2, jobs=4, warm_cache=False, progress=messages.append)
+    assert [c.case.id for c in result.cases] == ["todo-check-has-todo-01", "todo-check-no-todo-01"]
+    assert all(len(c.runs) == 2 for c in result.cases)
+    # The progress lines come as the calls finish: the quick case first, but each line still names its case and run.
+    assert messages[0].startswith("todo-check-no-todo-01 run ")
+    assert sorted(messages) == [
+        f"todo-check-{case}-01 run {i}/2: pass" for case in ("has-todo", "no-todo") for i in (1, 2)
+    ]
+
+
+def test_with_the_cache_warmed_the_first_call_ends_before_the_others_start(skills_dir, evals_dir):
+    client = TimedClient(delay=lambda user: 0.1)
+    run(skills_dir, evals_dir, client, runs=3, jobs=6)
+    assert [kind for kind, _ in client.events[:2]] == ["start", "end"]
+    assert [kind for kind, _ in client.events[2:7]] == ["start"] * 5
+
+
+def test_without_warming_all_the_calls_start_together(skills_dir, evals_dir):
+    client = TimedClient(delay=lambda user: 0.1)
+    run(skills_dir, evals_dir, client, runs=3, jobs=6, warm_cache=False)
+    assert [kind for kind, _ in client.events[:6]] == ["start"] * 6
+
+
+def test_a_failed_call_is_recorded_and_the_other_calls_carry_on_in_parallel(skills_dir, evals_dir):
+    class Flaky(FakeClient):
+        def complete(self, system, user):
+            if "TODO: handle empty names" in user:
+                raise ModelError("RateLimitError: slow down")
+            return super().complete(system, user)
+
+    result = run(skills_dir, evals_dir, Flaky(), runs=2, jobs=4)
+    by_id = {c.case.id: c for c in result.cases}
+    assert all("RateLimitError" in r.score.error for r in by_id["todo-check-has-todo-01"].runs)
+    assert by_id["todo-check-no-todo-01"].passed
+
+
+def test_a_fatal_error_ends_a_parallel_run(skills_dir, evals_dir):
+    with pytest.raises(FatalModelError):
+        run(skills_dir, evals_dir, FakeClient({"*": FatalModelError("AuthenticationError")}), runs=3, jobs=4)
+
+
+def test_cli_exit_code_is_2_for_a_fatal_error_in_a_parallel_run(skills_dir, evals_dir, tmp_path):
+    client = FakeClient({"*": FatalModelError("AuthenticationError: bad key")})
+    assert cli(skills_dir, evals_dir, tmp_path, "--jobs", "4", "--runs", "3", client=client) == 2
+    assert not (tmp_path / "results").exists()
+
+
+@pytest.mark.parametrize("value", ["0", "-1"])
+def test_cli_rejects_a_jobs_value_below_one(skills_dir, evals_dir, tmp_path, capsys, value):
+    with pytest.raises(SystemExit):
+        cli(skills_dir, evals_dir, tmp_path, "--jobs", value, client=FakeClient())
+    assert "--jobs must be at least 1" in capsys.readouterr().err
+
+
+# --- prompt caching ---
+
+
+def test_cache_tokens_are_added_up_next_to_the_normal_counts(skills_dir, evals_dir, tmp_path, capsys):
+    class Caching(FakeClient):
+        def complete(self, system, user):
+            completion = super().complete(system, user)
+            cached = len(self.calls) > 1
+            return replace(
+                completion,
+                cache_write_tokens=0 if cached else 700,
+                cache_read_tokens=500 if cached else 0,
+            )
+
+    # 4 calls: the first writes 700 tokens, the other three read 500 each.
+    assert cli(skills_dir, evals_dir, tmp_path, "--runs", "2", client=Caching()) == 0
+    out = capsys.readouterr().out
+    assert "tokens: 40 in, 20 out, 700 cache write, 1500 cache read" in out
+
+    [path] = (tmp_path / "results").glob("*-todo-check.json")
+    payload = json.loads(path.read_text())
+    assert payload["summary"]["cache_write_tokens"] == 700
+    assert payload["summary"]["cache_read_tokens"] == 1500
+    assert [r["cache_read_tokens"] for r in payload["cases"][0]["runs"]] == [0, 500]
+
+
+class RecordingClient(FakeClient):
+    """Stands in for AnthropicClient and remembers how the CLI built it."""
+
+    built = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        type(self).built = (args, kwargs)
+
+
+@pytest.fixture
+def built_client(monkeypatch):
+    monkeypatch.setattr("evals.runner.__main__.AnthropicClient", RecordingClient)
+    return RecordingClient
+
+
+def test_cli_turns_caching_on_by_default_and_off_with_no_cache(skills_dir, evals_dir, tmp_path, built_client):
+    cli(skills_dir, evals_dir, tmp_path)
+    assert built_client.built[1]["cache"] is True
+    cli(skills_dir, evals_dir, tmp_path, "--no-cache")
+    assert built_client.built[1]["cache"] is False
+
+
+def test_cli_asks_for_more_rate_limit_retries_only_when_running_in_parallel(
+    skills_dir, evals_dir, tmp_path, built_client
+):
+    cli(skills_dir, evals_dir, tmp_path)
+    assert built_client.built[1]["max_retries"] is None
+    cli(skills_dir, evals_dir, tmp_path, "--jobs", "4")
+    assert built_client.built[1]["max_retries"] == PARALLEL_MAX_RETRIES > 2
+
+
+def test_the_summary_and_results_file_say_how_the_run_was_made(skills_dir, evals_dir, tmp_path, capsys):
+    cli(skills_dir, evals_dir, tmp_path, "--jobs", "2", "--no-cache", client=FakeClient())
+    assert re.search(r"jobs: 2   prompt cache: off   elapsed: \d+s", capsys.readouterr().out)
+    [path] = (tmp_path / "results").glob("*-todo-check.json")
+    payload = json.loads(path.read_text())
+    assert (payload["jobs"], payload["prompt_cache"]) == (2, False)
+    assert payload["elapsed_seconds"] >= 0
+
+
+# --- running some of the cases ---
+
+
+def test_tag_runs_only_the_cases_that_have_it(skills_dir, evals_dir):
+    client = FakeClient()
+    result = run(skills_dir, evals_dir, client, tags=("clean",))
+    assert [c.case.id for c in result.cases] == ["todo-check-no-todo-01"]
+    assert len(client.calls) == 1
+
+
+def test_a_run_with_several_tags_runs_the_cases_that_have_any_of_them(skills_dir, evals_dir):
+    result = run(skills_dir, evals_dir, FakeClient(), tags=("clean", "defect"))
+    assert len(result.cases) == 2
+
+
+def test_cli_tag_run_is_marked_partial_in_the_summary_and_the_results_file(skills_dir, evals_dir, tmp_path, capsys):
+    assert cli(skills_dir, evals_dir, tmp_path, "--tag", "clean", client=FakeClient()) == 0
+    assert "partial run: tag clean (the skill has 2 cases)" in capsys.readouterr().out
+    [path] = (tmp_path / "results").glob("*-todo-check.json")
+    assert json.loads(path.read_text())["partial"] == {"case": None, "tags": ["clean"], "cases_available": 2}
+
+
+def test_cli_case_run_is_marked_partial_too(skills_dir, evals_dir, tmp_path, capsys):
+    cli(skills_dir, evals_dir, tmp_path, "--case", "todo-check-no-todo-01", client=FakeClient())
+    assert "partial run: case todo-check-no-todo-01 (the skill has 2 cases)" in capsys.readouterr().out
+
+
+def test_cli_full_run_is_not_marked_partial(skills_dir, evals_dir, tmp_path, capsys):
+    cli(skills_dir, evals_dir, tmp_path, client=FakeClient())
+    assert "partial run" not in capsys.readouterr().out
+    [path] = (tmp_path / "results").glob("*-todo-check.json")
+    assert json.loads(path.read_text())["partial"] is None
+
+
+def test_cli_repeated_tag_flags_combine(skills_dir, evals_dir, tmp_path):
+    client = FakeClient()
+    assert cli(skills_dir, evals_dir, tmp_path, "--tag", "defect", "--tag", "clean", client=client) == 0
+    assert len(client.calls) == 2
+
+
+def test_cli_exit_code_is_2_for_a_tag_no_case_has(skills_dir, evals_dir, tmp_path, capsys):
+    client = FakeClient()
+    assert cli(skills_dir, evals_dir, tmp_path, "--tag", "nope", client=client) == 2
+    err = capsys.readouterr().err
+    assert "no case has the tag 'nope'" in err and "clean, defect" in err
+    assert client.calls == []
+
+
+def test_cli_rejects_tag_together_with_case(skills_dir, evals_dir, tmp_path, capsys):
+    with pytest.raises(SystemExit):
+        cli(skills_dir, evals_dir, tmp_path, "--tag", "clean", "--case", "todo-check-no-todo-01", client=FakeClient())
+    assert "cannot be combined" in capsys.readouterr().err
+
+
+def test_cli_dry_run_honours_tag(skills_dir, evals_dir, tmp_path, capsys):
+    assert cli(skills_dir, evals_dir, tmp_path, "--dry-run", "--tag", "clean", client=FakeClient()) == 0
+    out = capsys.readouterr().out
+    assert "=== USER (todo-check-no-todo-01) ===" in out
+    assert "todo-check-has-todo-01" not in out

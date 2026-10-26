@@ -1,4 +1,7 @@
 import json
+import threading
+import time
+from dataclasses import replace
 
 import pytest
 
@@ -223,3 +226,88 @@ def test_cli_triggers_dry_run(tmp_path, capsys):
 def test_cli_rejects_case_with_triggers(tmp_path):
     with pytest.raises(SystemExit):
         cli(tmp_path, "--case", "x", client=Router())
+
+
+def test_cli_rejects_tag_with_triggers(tmp_path, capsys):
+    with pytest.raises(SystemExit):
+        cli(tmp_path, "--tag", "defect", client=Router())
+    assert "cannot be combined with --triggers" in capsys.readouterr().err
+
+
+# --- running calls at the same time ---
+
+
+class MeetingRouter(Router):
+    """Every call waits until `n` calls are inside at once."""
+
+    def __init__(self, n):
+        super().__init__()
+        self.barrier = threading.Barrier(n, timeout=5)
+
+    def complete(self, system, user):
+        self.barrier.wait()
+        return super().complete(system, user)
+
+
+def test_trigger_calls_overlap_when_jobs_is_more_than_one(tmp_path):
+    skills, evals = make_skills(tmp_path)
+    router = MeetingRouter(4)
+    result = run_triggers("pr-review", skills_dir=skills, evals_dir=evals, client=router, jobs=4, warm_cache=False)
+    assert result.passed
+
+
+def test_trigger_results_and_progress_are_per_prompt_in_prompt_order(tmp_path):
+    skills, evals = make_skills(tmp_path)
+    messages = []
+    result = run_triggers(
+        "pr-review", skills_dir=skills, evals_dir=evals, client=Router(), runs=3, jobs=6, progress=messages.append
+    )
+    assert [p.prompt.text for p in result.prompts] == [
+        "review this PR",
+        "check my pull request",
+        "why did this test fail",
+        "write a date parser",
+    ]
+    assert all(len(p.runs) == 3 for p in result.prompts)
+    assert len(messages) == 4
+    assert "'review this PR': 100%" in "\n".join(messages)
+
+
+def test_the_first_trigger_call_goes_alone_so_the_others_can_read_the_cache(tmp_path):
+    skills, evals = make_skills(tmp_path)
+    events, lock = [], threading.Lock()
+
+    class Logging(Router):
+        def complete(self, system, user):
+            with lock:
+                events.append("start")
+            time.sleep(0.1)
+            completion = super().complete(system, user)
+            with lock:
+                events.append("end")
+            return completion
+
+    run_triggers("pr-review", skills_dir=skills, evals_dir=evals, client=Logging(), runs=2, jobs=8)
+    assert events[:2] == ["start", "end"]
+
+
+def test_a_fatal_error_ends_a_parallel_trigger_run(tmp_path):
+    skills, evals = make_skills(tmp_path)
+    router = Router(fail=FatalModelError("bad key"))
+    with pytest.raises(FatalModelError):
+        run_triggers("pr-review", skills_dir=skills, evals_dir=evals, client=router, runs=2, jobs=4)
+
+
+def test_cli_triggers_reports_cache_tokens_and_how_the_run_was_made(tmp_path, capsys):
+    class Caching(Router):
+        def complete(self, system, user):
+            return replace(super().complete(system, user), cache_write_tokens=5, cache_read_tokens=7)
+
+    assert cli(tmp_path, "--jobs", "2", client=Caching()) == 0
+    out = capsys.readouterr().out
+    assert "tokens: 16 in, 8 out, 20 cache write, 28 cache read" in out
+    assert "jobs: 2   prompt cache: on" in out
+    [path] = (tmp_path / "results").glob("*-pr-review-triggers.json")
+    payload = json.loads(path.read_text())
+    assert payload["summary"]["cache_read_tokens"] == 28
+    assert payload["jobs"] == 2
