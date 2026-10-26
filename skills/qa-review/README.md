@@ -68,7 +68,7 @@ There are two modes, used at different points in the ticket lifecycle:
 
 ## What you get
 
-- **A Jira comment**, in plain text, using the template for the mode. It has the verdict, one line per acceptance criterion, a summary of the change, and the gaps by section. You see it as a draft first, and it is posted only after you say yes. If the ticket has no acceptance criteria, the skill derives them from the description, marks them "(derived from the description)", and asks you to confirm them before posting.
+- **A Jira comment**, in Markdown (bold headings, related lines grouped together), using the template for the mode. It stays within 500 words for an `initial` review and 600 for a `final` one. It has the verdict, one line per acceptance criterion, a summary of the change, and the gaps by section. You see it as a draft first, and it is posted only after you say yes. If the ticket has no acceptance criteria, the skill derives them from the description, marks them "(derived from the description)", and asks you to confirm them before posting.
 - **A findings block** at the end of the session: a short JSON list of the gaps, each with a category, a file, a severity and a one-sentence summary. It is for tools and evals only and is never posted to Jira. Its format is in [references/output-format.md](references/output-format.md).
 
 ## What it checks
