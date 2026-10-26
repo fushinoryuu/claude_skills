@@ -1,7 +1,7 @@
 id: qa-review-clean-01
 skill: qa-review
 fixture: clean
-prompt: "/qa-review initial LFMT-12 42. The ticket and the PR are in the files provided."
+prompt: "/qa-review initial LFMT-12 42. The ticket, the PR and the output of missing_tests.py are in the files provided."
 expect:
   findings: []
   must_not_flag: []

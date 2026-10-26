@@ -1,0 +1,22 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "docs/install.md"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [],
+  "test_files_changed": [],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    },
+    {
+      "file": "docs/install.md",
+      "reason": "documentation"
+    }
+  ],
+  "note": "No changed source files to check."
+}

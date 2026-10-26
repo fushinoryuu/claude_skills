@@ -10,7 +10,7 @@ This skill assumes that you have the following tools already set up and fully au
 
 - GitHub CLI (`gh`). The skill needs it to read the pull requests.
 - Atlassian MCP with write access to post comments (setup is in the repository README). Without it, the skill asks you to paste the ticket text and gives you the finished comment to post by hand.
-- Optional: `python3`. The skill runs a small script that suggests which lenses fit the change. Without Python it chooses lenses by hand.
+- Optional: `python3`. The skill runs small scripts that suggest which lenses fit the change and which changed source files have no matching test change. Without Python it does both by hand.
 - Set effort level to `high` before running skill
 
 Optional: put a `.claude/qa-review/patterns.md` file in the repo you are reviewing, with your team's known recurring gaps under an **Implementation Gaps** heading. The skill reads it as a checklist and never edits it. At the end of a review it suggests patterns worth adding, for you to commit.
