@@ -17,7 +17,9 @@ A changed test file matches when it fits a pattern and its `{name}` is the sourc
 `-`, `_` and `.` are ignored when names are compared. The folders must agree too, so that
 tests/b/test_utils.py does not cover src/a/utils.py. Folders such as src, lib, test, tests, spec,
 __tests__ and unit are ignored, and one folder path has to end with the other (a test with no folders
-left, like tests/test_utils.py, agrees with every source file). Files under a folder called test,
+left, like tests/test_utils.py, agrees with every source file). A same-name test in a folder that does
+not agree is still not a match, but when no other changed source file claims it, it is reported as a
+likely match, because folder names often differ (scripts/ and qa_review/, say). Files under a folder called test,
 tests, __tests__, spec, specs or e2e count as test files too, so they are never reported as source.
 Documentation, configuration (including *.config.* and *.setup.* files), type declarations (.d.ts),
 lock files, generated files and assets are not checked.
@@ -44,8 +46,11 @@ Anything that goes wrong is reported in the output and never stops the review.
     "changed_files": ["src/app.py", "tests/test_app.py"],
     "missing_test_change": [          source files with no matching test file in the change
       {"file": "src/text.py", "language": "python", "expected_tests": ["**/test_text.py"],
-       "same_name_tests_elsewhere": ["tests/b/test_text.py"]}    present only when a changed test has the
-    ],                                                           same name but sits in another folder
+       "same_name_tests_elsewhere": ["tests/b/test_text.py"],    present only when a changed test has the
+                                                                 same name but sits in another folder
+       "likely_test_elsewhere": ["tests/b/test_text.py"]}        present only when no other changed source
+    ],                                                           file accounts for that test, so it probably
+                                                                 covers this file: read it before reporting
     "has_test_change": [              source files with a matching test file in the change
       {"file": "src/app.py", "language": "python", "tests": ["tests/test_app.py"],
        "ambiguous_with": ["lib/app.py"]}                         present only when another source file with
@@ -68,6 +73,7 @@ import argparse
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
@@ -347,6 +353,14 @@ def check(text: str, patterns: list[tuple[Language | None, list[str]]], source_e
                 entry["same_name_tests_elsewhere"] = elsewhere
             report["missing_test_change"].append(entry)
 
+    # A same-name test in another folder is a likely match when no other changed source file accounts for it.
+    claimed = {test for tests_ in covered.values() for test in tests_}
+    shared_by = Counter(test for entry in report["missing_test_change"] for test in entry.get("same_name_tests_elsewhere", []))
+    for entry in report["missing_test_change"]:
+        likely = [t for t in entry.get("same_name_tests_elsewhere", []) if t not in claimed and shared_by[t] == 1]
+        if likely:
+            entry["likely_test_elsewhere"] = likely
+
     for entry in report["has_test_change"]:  # one test claimed by several same-named source files
         shared = [
             other
@@ -368,6 +382,11 @@ def check(text: str, patterns: list[tuple[Language | None, list[str]]], source_e
         notes.append(
             "Some test files changed but matched no source file by name. They may still cover the files listed as "
             "missing a test change, so read them before reporting a gap."
+        )
+    if any("likely_test_elsewhere" in entry for entry in report["missing_test_change"]):
+        notes.append(
+            "A file listed as missing a test has a test with the same name in another folder. Read that test "
+            "(likely_test_elsewhere) before reporting a gap: it probably covers the file."
         )
     if any("ambiguous_with" in entry for entry in report["has_test_change"]):
         notes.append("A test that matches several source files of the same name may cover only one of them.")
