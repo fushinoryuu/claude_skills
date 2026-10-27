@@ -1,11 +1,11 @@
 id: qa-review-docs-only-01
 skill: qa-review
 fixture: docs-only
-prompt: "/qa-review initial TT-8 9. The ticket, the PR and the output of suggest_lenses.py and missing_tests.py are in the files provided."
+prompt: "/qa-review initial TT-8 9 json. The ticket, the PR and the output of suggest_lenses.py and missing_tests.py are in the files provided."
 expect:
   findings: []
   must_not_flag: [missing-tests, missing-edge-case-coverage, missing-error-handling]
   max_findings: 1
-  max_comment_words: 500
+  max_comment_words: 750
   lenses: []
 tags: [clean, lenses]

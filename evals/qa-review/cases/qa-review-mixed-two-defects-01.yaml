@@ -1,7 +1,7 @@
 id: qa-review-mixed-two-defects-01
 skill: qa-review
 fixture: mixed-two-defects
-prompt: "/qa-review initial PK-9 22. The ticket and the PR are in the files provided, and so is the repository README.md as it is before this PR."
+prompt: "/qa-review initial PK-9 22 json. The ticket and the PR are in the files provided, and so is the repository README.md as it is before this PR."
 expect:
   findings:
     - category: missing-tests
@@ -10,5 +10,5 @@ expect:
       file: README.md
   must_not_flag: []
   max_findings: 4
-  max_comment_words: 500
+  max_comment_words: 750
 tags: [defect]

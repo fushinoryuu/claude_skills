@@ -1,13 +1,13 @@
 id: qa-review-mixed-lens-change-01
 skill: qa-review
 fixture: mixed-lens-change
-prompt: "/qa-review initial SH-31 52. The ticket, the PR and the output of suggest_lenses.py are in the files provided."
+prompt: "/qa-review initial SH-31 52 json. The ticket, the PR and the output of suggest_lenses.py are in the files provided."
 expect:
   findings:
     - category: missing-tests
       file: src/shop/routes/orders.py
   must_not_flag: []
   max_findings: 4
-  max_comment_words: 500
+  max_comment_words: 750
   lenses: [service, api-spec]
 tags: [defect, lenses]

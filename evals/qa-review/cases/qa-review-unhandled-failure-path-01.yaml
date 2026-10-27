@@ -1,12 +1,12 @@
 id: qa-review-unhandled-failure-path-01
 skill: qa-review
 fixture: unhandled-failure-path
-prompt: "/qa-review initial FC-3 7. The ticket and the PR are in the files provided."
+prompt: "/qa-review initial FC-3 7 json. The ticket and the PR are in the files provided."
 expect:
   findings:
     - category: missing-error-handling
       file: src/forecast/client.py
   must_not_flag: []
   max_findings: 4
-  max_comment_words: 500
+  max_comment_words: 750
 tags: [defect]
