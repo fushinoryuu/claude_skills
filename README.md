@@ -4,15 +4,18 @@
 
 ## Expected tools
 
-The skills describe what they need (the PR diff, the linked ticket and its acceptance criteria) and let the agent fetch it with whatever is connected. They expect three tools:
+The skills describe what they need (the PR diff, the linked ticket and its acceptance criteria) and let the agent fetch it with whatever is connected. They expect four tools:
 
 | Need                                                          | Expected                                                                                                                | Fallback                            |
 | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
 | Running the skills, and adding MCP servers (`claude mcp add`) | The [Claude Code CLI](https://code.claude.com/docs/en/overview) (the VS Code extension and desktop app also run skills) | None                                |
 | Pull requests, diffs, changed files, comments, GitHub Issues  | The [GitHub CLI](https://cli.github.com/) (`gh pr view`, `gh pr diff`, `gh issue view`)                                 | None                                |
 | Jira issues, acceptance criteria, comments                    | The [Atlassian Rovo MCP server](https://developer.atlassian.com/cloud/rovo-mcp/)                                        | Paste the ticket text into the chat |
+| Small helper scripts that skills run (`python3`)              | [Python](https://www.python.org/downloads/) 3.9 or newer, standard library only                                         | The skill does that step by hand    |
 
 Without Jira access, a skill still works if you paste the ticket text.
+
+Check Python with `python3 --version`. On Windows, `python3` can be a Microsoft Store shortcut and not Python: running it only prints "Python was not found" and offers the Store. If that happens, install Python from the Store or python.org and open a new terminal. The scripts need no packages, so `uv` is not required to run a skill (it is only for developing this repo).
 
 ### Connecting Jira
 

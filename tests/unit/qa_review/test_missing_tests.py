@@ -193,6 +193,7 @@ def test_a_test_in_another_module_does_not_cover_a_same_named_source_file():
     assert report["missing_test_change"][0]["same_name_tests_elsewhere"] == ["tests/b/test_utils.py"]
     assert covered(report) == {"src/b/utils.py": ["tests/b/test_utils.py"]}
     assert "ambiguous_with" not in report["has_test_change"][0]
+    assert "likely_test_elsewhere" not in report["missing_test_change"][0]  # src/b/utils.py already accounts for it
 
 
 def test_a_test_with_no_telling_folder_matches_both_files_and_says_so():
@@ -205,7 +206,39 @@ def test_a_test_with_no_telling_folder_matches_both_files_and_says_so():
 
 
 def test_a_missing_test_without_a_same_name_test_elsewhere_has_no_such_key():
-    assert "same_name_tests_elsewhere" not in run(["src/a.py"])["missing_test_change"][0]
+    entry = run(["src/a.py"])["missing_test_change"][0]
+    assert "same_name_tests_elsewhere" not in entry
+    assert "likely_test_elsewhere" not in entry
+
+
+def test_a_uniquely_named_test_in_a_differently_named_folder_is_a_likely_match():
+    report = run(["skills/qa-review/scripts/missing_tests.py", "tests/unit/qa_review/test_missing_tests.py"])
+    assert missing(report) == ["skills/qa-review/scripts/missing_tests.py"]  # still missing: the script only suggests
+    entry = report["missing_test_change"][0]
+    assert entry["likely_test_elsewhere"] == ["tests/unit/qa_review/test_missing_tests.py"]
+    assert entry["same_name_tests_elsewhere"] == ["tests/unit/qa_review/test_missing_tests.py"]
+    assert "likely_test_elsewhere" in report["note"]
+
+
+def test_a_likely_match_is_not_offered_for_a_test_that_another_source_file_accounts_for():
+    report = run(["src/a/utils.py", "src/b/utils.py", "tests/b/test_utils.py"])
+    assert "likely_test_elsewhere" not in report["missing_test_change"][0]
+    assert "likely_test_elsewhere" not in report["note"]
+
+
+def test_a_likely_match_is_not_offered_when_two_missing_files_share_the_same_test():
+    report = run(["src/a/utils.py", "src/b/utils.py", "tests/c/test_utils.py"])
+    assert missing(report) == ["src/a/utils.py", "src/b/utils.py"]
+    assert all("likely_test_elsewhere" not in entry for entry in report["missing_test_change"])
+    assert all(entry["same_name_tests_elsewhere"] == ["tests/c/test_utils.py"] for entry in report["missing_test_change"])
+
+
+def test_only_the_unclaimed_test_is_likely_when_a_file_has_two_same_name_tests_elsewhere():
+    report = run(["src/a/utils.py", "src/b/utils.py", "tests/b/test_utils.py", "tests/c/test_utils.py"])
+    by_file = {entry["file"]: entry for entry in report["missing_test_change"]}
+    assert missing(report) == ["src/a/utils.py"]
+    assert by_file["src/a/utils.py"]["likely_test_elsewhere"] == ["tests/c/test_utils.py"]
+    assert by_file["src/a/utils.py"]["same_name_tests_elsewhere"] == ["tests/b/test_utils.py", "tests/c/test_utils.py"]
 
 
 # --- files that need no test ---
