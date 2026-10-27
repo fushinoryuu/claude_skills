@@ -17,6 +17,20 @@ On Windows, `python3` can be a Microsoft Store shortcut and not Python: running 
 
 Optional: put a `.claude/qa-review/patterns.md` file in the repo you are reviewing, with your team's known recurring gaps under an **Implementation Gaps** heading. The skill reads it as a checklist and never edits it. At the end of a review it suggests patterns worth adding, for you to commit.
 
+### Progress list
+
+The skill shows a list of its 12 steps and where it is. It uses the session's task tool when there is one. In some Claude Code builds that tool is off by default; set `CLAUDE_CODE_ENABLE_TODO_TOOLS` to `1` once under `env` in `~/.claude/settings.json` to turn it on:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1"
+  }
+}
+```
+
+Without a task tool, the skill prints the 12 steps once and a `Step N of 12` line as each step starts.
+
 ### If `git fetch` fails with an SSL certificate error
 
 On Windows, antivirus software that scans HTTPS traffic replaces GitHub's certificate with its own. `gh` and browsers use the Windows certificate store, which trusts it, but Git for Windows does not, so `git fetch` fails with an SSL certificate error. Either fix works:
@@ -36,8 +50,10 @@ There are two modes, used at different points in the ticket lifecycle:
 ## Usage
 
 ```
-/qa-review <MODE> <JIRA-TICKET> <PR#> [PR#2 PR#3 ...]
+/qa-review <MODE> <JIRA-TICKET> <PR#> [PR#2 PR#3 ...] [json]
 ```
+
+End the command with `json` to also get the findings as a JSON block at the end of the report. Without it you get a readable list only.
 
 **Examples:**
 
@@ -45,6 +61,7 @@ There are two modes, used at different points in the ticket lifecycle:
 /qa-review initial ABC-123 456
 /qa-review final ABC-123 456
 /qa-review final ABC-123 456 789
+/qa-review final ABC-123 456 json
 ```
 
 ## What each mode does
@@ -60,7 +77,7 @@ There are two modes, used at different points in the ticket lifecycle:
 7. Check interfaces and documentation
 8. Sanity-check each gap against the current base branch
 9. _(Nothing is fixed in `initial` mode, every open gap is reported)_
-10. Show the initial review comment as a draft, post it to the Jira ticket after you approve it, and stop
+10. Post the initial review comment to the Jira ticket (after you confirm any derived acceptance criteria), and stop
 
 **`final` review:**
 
@@ -73,12 +90,14 @@ There are two modes, used at different points in the ticket lifecycle:
 7. Check interfaces and documentation
 8. Sanity-check each gap against the current base branch
 9. Fix the test and documentation gaps that step 8 confirmed are still open, where possible without touching production code. This includes writing the functional/integration tests
-10. Show the final review comment as a draft and post it to the Jira ticket after you approve it. If gaps remain for dev, the comment is another initial-style review instead.
+10. Post the final review comment to the Jira ticket (after you confirm any derived acceptance criteria). If gaps remain for dev, the comment is another initial-style review instead.
 
 ## What you get
 
-- **A Jira comment**, in Markdown (bold headings, related lines grouped together), using the template for the mode. It stays within 500 words for an `initial` review and 600 for a `final` one. It has the verdict, one line per acceptance criterion, a summary of the change, and the gaps by section. You see it as a draft first, and it is posted only after you say yes. If the ticket has no acceptance criteria, the skill derives them from the description, marks them "(derived from the description)", and asks you to confirm them before posting.
-- **A findings block** at the end of the session: a short JSON list of the gaps, each with a category, a file, a severity and a one-sentence summary. It is for tools and evals only and is never posted to Jira. Its format is in [references/output-format.md](references/output-format.md).
+- **A Jira comment**, in Markdown (bold headings, related lines grouped together), using the template for the mode. It aims for 750 words for an `initial` review and 1000 for a `final` one, and never drops a gap to get there: a review with many gaps can run longer. It has the verdict, one line per acceptance criterion, a summary of the change, and the gaps by section. It is posted without asking, because the skill only adds comments and a comment can be edited or deleted in Jira. The report at the end shows the comment as posted. Two cases still stop for you: if the ticket has no acceptance criteria, the skill derives them from the description, marks them "(derived from the description)", and asks you to confirm them before posting; and if the ticket was pasted or the Atlassian tool is missing, it gives you the comment to post by hand.
+- **A report** at the end of the session: a summary, the comment as posted, and the findings as a readable list (a severity, a category, a file and a one-sentence summary for each gap). It never goes to Jira. Add `json` to the command to also get the same findings as a JSON block for tools and evals. The format is in [references/output-format.md](references/output-format.md).
+
+The state of a pull request (open, merged or closed) never changes the verdict. The Jira ticket tracks the work, so a PR that is already merged is reviewed like any other and the comment does not mention it.
 
 ## What it checks
 
