@@ -10,10 +10,19 @@ This skill assumes that you have the following tools already set up and fully au
 
 - GitHub CLI (`gh`). The skill needs it to read the pull requests.
 - Atlassian MCP with write access to post comments (setup is in the repository README). Without it, the skill asks you to paste the ticket text and gives you the finished comment to post by hand.
-- Optional: `python3`. The skill runs small scripts that suggest which lenses fit the change and which changed source files have no matching test change. Without Python it does both by hand.
+- Python 3.9 or newer, as `python3`. Check with `python3 --version`. The skill runs small scripts that suggest which lenses fit the change and which changed source files have no matching test change. They use only the standard library, so there is nothing to install. If a script cannot run, the skill says so and does that step by hand, which is slower and less consistent.
 - Set effort level to `high` before running skill
 
+On Windows, `python3` can be a Microsoft Store shortcut and not Python: running it only prints "Python was not found" and offers the Store. If `python3 --version` does that, install Python from the Store or from [python.org](https://www.python.org/downloads/), then open a new terminal and check again.
+
 Optional: put a `.claude/qa-review/patterns.md` file in the repo you are reviewing, with your team's known recurring gaps under an **Implementation Gaps** heading. The skill reads it as a checklist and never edits it. At the end of a review it suggests patterns worth adding, for you to commit.
+
+### If `git fetch` fails with an SSL certificate error
+
+On Windows, antivirus software that scans HTTPS traffic replaces GitHub's certificate with its own. `gh` and browsers use the Windows certificate store, which trusts it, but Git for Windows does not, so `git fetch` fails with an SSL certificate error. Either fix works:
+
+- Add an exception for `github.com` and `*.github.com` in the antivirus software's HTTPS scanning settings.
+- Or make Git use the Windows certificate store: `git config --global http.sslBackend schannel`.
 
 ## Review modes
 
@@ -116,7 +125,7 @@ To add a lens for your own stack, see [references/lenses/README.md](references/l
 
 ### Test patterns
 
-Step 5 starts with a script (`scripts/missing_tests.py`) that lists changed source files with no matching test file in the change. It compares file names and folders, it never reads a test, and the skill treats its output as a signal. Out of the box it knows the usual test names for Python, JavaScript and TypeScript, Java, Kotlin, Go, Ruby, C#, PHP and Swift. If your project names or places its tests differently, commit a file named `.claude/qa-review/test-patterns` in the repo being reviewed. The script reads it on every run:
+Step 5 starts with a script (`scripts/missing_tests.py`) that lists changed source files with no matching test file in the change. It compares file names and folders, it never reads a test, and the skill treats its output as a signal. Folders tell same-named files apart (`tests/b/test_utils.py` does not cover `src/a/utils.py`). A same-name test in a differently named folder, such as `scripts/` and `qa_review/`, is not counted as a match, but when no other changed file accounts for it the script lists it as a likely match (`likely_test_elsewhere`) so the reviewer reads it before reporting a gap. Out of the box it knows the usual test names for Python, JavaScript and TypeScript, Java, Kotlin, Go, Ruby, C#, PHP and Swift. If your project names or places its tests differently, commit a file named `.claude/qa-review/test-patterns` in the repo being reviewed. The script reads it on every run:
 
 ```
 # One pattern per line. {name} is the source file's name without its extension.
