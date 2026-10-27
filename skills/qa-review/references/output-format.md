@@ -1,8 +1,25 @@
-# Findings block
+# Findings
 
-At the end of every review, after the summary in Step 12, print one structured block listing the gaps found. Tools and the eval runner read it, so its shape is fixed.
+The gaps found are reported twice in the session, never in the Jira comment (the comment is Markdown text and must not contain a code fence, see the comment templates):
 
-The block is for the session only. **Never put it in the Jira comment**: the Jira comment is Markdown text and must not contain a code fence (see the comment templates).
+- A **readable list** under `## Findings` in the final report (Step 12). Every review prints it.
+- A **JSON block** after the list, only when the user ended the command with `json`. Tools and the eval runner read it, so its shape is fixed.
+
+Both hold the same findings and use the same categories, files, severities and summaries. The rules for which gaps to list, and the fields, are the same for both.
+
+## Readable list
+
+Start with one line, `Lenses applied:`, followed by the lens names or `core only`. Then one line per finding, ranked most severe first, in this shape:
+
+```
+1. [medium] missing-tests - src/orders/service.py - cancel_order has no test for the already-cancelled case.
+```
+
+That is: a number, the severity in brackets, the category slug, the file, and the one-sentence summary, joined by ` - `. When there are no gaps, write `No gaps found.` after the `Lenses applied:` line. Do not use a table and do not repeat the Jira comment's wording of the verdict.
+
+## JSON block (only with `json`)
+
+Print this block after the readable list, and only when the command ended with `json`. Without it, print no JSON.
 
 ## Shape
 
