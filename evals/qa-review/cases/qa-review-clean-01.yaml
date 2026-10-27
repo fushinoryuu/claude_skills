@@ -1,10 +1,10 @@
 id: qa-review-clean-01
 skill: qa-review
 fixture: clean
-prompt: "/qa-review initial LFMT-12 42. The ticket, the PR and the output of missing_tests.py are in the files provided."
+prompt: "/qa-review initial LFMT-12 42 json. The ticket, the PR and the output of missing_tests.py are in the files provided."
 expect:
   findings: []
   must_not_flag: []
   max_findings: 1
-  max_comment_words: 500
+  max_comment_words: 750
 tags: [clean]

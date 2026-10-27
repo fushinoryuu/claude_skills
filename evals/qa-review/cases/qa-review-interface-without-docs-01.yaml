@@ -1,12 +1,12 @@
 id: qa-review-interface-without-docs-01
 skill: qa-review
 fixture: interface-without-docs
-prompt: "/qa-review initial FC-6 12. The ticket and the PR are in the files provided, and so is the repository README.md as it is before this PR."
+prompt: "/qa-review initial FC-6 12 json. The ticket and the PR are in the files provided, and so is the repository README.md as it is before this PR."
 expect:
   findings:
     - category: missing-interface-doc-update
       file: README.md
   must_not_flag: []
   max_findings: 3
-  max_comment_words: 500
+  max_comment_words: 750
 tags: [defect]

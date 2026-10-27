@@ -1,10 +1,10 @@
 id: qa-review-vague-criteria-01
 skill: qa-review
 fixture: vague-criteria
-prompt: "/qa-review initial NK-31 28. The ticket and the PR are in the files provided."
+prompt: "/qa-review initial NK-31 28 json. The ticket and the PR are in the files provided."
 expect:
   findings: []
   must_not_flag: [unmet-acceptance-criterion]
   max_findings: 1
-  max_comment_words: 500
+  max_comment_words: 750
 tags: [tricky]

@@ -1,12 +1,12 @@
 id: qa-review-missing-tests-01
 skill: qa-review
 fixture: missing-tests
-prompt: "/qa-review initial SLUG-7 15. The ticket, the PR and the output of missing_tests.py are in the files provided."
+prompt: "/qa-review initial SLUG-7 15 json. The ticket, the PR and the output of missing_tests.py are in the files provided."
 expect:
   findings:
     - category: missing-tests
       file: src/slugkit/text.py
   must_not_flag: []
   max_findings: 3
-  max_comment_words: 500
+  max_comment_words: 750
 tags: [defect]

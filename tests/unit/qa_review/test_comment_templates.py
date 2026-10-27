@@ -20,11 +20,26 @@ def test_each_template_states_a_word_limit_in_its_rules():
         assert re.search(r"\b\d+ words or fewer", template_rules(name)), name
 
 
-def test_the_initial_limit_matches_the_one_the_evals_enforce():
-    limit = int(re.search(r"(\d+) words or fewer", template_rules("initial-comment.md")).group(1))
-    cases = (ROOT / "evals" / "qa-review" / "cases").glob("*.yaml")
-    limits = {re.search(r"max_comment_words: (\d+)", c.read_text(encoding="utf-8")).group(1) for c in cases}
-    assert limits == {str(limit)}
+def template_limit(name: str) -> int:
+    return int(re.search(r"(\d+) words or fewer", template_rules(name)).group(1))
+
+
+def test_each_case_enforces_the_limit_of_the_template_for_its_mode():
+    limits = {"initial": template_limit("initial-comment.md"), "final": template_limit("final-comment.md")}
+    cases = list((ROOT / "evals" / "qa-review" / "cases").glob("*.yaml"))
+    assert cases
+    for case in cases:
+        text = case.read_text(encoding="utf-8")
+        mode = re.search(r"^prompt: \"/qa-review (initial|final) ", text, re.MULTILINE).group(1)
+        enforced = int(re.search(r"max_comment_words: (\d+)", text).group(1))
+        assert enforced == limits[mode], case.name
+
+
+def test_every_case_prompt_asks_for_the_json_block_so_scoring_can_read_it():
+    for case in (ROOT / "evals" / "qa-review" / "cases").glob("*.yaml"):
+        prompt = re.search(r"^prompt: \"(.*)\"$", case.read_text(encoding="utf-8"), re.MULTILINE).group(1)
+        command = prompt.split(".")[0]
+        assert command.split()[-1] == "json", case.name
 
 
 def test_headings_are_bold_markdown_not_single_asterisk_text():

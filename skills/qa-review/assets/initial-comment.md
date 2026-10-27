@@ -17,7 +17,7 @@ Use this template when posting the Jira comment for an `initial` mode review. Fi
 9. Do not use Markdown tables. Use one line per item.
 10. Never change Jira ticket status.
 11. Keep the lines of one group on consecutive lines with no blank line between them: the title and the `PRs`, `Reviewed` and `Lenses` lines, the acceptance criteria, and the Gap (and Action) lines of one section. Leave one blank line between groups and sections. Jira shows a single line break as a line break but a blank line as extra space, so blank lines between every line make the comment look loose. Do not add trailing spaces or backslashes to force a break.
-12. Keep the whole comment to 500 words or fewer. If it is longer, shorten the Implementation summary and the wording of each Gap before dropping a gap.
+12. Aim for 750 words or fewer. Never drop a gap to reach that. If the comment is longer, shorten the Implementation summary and the wording of each Gap. If many gaps still keep it over, keep every gap and go over.
 
 ---
 

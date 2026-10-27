@@ -65,11 +65,13 @@ Settled before the remaining Phase 1 work, so later PRs do not reopen them:
 
 - **Slash-only.** The skill sets `disable-model-invocation: true` and runs only when the user types `/qa-review`. Its description never selects it, so it has no trigger phrases and no `triggers.yaml`. The structure check exempts skills like this.
 - **Ticket source.** The Jira key is a required argument and the ticket is read through the Atlassian MCP server. If that tool is not available, the skill asks the user to paste the ticket text and shows the comment as a draft instead of stopping. GitHub Issues are a Phase 2 source.
-- **Posting.** The skill shows the draft comment and waits for the user's yes before posting it to Jira.
+- **Posting.** The skill posts the comment to Jira without waiting for a yes, because it only adds comments and a comment can be edited or deleted in Jira. It still asks first when it derived the acceptance criteria (the user confirms them), and it hands over a draft when the ticket was pasted or the Atlassian tool is missing. The final report shows the comment as posted. Changed from "draft, then wait for a yes" after the first dogfood run (QARS-11).
+- **PR state.** Whether a PR is open, merged or closed never changes the verdict, and the comment does not mention it. The Jira ticket tracks the work, not the PR.
+- **Progress list.** The skill uses the session's task tool when there is one (`TodoWrite`, or `TaskCreate` and `TaskUpdate`; some builds need `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`). Otherwise it prints the 12 steps once and a `Step N of 12` line as each step starts.
 - **Review state.** The per-ticket gaps and verdict live in Claude Code memory. The "living document" of recurring issues is the patterns file below.
 - **Project extensions.** A team puts its own files in `.claude/qa-review/` in the repo being reviewed, committed so the whole team shares them: `patterns.md` (known recurring gaps) and later `lenses/` (project-specific lenses). The skill only reads them. The patterns file is read in Step 4 and optional. New patterns are suggested in the final report for a person to commit. Bundled lenses live in the skill's `references/lenses/` and project lenses in `.claude/qa-review/lenses/`. When both have a lens with the same name, the project lens wins, so a team can replace a default without editing the skill. A project lens with a new name is added to the bundled ones.
 - **Report format.** The Jira comment templates are the report. Each acceptance criterion is one line, and there are no tables and no line numbers, because Jira renders them badly and line numbers go stale. Severity appears only in the structured findings block.
-- **Findings block.** The structured block is shown at the end of every session and never posted to Jira. The category list includes an `other` catch-all, so the model does not invent a name when none fits.
+- **Findings.** Every session ends with a readable list of the gaps. The structured JSON block is printed only when the command ends with `json` (the eval prompts all do), and neither is posted to Jira. The category list includes an `other` catch-all, so the model does not invent a name when none fits.
 - **Templates.** They keep the *Other Findings* section and the `Lenses:` header line.
 - **Uncertainty.** When the ticket has no acceptance criteria, the skill derives them from the description, marks each one as derived and not stated in the ticket, never reports a derived criterion as a gap, and asks the user to confirm them before posting.
 - **Scripts.** Standard library only, runnable with a plain `python3`, and a script that cannot run never stops the review.
@@ -193,8 +195,8 @@ The Jira comment templates in `assets/` are the report (see "Decisions").
 - [x] Acceptance criteria, one line each: met or not met, with a brief reason. No table.
 - [x] Gaps grouped by section (*Tests*, *Interfaces and Documentation*, *Other Findings*), each naming the file and the change that would close it. No line numbers.
 - [x] A "Lenses applied" line naming each lens, or "core only".
-- [x] Structured findings block at the end of the session, described in `references/output-format.md`. It carries `category`, `file`, `severity` and `summary` per finding, and a `lenses_applied` list (an extra top-level key, which the current scoring ignores). Never posted to Jira.
-- [x] Keep it short enough that a reviewer reads all of it (500 words for an initial comment, 600 for a final one, enforced in the evals by `expect.max_comment_words`).
+- [x] Structured findings block, printed after the readable findings list when the command ends with `json`, described in `references/output-format.md`. It carries `category`, `file`, `severity` and `summary` per finding, and a `lenses_applied` list (an extra top-level key, which the current scoring ignores). Never posted to Jira.
+- [x] Keep it short enough that a reviewer reads all of it (a target of 750 words for an initial comment and 1000 for a final one, never met by dropping a gap, and guarded in the evals by `expect.max_comment_words`).
 
 ### 6. Fixtures and cases
 

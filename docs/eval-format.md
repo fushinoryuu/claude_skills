@@ -102,13 +102,13 @@ A skill that drafts a comment for posting (the `qa-review` Jira comment) can hav
 ```yaml
 expect:
   max_findings: 4
-  max_comment_words: 500
+  max_comment_words: 750
 ```
 
 - The skill's `categories.yaml` says how to find the comment with `comment_start`, a regular expression for the line that opens it (for `qa-review`, the `Initial QA Review - KEY` title line, which may be bold or numbered). A case that sets `max_comment_words` without it is a setup error.
 - The comment runs from the last line that matches to the next heading or code fence, minus trailing rules. Words are counted by splitting on whitespace.
 - The run passes only if the comment is found and has at most that many words. The run's progress line says how many it had.
-- It is checked per case, so a clean case can use a tighter limit than a defect case.
+- It is checked per case, so a clean case can use a tighter limit than a defect case. For `qa-review`, a case's limit equals its template's limit for the mode in the prompt (750 words for `initial`, 1000 for `final`), and a unit test checks that. The skill treats the limit as a target and never drops a gap to meet it, so the cap guards the eval's normal cases (at most 4 findings) against the skill getting wordier. It is not a rule that a very bad PR must fit.
 
 ## Structured findings block
 
@@ -135,6 +135,7 @@ Rules:
 - `findings` is a list of objects. An empty list means "nothing found" and is valid.
 - Extra top-level keys are allowed (for example `unmapped_files`) and are ignored unless the scorer uses them.
 - A missing or unparseable block is a failed run (`parse_error`), never a pass.
+- A skill may print the block only on request. `qa-review` prints a readable list by default and the block only when the command ends with `json`, so every `qa-review` case prompt ends its command with `json` (a unit test checks that).
 - Fields are skill-specific and declared in the skill's `categories.yaml`. `qa-review` uses `category`, `file`, `severity`, `summary`. Other skills (failure analysis uses `test`, `class`, `confidence`, `evidence`, `next_action`) define their own in their phase docs.
 - `severity` is one of `high`, `medium`, `low` wherever it appears.
 
