@@ -23,6 +23,8 @@ A weekly deployment of 3 to 5 services, deployed one after the other, which take
 - **First-version signals:** error rate, latency, and monitor state.
 - **Several services per release.** One run watches a list of services (see "Watching several services" below). One service is just a list of one.
 - **A config file is part of the first version,** to map each service to its tools (see the sketch below).
+- **Scripts call the tools' REST APIs and shrink the data before the model sees it.** The repo's old "MCP instead of custom adapters" rule is dropped (see "Cost").
+- **Cost is a design goal.** Gate and watch mode for polling, rules in scripts, a token budget per eval case, and evals run only when needed.
 - **The name stays `deploy-watch`.** A future "act" mode does not need to be in the name.
 - **Confluence output (later) is a comment on the existing release document,** never an edit of its body, so the release doc is not changed or damaged.
 - **Read-only.** The services are live, probably production. The skill never deploys, rolls back, promotes, or mutes a monitor. It can recommend an action for a person to take. Acting may be added much later, behind explicit approval, and is not part of the first version.
@@ -67,6 +69,8 @@ skills/deploy-watch/
   scripts/
     compare_windows.py        baseline versus current, from metric series in JSON
     release_changes.py        the changes between two releases
+    fetch_summary.py          call the APIs, print one compact summary per service (the gate lives here)
+    watch_release.py          poll on its own, exit on a meaningful change or when every soak window is over
   assets/
     report-template.md
 ```
@@ -87,13 +91,57 @@ services:
 
 The usage idea changes to `/deploy-watch <before|during|after> <environment> [service ...]`. With no service named, it watches every service in the release that Octopus reports for that environment, falling back to the whole config.
 
+## Cost: tokens and eval spend
+
+Token cost is a design goal from the start, not something to tune later. Three things multiply it: several services per run, repeated checks during a 30-minute rollout, and monitoring APIs that return a lot of data. The same approach that keeps `qa-review` cheap applies here: scripts do the heavy reading, the model does the judgment.
+
+### Decision: scripts call the APIs and shrink the data
+
+The repo no longer has a "use an MCP server instead of a custom adapter" rule. For `deploy-watch`, standard-library Python scripts call the tools' REST APIs directly and print a compact summary. The model never sees a raw metric series, deployment history, or monitor list.
+
+- **Credentials:** read-only keys, taken from environment variables, never written to a file, a log, or the report. Each tool's page in `references/sources/` says which permission is enough.
+- **No raw responses in context.** A script prints one summary per service: signal, baseline p50 and p95, current p50 and p95, change, monitor state, and a status flag. That is a few hundred tokens per service.
+- **Rules live in the script.** A threshold such as "error rate more than double the baseline" is deterministic, so the script flags it. The model spends its tokens on the ambiguous cases, on correlating services, and on writing the report. This also makes a smaller model a candidate for the judgment step, which the evals can confirm because the runner records the model used.
+- **Budgets in the config:** a cap on points per series, log lines, and monitors per service, keeping the top N by severity.
+- **Expected tools** then lists the three services' APIs and their keys, plus the Atlassian MCP server only for the later Confluence step.
+
+### Polling: a check that costs almost nothing
+
+During a rollout, most checks find nothing new. Two ways to keep that cheap:
+
+1. **A gate in the script.** The script saves its last summary locally and compares the new one to it. If nothing meaningful changed (no service started or finished, no threshold crossed, no monitor changed state), it prints `no change` and the model has nothing to do.
+2. **A watch mode, so nobody has to re-run it.** `watch_release.py` loops on its own with `time.sleep`, polls every interval (for example 60 seconds), and exits when something meaningful changes or when every service's soak window has passed. While it waits it costs no tokens. In Claude Code it runs as a background command, and the session is woken when it exits, so one slash command can cover the whole rollout. In another tool, or a plain terminal, the person runs it in a terminal window and brings the result to the agent. It needs the person's machine to stay on for the duration, and the keys in its environment.
+
+The model is therefore called once per meaningful change, not once per interval.
+
+### Keep the prompt cheap too
+
+- `SKILL.md` stays short, with detail in `references/` that is read only when a step needs it.
+- The stable text (instructions) comes first and the changing data last, so prompt caching applies.
+- Reports are short: the verdict and the evidence per service, not a narrative.
+
+### Keep the eval spend low
+
+Evals call the real model and cost money, so they run only when a change needs them, not on every edit. Applying what `qa-review` taught:
+
+- Script behavior is covered by unit tests, which are free. Most of the logic (windows, baselines, thresholds, the gate) is in scripts, so most changes need no eval run.
+- Evals run with the existing speed-ups: `--jobs`, prompt caching, `--tag` and `--case`, to run only the cases a change can affect. A full run is for the end of a ticket that changed skill text.
+- Fixtures hold large raw API responses, as recorded by the scripts' tests, so the shrinking is tested without the model.
+- Each case carries a token budget, in the same way `max_comment_words` guards comment length. A change that makes the skill read raw data then fails.
+- Record the tokens and cost of every full run in the PR description, as for `qa-review`.
+
+### Rough size (a guess, to be measured)
+
+A check with a change, over 5 services: about 10 to 15k input and 1 to 2k output tokens. A check with no change: under 1k. These are targets, to be replaced by measured numbers from the first fixtures.
+
 ## Hard parts
 
 1. **Evals without a live system.** Record API responses as fixtures (a deployment, a metric series, a monitor state) and plant the problems: error rate doubled after the deploy, a metric went silent, a flapping monitor, an unrelated incident in the same window, and a clean deployment.
 2. **Causality.** See "Correlated, not caused" above.
-3. **Size of the responses.** Monitoring APIs return a lot. Every call needs a narrow query, and the scripts should shrink the data before the model sees it.
-4. **Which tool for GitHub.** The repo uses the `gh` CLI instead of a GitHub MCP server to save tokens. Decide whether this skill follows that rule.
-5. **Where the tool access comes from.** Check whether each of the three tools has an MCP server or only a REST API, and what a person needs to authenticate. This decides the "Expected tools" section.
+3. **Size of the responses.** See "Cost" above.
+4. **Credentials.** Scripts that call the APIs handle keys. They must use read-only keys, and never print them or write them anywhere.
+5. **Request limits.** The tools' APIs have rate limits. A watch mode that polls every minute for 5 services must stay well inside them, so check the documented limits for each.
+6. **What each tool's API offers.** Check each tool's public API docs for the calls and fields the first slice needs, and for any required plan or permission. This decides the "Expected tools" section.
 
 ## Suggested first slice
 
@@ -105,6 +153,8 @@ Start with the `after` mode only, over several services. It has the clearest que
 - Is "healthy so far" a fourth verdict, or a note on `healthy`?
 - Can the Atlassian MCP server add a comment to a Confluence page (and not only create or update pages)? Check this against the tool list before promising the Confluence output.
 - How does the skill find the baseline for a service: a fixed window before the deployment start (for example the previous hour), or the same time of day on the previous week? The weekly deploy may make "same time last week" a good second baseline, but it needs the data to exist.
+- Is the watch mode in the first version, or only the gate? The gate alone is enough for a person who re-runs the skill, and the watch mode is a small addition on top of it.
+- The repo's other docs still carry the old rule: `docs/roadmap-phases/phase-1-qa-review-skill.md` (the "No API adapters" section) and `docs/roadmap-phases/phase-4-polish.md` (a design-notes bullet and an interview question). Update them in this change, or in a separate one?
 - Where does the person say which release or deployment is meant: by Octopus release version, or "the latest deployment to this environment"?
 
 ## Next steps
