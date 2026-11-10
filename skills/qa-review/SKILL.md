@@ -289,7 +289,7 @@ End with a report in this order. Give each part its own `##` heading, so a reade
 
 If the user ended the command with `json`, finish with the structured findings block described in [references/output-format.md](references/output-format.md), after the list. Without `json`, print no JSON.
 
-`/compact` cannot be triggered automatically. As the final action of every review, output the following message to the user verbatim, they can run the command as-is to cleanup the session with a consistent focus and memory state:
+`/compact` cannot be triggered automatically. As the final action of every review, output the following message to the user verbatim, they can run the command as-is to cleanup the session with a consistent focus and memory state. Always print it inside a fenced code block, so it is easy to copy and does not read as part of the report. It is the last thing you write: nothing comes after it, not even after the JSON block:
 
 ```
 /compact Keep: ticket key and PR numbers reviewed; mode (initial/final); each gap found with its category (e.g. unit test, integration test, spec, implementation, etc) and action taken (e.g. fixed in session, sent back to dev, .todo stub added, etc); files created or modified and what changed in each; Jira comment ID. Discard everything else.
