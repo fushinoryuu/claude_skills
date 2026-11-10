@@ -23,7 +23,9 @@ A weekly deployment of 3 to 5 services, deployed one after the other, which take
 - **First-version signals:** error rate, latency, and monitor state.
 - **Several services per release.** One run watches a list of services (see "Watching several services" below). One service is just a list of one.
 - **A config file is part of the first version,** to map each service to its tools (see the sketch below).
-- **Scripts call the tools' REST APIs and shrink the data before the model sees it.** The repo's old "MCP instead of custom adapters" rule is dropped (see "Cost").
+- **Scripts call the tools' REST APIs and shrink the data before the model sees it.** The repo has no rule for or against adapters any more: each skill picks MCP, a CLI or a script by token cost (see "Cost"). `qa-review` is unchanged. The phase 1 and phase 4 docs were updated to say so.
+- **The watch mode is in the first version.** The skill has no point without it.
+- **Skills should also work in VS Code Copilot,** not only in Claude Code (see "Working on more than one platform").
 - **Cost is a design goal.** Gate and watch mode for polling, rules in scripts, a token budget per eval case, and evals run only when needed.
 - **The name stays `deploy-watch`.** A future "act" mode does not need to be in the name.
 - **Confluence output (later) is a comment on the existing release document,** never an edit of its body, so the release doc is not changed or damaged.
@@ -134,6 +136,35 @@ Evals call the real model and cost money, so they run only when a change needs t
 
 A check with a change, over 5 services: about 10 to 15k input and 1 to 2k output tokens. A check with no change: under 1k. These are targets, to be replaced by measured numbers from the first fixtures.
 
+## Working on more than one platform
+
+The goal is that a skill in this repo works in Claude Code and in VS Code Copilot with no changes to its files. Checked against the [VS Code Agent Skills docs](https://code.visualstudio.com/docs/agent-customization/agent-skills) (Copilot reads the same skill format):
+
+- **Same format.** A skill is a folder with a `SKILL.md`, plus optional scripts, templates and references. VS Code reads project skills from `.github/skills/`, `.claude/skills/` and `.agents/skills/`, and personal skills from `~/.copilot/skills/`, `~/.claude/skills/` and `~/.agents/skills/`. `.claude/skills/` is the one location both tools read, so the install instructions keep using it.
+- **Frontmatter that works in both:** `name` (lowercase letters, numbers and hyphens, and it must match the folder name), `description`, `argument-hint`, and `disable-model-invocation`. `user-invocable` exists in VS Code too. `context: fork` is experimental there, and is not used.
+- **Referenced files load when linked.** VS Code loads only the files the instructions reference, by a path relative to `SKILL.md`. That matches how `references/` already works.
+
+### Where the two tools differ (from the docs, and not tested yet)
+
+| Area               | Claude Code today                                                      | What to do in `deploy-watch`                                                                                                 |
+| ------------------ | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Skill folder path  | `${CLAUDE_SKILL_DIR}` is filled in when the skill loads                | The VS Code page documents no such variable. Refer to scripts by a path relative to the skill, and check what VS Code does   |
+| Tool names         | MCP tools are named `mcp__<server>__<tool>`                            | The VS Code names differ. Describe each need in words and keep one "Expected tools" table with the name on each platform     |
+| Arguments          | `$ARGUMENTS` is filled in with what follows the command                | The VS Code page says only that extra context can follow the command. Have the skill read its arguments from the user's text |
+| Progress list      | A task tool such as `TodoWrite`                                        | Keep the tool-neutral rule `qa-review` already has (use the session's task tool, otherwise print the steps)                  |
+| Ending the session | `/compact` command                                                     | Say what to keep in plain words, with the command as the Claude Code form                                                    |
+| Background command | A command can run in the background and wake the session when it exits | Not documented for Copilot. See the time limit below                                                                         |
+
+### Rules for the new skill
+
+- Use only the frontmatter listed above, and name the folder exactly as `name`.
+- Scripts must run from any terminal with plain `python3` and no Claude-specific environment. The skill passes them every path as an argument, so a script never needs the skill folder variable.
+- The watch mode must work without the host's background-command feature. A command that waits 30 minutes can exceed a tool call's time limit, so `watch_release.py` takes `--max-wait` and exits with `still watching` after that time, having saved its state. The agent then runs it again, which costs one call and no model reasoning. Where background commands exist, the same script just runs with a long `--max-wait`.
+- `SKILL.md` stays in plain Markdown instructions. Anything Claude-specific is marked as such and has a neutral fallback.
+- Evals use the Anthropic API, so they only test the skill under Claude. Use in Copilot is checked by hand, once per skill, and the result goes in the skill's README. The unit tests of the scripts are platform-independent.
+
+`qa-review` has the same points (`${CLAUDE_SKILL_DIR}` in Step 3, the `mcp__atlassian__*` names in Steps 2 and 10, `$ARGUMENTS`, the `/compact` message). Checking it in VS Code and fixing what differs is a separate piece of work, not part of this one.
+
 ## Hard parts
 
 1. **Evals without a live system.** Record API responses as fixtures (a deployment, a metric series, a monitor state) and plant the problems: error rate doubled after the deploy, a metric went silent, a flapping monitor, an unrelated incident in the same window, and a clean deployment.
@@ -145,7 +176,7 @@ A check with a change, over 5 services: about 10 to 15k input and 1 to 2k output
 
 ## Suggested first slice
 
-Start with the `after` mode only, over several services. It has the clearest question and the clearest evidence, and `before` and `during` reuse the same comparison script. Because the per-service state matters for a release in progress, the first slice also reads which services Octopus reports as done.
+The first version follows a rollout from the first service starting to the last soak window ending, over several services, with the watch mode. Without the watch mode the skill has no point, so it is in. That covers `during` and `after`. The `before` check (is it safe to deploy now?) comes later, and reuses the same comparison script. The first slice reads which services Octopus reports as started and done, and applies each service's soak window.
 
 ## Open questions
 
@@ -153,8 +184,6 @@ Start with the `after` mode only, over several services. It has the clearest que
 - Is "healthy so far" a fourth verdict, or a note on `healthy`?
 - Can the Atlassian MCP server add a comment to a Confluence page (and not only create or update pages)? Check this against the tool list before promising the Confluence output.
 - How does the skill find the baseline for a service: a fixed window before the deployment start (for example the previous hour), or the same time of day on the previous week? The weekly deploy may make "same time last week" a good second baseline, but it needs the data to exist.
-- Is the watch mode in the first version, or only the gate? The gate alone is enough for a person who re-runs the skill, and the watch mode is a small addition on top of it.
-- The repo's other docs still carry the old rule: `docs/roadmap-phases/phase-1-qa-review-skill.md` (the "No API adapters" section) and `docs/roadmap-phases/phase-4-polish.md` (a design-notes bullet and an interview question). Update them in this change, or in a separate one?
 - Where does the person say which release or deployment is meant: by Octopus release version, or "the latest deployment to this environment"?
 
 ## Next steps
