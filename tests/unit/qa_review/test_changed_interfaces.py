@@ -211,6 +211,26 @@ def test_a_schema_file_in_a_list_of_paths_is_listed_as_changed():
     assert "list of paths" in report["note"]
 
 
+@pytest.mark.parametrize("path", ["specs/openapi.yaml", "spec/openapi.yaml", "e2e/api/openapi.json", "api/specs/orders.proto"])
+def test_a_spec_in_a_spec_folder_is_listed_not_skipped_as_a_test_file(path):
+    report = ci.check(make_diff(path, added=["  /orders:"]))
+    assert [(e["kind"], e["file"]) for e in report["interfaces"]] == [("schema_file", path)]
+    assert report["not_checked"] == []
+
+
+@pytest.mark.parametrize("path", ["tests/fixtures/openapi.json", "test/schema.graphql", "src/__tests__/orders.proto", "testdata/openapi.yaml"])
+def test_a_spec_in_a_fixture_folder_is_still_skipped_as_a_test_file(path):
+    report = ci.check(make_diff(path, added=["x"]))
+    assert report["interfaces"] == []
+    assert report["not_checked"] == [{"file": path, "reason": "test file"}]
+
+
+def test_code_in_a_spec_folder_is_still_a_test_file():
+    report = ci.check(make_diff("spec/orders_spec.rb", added=["get '/orders'"]) + make_diff("specs/api.py", added=['@app.get("/x")']))
+    assert report["interfaces"] == []
+    assert {e["file"] for e in report["not_checked"]} == {"spec/orders_spec.rb", "specs/api.py"}
+
+
 # --- added, removed or modified ---
 
 

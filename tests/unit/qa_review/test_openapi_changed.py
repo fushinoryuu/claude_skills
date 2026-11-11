@@ -49,7 +49,9 @@ def test_a_repo_without_a_spec_is_not_applicable(tmp_path):
     assert "no OpenAPI or Swagger spec" in report["note"]
 
 
-@pytest.mark.parametrize("folder", ["node_modules/pkg", "tests/data", "fixtures", "vendor/x", ".venv/lib", "build"])
+@pytest.mark.parametrize(
+    "folder", ["node_modules/pkg", "tests/data", "fixtures", "testdata", "__tests__", "test", "vendor/x", ".venv/lib", "build"]
+)
 def test_specs_in_test_vendor_and_build_folders_do_not_count(tmp_path, folder):
     write_spec(tmp_path, folder=folder)
     assert oc.check(make_diff("src/api.py", added=[ROUTE]), tmp_path)["status"] == "not_applicable"
@@ -65,7 +67,32 @@ def test_a_missing_root_folder_is_not_applicable(tmp_path):
     assert oc.check(make_diff("src/api.py", added=[ROUTE]), tmp_path / "nope")["status"] == "not_applicable"
 
 
-@pytest.mark.parametrize("folder", ["tests/fixtures", "tests/data", "fixtures", "node_modules/pkg", "vendor/x", "build", ".venv/lib"])
+SPEC_PLACES = ["", "docs", "spec", "specs", "api", "e2e", "src/specs", "Specs"]
+
+
+@pytest.mark.parametrize("folder", SPEC_PLACES)
+def test_a_spec_in_a_common_place_counts_when_the_change_names_it(tmp_path, folder):
+    """Folders called spec, specs or e2e often hold the real spec, so they are not skipped."""
+    name = f"{folder}/openapi.yaml" if folder else "openapi.yaml"
+    diff = make_diff("src/api.py", added=[ROUTE]) + make_diff(name, added=["  /orders/{id}:"])
+    report = oc.check(diff, tmp_path)
+    assert report["status"] == "ok"
+    assert report["spec_files_changed"] == [name]
+    assert [r["route"] for r in report["routes_with_spec_change"]] == ["GET /orders/{id}"]
+
+
+@pytest.mark.parametrize("folder", SPEC_PLACES)
+def test_a_spec_in_a_common_place_is_found_in_the_working_tree(tmp_path, folder):
+    write_spec(tmp_path, folder=folder)
+    report = oc.check(make_diff("src/api.py", added=[ROUTE]), tmp_path)
+    assert report["status"] == "ok"
+    assert len(report["spec_files"]) == 1
+    assert report["routes_without_spec_change"][0]["reason"] == "no spec file changed in this change"
+
+
+@pytest.mark.parametrize(
+    "folder", ["tests/fixtures", "tests/data", "fixtures", "testdata", "__tests__", "test", "node_modules/pkg", "vendor/x", "build", ".venv/lib"]
+)
 def test_a_changed_file_named_like_a_spec_in_a_skipped_folder_is_not_a_spec(tmp_path, folder):
     diff = make_diff("src/api.py", added=[ROUTE]) + make_diff(f"{folder}/openapi.json", added=['"/orders/{id}": {}'])
     report = oc.check(diff, tmp_path)

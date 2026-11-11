@@ -7,7 +7,9 @@ is breaking or that the documentation is right.
 
 What it looks at. Only the lines the diff changes, plus the few lines after each one, so that a call
 split over several lines is still read. It does not follow the code, so a new parameter on a route
-handler, or a changed default that sits on an untouched line, is not seen. Test files are skipped.
+handler, or a changed default that sits on an untouched line, is not seen. Test files are skipped. A
+schema or API spec file is skipped only in a test or fixture folder (test, tests, __tests__, testdata,
+fixtures), because a folder called spec or specs often holds the real spec.
   http_route   framework routes: Flask, FastAPI, Django urls.py, Express and similar, NestJS, Spring,
                JAX-RS, Go (net/http, gin, echo, chi), Rails routes.rb, ASP.NET, Laravel, Actix, axum
   cli          flags and commands: argparse, click, commander, yargs, cobra and the Go flag package,
@@ -71,9 +73,10 @@ LOOKAHEAD = 4  # a call may be split over this many lines
 HTTP_METHODS = frozenset({"get", "post", "put", "patch", "delete", "head", "options", "trace"})
 LABELLED_WORDS = frozenset({"resources", "resource", "namespace", "scope", "match", "mount", "websocket"})
 
-TEST_FOLDERS = frozenset(
-    {"test", "tests", "__tests__", "spec", "specs", "e2e", "testdata", "fixtures", "__fixtures__", "__mocks__"}
-)
+# Folders of test data: a schema or spec file in one is a fixture, not an interface of the project.
+FIXTURE_FOLDERS = frozenset({"test", "tests", "__tests__", "testdata", "fixtures", "__fixtures__", "__mocks__"})
+# Folders of test code. `spec` and `specs` also hold real API specs, so they are not in FIXTURE_FOLDERS.
+TEST_FOLDERS = FIXTURE_FOLDERS | {"spec", "specs", "e2e"}
 TEST_FILE = re.compile(
     r"^(?:test_.*\.py|.*_test\.(?:py|go|rb)|.*\.(?:test|spec)\.\w+|.*(?:Test|Tests|IT)\.(?:java|kt|cs|php|swift))$"
 )
@@ -184,9 +187,10 @@ COMMENT_STARTS = ("//", "/*", "*", ";", "<!--")
 # --- what kind of file is it ---
 
 
-def is_test_file(path: str) -> bool:
+def is_test_file(path: str, folders: frozenset[str] = TEST_FOLDERS) -> bool:
+    """A test file by its folder (one of `folders`) or by its name."""
     parts = PurePosixPath(path).parts
-    return any(p.lower() in TEST_FOLDERS for p in parts[:-1]) or bool(TEST_FILE.match(parts[-1])) or parts[-1] == "conftest.py"
+    return any(p.lower() in folders for p in parts[:-1]) or bool(TEST_FILE.match(parts[-1])) or parts[-1] == "conftest.py"
 
 
 def is_schema_file(path: str) -> bool:
@@ -318,9 +322,10 @@ def check(text: str) -> dict:
     for path in paths:
         suffix = PurePosixPath(path).suffix.lower()
         diff = diffs.get(path)
-        if is_test_file(path):
+        schema = is_schema_file(path)
+        if is_test_file(path, FIXTURE_FOLDERS if schema else TEST_FOLDERS):  # a spec/ or specs/ folder can hold a real spec
             report["not_checked"].append({"file": path, "reason": "test file"})
-        elif is_schema_file(path):
+        elif schema:
             looked_at += 1
             report["interfaces"].append(
                 {"file": path, "kind": "schema_file", "name": PurePosixPath(path).name, "change": _schema_change(diff), "line": None}

@@ -2,9 +2,10 @@
 
 Runs only when the repo has a spec. A spec is a file named `openapi*` or `swagger*` with a .json,
 .yaml or .yml extension, found in the working tree (the folder given with --root, the current folder
-by default) or among the files of the change. A file in a test or fixture folder, node_modules,
-vendor or a build folder is never a spec, whether it is searched for or changed by the change. When
-there is no spec, the status is `not_applicable`.
+by default) or among the files of the change. A file in a test or fixture folder (test, tests,
+__tests__, testdata, fixtures), node_modules, vendor or a build folder is never a spec, whether it is
+searched for or changed by the change. A folder called spec or specs is not skipped. When there is
+no spec, the status is `not_applicable`.
 
 Reads a unified diff from a file or stdin. The routes come from `changed_interfaces.py`, so the same
 limits apply: only changed lines are read, and only HTTP routes are compared. Flags, commands and
@@ -60,7 +61,7 @@ SPEC_LIMIT = 20
 FOLDER_LIMIT = 5000  # stop looking after this many folders, in case the script is run from a huge folder
 SKIPPED_FOLDERS = frozenset(
     {".git", "node_modules", "vendor", "dist", "build", "target", ".venv", "venv", "__pycache__", ".tox", ".mypy_cache"}
-) | changed_interfaces.TEST_FOLDERS
+) | changed_interfaces.FIXTURE_FOLDERS  # not spec or specs: a spec is often kept in one of those
 
 _PATH_IN_LINE = re.compile(r"(?<![\w#.:/])/[\w\-.~%/{}<>:$]*")
 _PARAM = re.compile(r"\{[^}/]*\}|<[^>/]*>|(?<=/):[\w\-]+|(?<=/)\$\{[^}/]*\}")
