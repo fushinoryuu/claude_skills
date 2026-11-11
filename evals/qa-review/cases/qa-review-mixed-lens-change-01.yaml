@@ -1,7 +1,7 @@
 id: qa-review-mixed-lens-change-01
 skill: qa-review
 fixture: mixed-lens-change
-prompt: "/qa-review initial SH-31 52 json. The ticket, the PR and the output of suggest_lenses.py are in the files provided."
+prompt: "/qa-review initial SH-31 52 json. The ticket, the PR and the output of suggest_lenses.py, changed_interfaces.py and openapi_changed.py are in the files provided."
 expect:
   findings:
     - category: missing-tests

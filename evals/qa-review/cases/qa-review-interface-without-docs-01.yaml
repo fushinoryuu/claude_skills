@@ -1,7 +1,7 @@
 id: qa-review-interface-without-docs-01
 skill: qa-review
 fixture: interface-without-docs
-prompt: "/qa-review initial FC-6 12 json. The ticket and the PR are in the files provided, and so is the repository README.md as it is before this PR."
+prompt: "/qa-review initial FC-6 12 json. The ticket and the PR are in the files provided, and so is the repository README.md as it is before this PR. The output of changed_interfaces.py and openapi_changed.py is there too."
 expect:
   findings:
     - category: missing-interface-doc-update
