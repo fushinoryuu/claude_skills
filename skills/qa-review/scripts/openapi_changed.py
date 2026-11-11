@@ -2,8 +2,9 @@
 
 Runs only when the repo has a spec. A spec is a file named `openapi*` or `swagger*` with a .json,
 .yaml or .yml extension, found in the working tree (the folder given with --root, the current folder
-by default) or among the files of the change. Test and fixture folders, node_modules, vendor and
-build folders are not searched. When there is no spec, the status is `not_applicable`.
+by default) or among the files of the change. A file in a test or fixture folder, node_modules,
+vendor or a build folder is never a spec, whether it is searched for or changed by the change. When
+there is no spec, the status is `not_applicable`.
 
 Reads a unified diff from a file or stdin. The routes come from `changed_interfaces.py`, so the same
 limits apply: only changed lines are read, and only HTTP routes are compared. Flags, commands and
@@ -68,6 +69,11 @@ _PARAM = re.compile(r"\{[^}/]*\}|<[^>/]*>|(?<=/):[\w\-]+|(?<=/)\$\{[^}/]*\}")
 def is_spec(path: str) -> bool:
     pure = PurePosixPath(path.lower())
     return pure.suffix in SPEC_EXTENSIONS and pure.name.startswith(("openapi", "swagger"))
+
+
+def in_skipped_folder(path: str) -> bool:
+    """True when a folder above the file is a test, fixture, vendor or build folder."""
+    return any(part.lower() in SKIPPED_FOLDERS for part in PurePosixPath(path).parts[:-1])
 
 
 def normalize(path: str) -> str:
@@ -138,7 +144,7 @@ def check(text: str, root: Path) -> dict:
         return report
 
     diffs = {d.path: d for d in file_diffs(text)}
-    changed_specs = [p for p in paths if is_spec(p)]
+    changed_specs = [p for p in paths if is_spec(p) and not in_skipped_folder(p)]
     in_tree, stopped = find_specs(root) if root.is_dir() else ([], False)
     specs = sorted({*in_tree, *(p for p in changed_specs if not (p in diffs and diffs[p].deleted))})
     if not specs:

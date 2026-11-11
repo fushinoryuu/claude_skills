@@ -65,6 +65,26 @@ def test_a_missing_root_folder_is_not_applicable(tmp_path):
     assert oc.check(make_diff("src/api.py", added=[ROUTE]), tmp_path / "nope")["status"] == "not_applicable"
 
 
+@pytest.mark.parametrize("folder", ["tests/fixtures", "tests/data", "fixtures", "node_modules/pkg", "vendor/x", "build", ".venv/lib"])
+def test_a_changed_file_named_like_a_spec_in_a_skipped_folder_is_not_a_spec(tmp_path, folder):
+    diff = make_diff("src/api.py", added=[ROUTE]) + make_diff(f"{folder}/openapi.json", added=['"/orders/{id}": {}'])
+    report = oc.check(diff, tmp_path)
+    assert report["status"] == "not_applicable"
+    assert report["spec_files"] == []
+    assert report["spec_files_changed"] == []
+    assert report["routes_without_spec_change"] == []
+
+
+def test_a_changed_fixture_spec_next_to_a_real_spec_is_ignored(tmp_path):
+    write_spec(tmp_path, folder="docs")
+    diff = make_diff("src/api.py", added=[ROUTE]) + make_diff("tests/fixtures/openapi.json", added=['"/orders/{id}": {}'])
+    report = oc.check(diff, tmp_path)
+    assert report["spec_files"] == ["docs/openapi.yaml"]
+    assert report["spec_files_changed"] == []
+    assert report["routes_with_spec_change"] == []
+    assert report["routes_without_spec_change"][0]["reason"] == "no spec file changed in this change"
+
+
 def test_a_spec_the_change_deletes_does_not_count(tmp_path):
     diff = make_diff("src/api.py", added=[ROUTE]) + make_diff("openapi.yaml", removed=["x"], deleted=True)
     assert oc.check(diff, tmp_path)["status"] == "not_applicable"
