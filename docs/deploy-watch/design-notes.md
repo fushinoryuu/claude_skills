@@ -6,6 +6,8 @@ Early ideas for a new skill, `/deploy-watch`, that checks the health of a deploy
 
 A read-only skill that answers "is this deployment healthy?" from the evidence in the release tooling, and says so honestly when the evidence is not enough.
 
+The three rows below are stages of one continuous watch, not three commands. The person starts the skill a little before the planned deployment (for a 10:00 deployment, at 9:45). It checks that the environment looks healthy, notices each service's deployment starting, follows it, and keeps watching until the last soak window ends.
+
 | Phase  | Question                      | Main evidence                                                                                                                            |
 | ------ | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Before | Is it safe to deploy now?     | The deployment source (what is released, to where, what else is deploying), GitHub (the changes in the release), Datadog (open monitors) |
@@ -34,6 +36,12 @@ A weekly deployment of 3 to 5 services, deployed one after the other, which take
 - **The watch mode is in the first version.** The skill has no point without it.
 - **Skills should also work in VS Code Copilot,** not only in Claude Code (see "Working on more than one platform").
 - **Cost is a design goal.** Gate and watch mode for polling, rules in scripts, a token budget per eval case, and evals run only when needed.
+- **Soak window:** 30 minutes by default, and a service can override it in the config.
+- **`healthy so far` is a note, not a fourth verdict.** The verdicts stay `healthy`, `degraded` and `unknown`. A service still inside its soak window reads `healthy (soak ends 14:35)`.
+- **No `before|during|after` argument.** One command follows the whole rollout. The person starts it a few minutes before the deployment, and the `before` check is the first stage of the watch (see "Baseline").
+- **Baseline:** the last 1 to 4 hours before a service's deployment starts, overridable in the config. There is no "same time last week" baseline.
+- **The planned release is known in advance,** because CI prepares it. The skill takes it as input, preferably from the Confluence release document (see "Knowing what is about to deploy").
+- **For GitHub Actions, a deployment is the workflow run** named in the config.
 - **The name stays `deploy-watch`.** A future "act" mode does not need to be in the name.
 - **Confluence output (later) is a comment on the existing release document,** never an edit of its body, so the release doc is not changed or damaged.
 - **Read-only.** The services are live, probably production. The skill never deploys, rolls back, promotes, or mutes a monitor. It can recommend an action for a person to take. Acting may be added much later, behind explicit approval, and is not part of the first version.
@@ -62,7 +70,27 @@ A weekly deployment of 3 to 5 services, deployed one after the other, which take
 
 The time after a service finishes deploying during which the skill keeps looking before it calls the service healthy. Some problems appear late: a cache warming up, a queue backing up, memory climbing, or a scheduled job running ten minutes later. Healthy right after the deploy and healthy 30 minutes later are different claims.
 
-Proposal: a default of 30 minutes, set per service in the config (a database-backed service may need longer than a stateless one) and overridable per run, for example for a hotfix. Until a service's soak window has passed, its best verdict is `healthy so far`, not `healthy`. Open (see "Open questions").
+The default is 30 minutes. A service can override it in the config (a database-backed service may need longer than a stateless one). Until a service's soak window has passed, its line reads `healthy (soak ends 14:35)`, as a note on `healthy` and not as a separate verdict.
+
+## Baseline
+
+The signals from before a service's deployment, which the signals after it are compared to. The window is the last 1 to 4 hours, with a default of 2 hours (a proposal, change it if another length suits your services), set in the config as a default and per service. It ends when that service's deployment starts. There is no "same time last week" baseline: it would complicate the skill for little gain.
+
+The baseline needs time before the deployment, so the person starts the skill a few minutes ahead of it. While waiting, the skill does the old `before` check: it reads the signals for the look-back window and the monitors' state right now, and says whether the environment looks healthy to deploy into (or `degraded` or `unknown`, with the reason). The skill is read-only and never blocks a deployment. It tells the person, who decides.
+
+Each service then moves through waiting, deploying, soaking and done, and the report shows where each one is.
+
+## Knowing what is about to deploy
+
+CI prepares the release in advance, so what is about to go out is known before the deployment starts, whether it goes through GitHub Actions or Octopus. The skill takes that planned release as input: the services expected, and their versions or artifacts. Sources, in order of preference:
+
+1. The release document in Confluence, which lists the release artifacts. The skill reads it through the Atlassian MCP server, from a page given to it.
+2. The command's arguments.
+3. The config (every service in it).
+
+With a planned release the skill can also compare what actually deploys with what was planned, and report a service that was not deployed, one deployed that was not planned, or a version that differs.
+
+Usage idea: `/deploy-watch <environment> [release document]`.
 
 ## Sketch of the skill
 
@@ -87,18 +115,21 @@ skills/deploy-watch/
 A config file in the repo being watched, `.claude/deploy-watch/config.yaml`, maps each service to its deployment source (an Octopus project, or a GitHub repository and deploy workflow), its Datadog monitors and tags, and its soak window. This is the same idea as the project patterns file in `qa-review`. Roughly:
 
 ```yaml
+defaults:
+  soak_minutes: 30
+  baseline_hours: 2
 services:
   orders:
     deploy: { source: octopus, project: "Orders" }
     datadog: { service: "orders", monitors: ["orders-error-rate"] }
-    soak_minutes: 30
+    baseline_hours: 1
   payments:
     deploy: { source: github_actions, repo: "example-org/payments", workflow: "deploy.yml" }
     datadog: { service: "payments", monitors: ["payments-latency"] }
     soak_minutes: 45
 ```
 
-The usage idea changes to `/deploy-watch <before|during|after> <environment> [service ...]`. With no service named, it watches the services the deployment sources report as part of the current release for that environment, falling back to the whole config.
+The usage idea is `/deploy-watch <environment> [release document]`. The services come from the planned release (see "Knowing what is about to deploy"), falling back to the whole config. A hotfix is a planned release with one service. A service entry that sets neither value uses the `defaults`.
 
 ## Cost: tokens and eval spend
 
@@ -185,16 +216,15 @@ The goal is that a skill in this repo works in Claude Code and in VS Code Copilo
 
 ## Suggested first slice
 
-The first version follows a rollout from the first service starting to the last soak window ending, over several services, with the watch mode. Without the watch mode the skill has no point, so it is in. That covers `during` and `after`. The `before` check (is it safe to deploy now?) comes later, and reuses the same comparison script. The first slice reads which services their deployment source (Octopus or GitHub Actions) reports as started and done, and applies each service's soak window.
+The first version follows a rollout from the first service starting to the last soak window ending, over several services, with the watch mode. Without the watch mode the skill has no point, so it is in. That covers all three stages: the check before the deployment (the baseline and the environment's state), the rollout, and the soak. All three use the same comparison script. The first slice reads which services their deployment source (Octopus or GitHub Actions) reports as started and done, and applies each service's soak window.
 
 ## Open questions
 
-- Agree the soak window proposal above (30 minutes by default, per service in the config, overridable per run)?
-- Is "healthy so far" a fourth verdict, or a note on `healthy`?
-- Does the skill still need the `before|during|after` argument? With the watch mode, one command follows a rollout from the first start to the last soak window. A simpler shape is `/deploy-watch <environment> [service ...]` for the rollout, with the `before` check added later as its own option.
-- How does the skill find the baseline for a service: a fixed window before the deployment start (for example the previous hour), or the same time of day on the previous week? The weekly deploy may make "same time last week" a good second baseline, but it needs the data to exist.
-- Where does the person say which release or deployment is meant: by Octopus release version, a GitHub Actions run, or "the latest deployment to this environment"?
-- Which GitHub signal marks a deployment: the deploy workflow run, or the GitHub deployment status? (See hard part 7.)
+- What does the release document in Confluence look like (a table, a list of artifacts with versions), and how does the skill read it cheaply? Reading a whole page costs tokens, so it should fetch only the part that lists the artifacts. The real document cannot be copied into the repo, so the fixtures need a synthetic example in the same shape.
+- How long does the skill wait for a deployment to start before it gives up (for example 60 minutes after it was started), and what does it report then?
+- Is 2 hours a good default look-back for the baseline? It is a proposal.
+- What does the skill report when the environment looks unhealthy before the deployment has started? It cannot stop the deployment, so the proposal is a clear `degraded` result at the top of the report, with the signals that caused it.
+- Does a service that deploys through GitHub Actions wait for a manual approval? The workflow run would show `running` or `waiting` while nothing is deploying yet. The proposal is to report `waiting for approval` when the run says so. (See hard part 7.)
 
 ## Next steps
 
