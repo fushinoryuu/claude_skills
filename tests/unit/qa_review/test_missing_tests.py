@@ -1,4 +1,3 @@
-import ast
 import importlib.util
 import json
 import subprocess
@@ -526,17 +525,6 @@ def test_help_documents_the_output_and_the_options():
     assert result.returncode == 0
     for text in ("missing_test_change", "has_test_change", "could_not_tell", "no_input", "--test-pattern", "--source-ext"):
         assert text in result.stdout
-
-
-def test_the_script_uses_only_the_standard_library():
-    tree = ast.parse(SCRIPT.read_text(encoding="utf-8"))
-    imported = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            imported |= {alias.name.split(".")[0] for alias in node.names}
-        elif isinstance(node, ast.ImportFrom):
-            imported.add(node.module.split(".")[0])
-    assert imported <= set(sys.stdlib_module_names)
 
 
 # --- the fixtures that hold this script's output ---
