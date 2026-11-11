@@ -65,7 +65,7 @@ Suggested scenario: a PR with a missing unit test and an undocumented endpoint, 
 - [ ] Quick start: install instructions, required tools (`gh`, the Atlassian MCP server), and how to invoke each skill.
 - [ ] Expected tools section from Phase 0, kept current.
 - [ ] Testing section: how to run unit, structure, and eval suites.
-- [ ] Design notes: why MCP instead of custom adapters for Jira, why the `gh` CLI instead of an MCP server for GitHub (token cost), why scripts only for deterministic work, why evals use planted defects. These show engineering judgment.
+- [ ] Design notes: why the fetching tool is chosen per skill by token cost (the Atlassian MCP server for Jira, the `gh` CLI for GitHub, scripts that call a REST API where the data is large), why scripts only for deterministic work, why evals use planted defects. These show engineering judgment.
 - [ ] Roadmap and contributing notes, if any.
 - [ ] CI badge and license.
 
@@ -88,7 +88,7 @@ Draft a few bullets and revise to fit the resume. Examples of the shape (adjust 
 
 Also prepare short answers for likely interview questions:
 
-- [ ] Why use MCP servers instead of custom API adapters?
+- [ ] How do you choose between an MCP server, a CLI, and a script that calls an API?
 - [ ] Why the `gh` CLI for GitHub but an MCP server for Jira?
 - [ ] How do you test something non-deterministic?
 - [ ] What did the evals show that surprised you?

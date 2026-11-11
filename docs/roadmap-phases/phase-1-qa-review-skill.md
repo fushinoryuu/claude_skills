@@ -36,9 +36,11 @@ What this means in practice:
 
 ## Design decisions
 
-### No API adapters
+### Choose the fetching tool per skill
 
-PR data comes from the `gh` CLI and ticket data from the Atlassian MCP server. The skill describes what it needs ("the PR diff, the PR description, the linked ticket and its acceptance criteria") and lets the agent fetch it. Scripts are reserved for work that is not an API call. SKILL.md includes an "Expected tools" section with the paste-the-ticket fallback for Jira.
+PR data comes from the `gh` CLI and ticket data from the Atlassian MCP server. The skill describes what it needs ("the PR diff, the PR description, the linked ticket and its acceptance criteria") and lets the agent fetch it. For `qa-review`, scripts are reserved for deterministic checks on data already fetched. SKILL.md includes an "Expected tools" section with the paste-the-ticket fallback for Jira.
+
+The repo has no rule for or against API adapters. Each skill picks an MCP server, a CLI, or a script that calls an API directly, and the deciding factor is token cost: use whatever puts the least data into the model's context for that skill. `qa-review` fits the CLI and MCP route. A skill that reads large monitoring data, such as `deploy-watch` (see `docs/deploy-watch/design-notes.md`), may use scripts that call a REST API and print a compact summary.
 
 ### Token-conscious fetching
 
