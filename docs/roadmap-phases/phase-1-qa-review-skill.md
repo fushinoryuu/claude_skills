@@ -182,6 +182,8 @@ Each script:
 - Has unit tests with small hand-written diffs, including empty diffs and malformed input.
 - Is run from SKILL.md, which says to treat its output as a signal, not a verdict.
 
+The scripts share one reader for the change, `scripts/diff_reader.py` (reading a file or stdin, listing the changed paths, printing the JSON). It is a module and not a command, it sits next to the scripts and uses only the standard library. Each script puts its own folder on `sys.path` before importing it, so `python3 ${CLAUDE_SKILL_DIR}/scripts/<name>.py` works from any folder. Extracted in QARS-6 so that `changed_interfaces.py` and `openapi_changed.py` do not copy the reader a third time.
+
 Per script:
 
 - [x] `suggest_lenses.py`
