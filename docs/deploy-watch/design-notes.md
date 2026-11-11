@@ -6,13 +6,20 @@ Early ideas for a new skill, `/deploy-watch`, that checks the health of a deploy
 
 A read-only skill that answers "is this deployment healthy?" from the evidence in the release tooling, and says so honestly when the evidence is not enough.
 
-| Phase  | Question                      | Main evidence                                                                                                                     |
-| ------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Before | Is it safe to deploy now?     | Octopus Deploy (what is released, to where, what else is deploying), GitHub (the changes in the release), Datadog (open monitors) |
-| During | Is the rollout going well?    | Octopus Deploy (task and step status), Datadog (error rate, latency and monitors against the pre-deploy baseline)                 |
-| After  | Did it work, and does it hold | Datadog (the same signals over a soak window), plus the release and its changes                                                   |
+| Phase  | Question                      | Main evidence                                                                                                                            |
+| ------ | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Before | Is it safe to deploy now?     | The deployment source (what is released, to where, what else is deploying), GitHub (the changes in the release), Datadog (open monitors) |
+| During | Is the rollout going well?    | The deployment source (run and step status), Datadog (error rate, latency and monitors against the pre-deploy baseline)                  |
+| After  | Did it work, and does it hold | Datadog (the same signals over a soak window), plus the release and its changes                                                          |
 
 The output is a verdict (`healthy`, `degraded` or `unknown`) with the evidence behind it.
+
+**Deployment source:** where the skill learns that a service is deploying, done, or failed. There are two, and one release can mix them:
+
+- **Octopus Deploy:** a deployment of a release to an environment.
+- **GitHub Actions:** a deploy workflow run (or a GitHub deployment) for a repository.
+
+Everything after "the deployment says it is done" (the signals, baselines, soak windows and verdicts) is the same for both. Only the part that reads the state differs, so that part sits behind one small interface in the scripts.
 
 ## The use case behind it
 
@@ -32,7 +39,7 @@ A weekly deployment of 3 to 5 services, deployed one after the other, which take
 - **Read-only.** The services are live, probably production. The skill never deploys, rolls back, promotes, or mutes a monitor. It can recommend an action for a person to take. Acting may be added much later, behind explicit approval, and is not part of the first version.
 - **Run by hand.** A person runs it on their own machine. It does not run in a pipeline for now: output is harder to see there, and a human should read the verdict.
 - **Fixtures come from public API documentation.** There is no real deployment to copy. Every fixture is synthetic, built from the public API docs of the tools. No employer-specific names, URLs, or data anywhere in the repo.
-- **Output goes to the terminal first.** A later step can write the result into a Confluence release document. The Atlassian MCP server the repo already expects has Confluence tools, so this needs no new connection.
+- **Output goes to the terminal first.** A later step can write the result into a Confluence release document. The Atlassian MCP server the repo already expects can do this with no new connection: checked on 2026-11-11, `createConfluenceComment` adds a footer comment to a page (Markdown body, at most 4096 characters), `updateConfluenceComment` edits a comment, and `listConfluenceComments` reads them. So the skill can comment on the release page and never edit its body. The 4096-character limit means the comment must be a short summary: the overall verdict, a line per service, and a link to the details.
 
 ## Principles carried over from `qa-review` and the Phase 3 plan
 
@@ -49,13 +56,13 @@ A weekly deployment of 3 to 5 services, deployed one after the other, which take
 - **Each service gets its own verdict and baseline.** The baseline window for a service ends when its deployment starts, not when the release starts. A service deployed 20 minutes into the release must not be compared to a baseline that already includes the earlier services.
 - **One overall verdict on top.** The release is `healthy` only if every service is. One `degraded` service makes the release `degraded`, and a service that cannot be judged makes the overall result at best `unknown`. The report lists the services in deploy order.
 - **Interactions between services.** A fault in a service that is not deploying can still come from one that just did (for example a downstream error rate). The report names the services deployed in the preceding window next to any degraded service.
-- **A skill run is a snapshot, not a 30-minute watcher.** To follow a rollout, the person re-runs it, or runs it on a repeat (the harness's `/loop`). Each run reads the current Octopus state, so it knows which services are done. Decide later whether the skill should help with this by saying when to check again.
+- **The state comes from each service's deployment source on every check** (Octopus Deploy or GitHub Actions, and a release can mix them), so a check always knows which services are done, with no memory of earlier runs. The watch mode (see "Cost") repeats the check until something changes, so one command follows the whole rollout.
 
 ## Soak window
 
 The time after a service finishes deploying during which the skill keeps looking before it calls the service healthy. Some problems appear late: a cache warming up, a queue backing up, memory climbing, or a scheduled job running ten minutes later. Healthy right after the deploy and healthy 30 minutes later are different claims.
 
-Proposal: a default of 30 minutes, set per service in the config (a database-backed service may need longer than a stateless one) and overridable per run, for example for a hotfix. Until a service's soak window has passed, its best verdict is `healthy so far`, not `healthy`. Needs the user's agreement.
+Proposal: a default of 30 minutes, set per service in the config (a database-backed service may need longer than a stateless one) and overridable per run, for example for a hotfix. Until a service's soak window has passed, its best verdict is `healthy so far`, not `healthy`. Open (see "Open questions").
 
 ## Sketch of the skill
 
@@ -77,21 +84,21 @@ skills/deploy-watch/
     report-template.md
 ```
 
-A config file in the repo being watched, `.claude/deploy-watch/config.yaml`, maps each service to its Octopus project, its Datadog monitors and tags, and its soak window. This is the same idea as the project patterns file in `qa-review`. Roughly:
+A config file in the repo being watched, `.claude/deploy-watch/config.yaml`, maps each service to its deployment source (an Octopus project, or a GitHub repository and deploy workflow), its Datadog monitors and tags, and its soak window. This is the same idea as the project patterns file in `qa-review`. Roughly:
 
 ```yaml
 services:
   orders:
-    octopus_project: "Orders"
+    deploy: { source: octopus, project: "Orders" }
     datadog: { service: "orders", monitors: ["orders-error-rate"] }
     soak_minutes: 30
   payments:
-    octopus_project: "Payments"
+    deploy: { source: github_actions, repo: "example-org/payments", workflow: "deploy.yml" }
     datadog: { service: "payments", monitors: ["payments-latency"] }
     soak_minutes: 45
 ```
 
-The usage idea changes to `/deploy-watch <before|during|after> <environment> [service ...]`. With no service named, it watches every service in the release that Octopus reports for that environment, falling back to the whole config.
+The usage idea changes to `/deploy-watch <before|during|after> <environment> [service ...]`. With no service named, it watches the services the deployment sources report as part of the current release for that environment, falling back to the whole config.
 
 ## Cost: tokens and eval spend
 
@@ -112,7 +119,7 @@ The repo no longer has a "use an MCP server instead of a custom adapter" rule. F
 During a rollout, most checks find nothing new. Two ways to keep that cheap:
 
 1. **A gate in the script.** The script saves its last summary locally and compares the new one to it. If nothing meaningful changed (no service started or finished, no threshold crossed, no monitor changed state), it prints `no change` and the model has nothing to do.
-2. **A watch mode, so nobody has to re-run it.** `watch_release.py` loops on its own with `time.sleep`, polls every interval (for example 60 seconds), and exits when something meaningful changes or when every service's soak window has passed. While it waits it costs no tokens. In Claude Code it runs as a background command, and the session is woken when it exits, so one slash command can cover the whole rollout. In another tool, or a plain terminal, the person runs it in a terminal window and brings the result to the agent. It needs the person's machine to stay on for the duration, and the keys in its environment.
+2. **A watch mode, so nobody has to re-run it.** `watch_release.py` loops on its own with `time.sleep`, polls every interval (for example 60 seconds), and exits when something meaningful changes or when every service's soak window has passed. While it waits it costs no tokens. Where the host can run a command in the background and wake the session when it exits (Claude Code), one slash command covers the whole rollout. Elsewhere it runs in slices of `--max-wait` (see "Working on more than one platform"), or in a terminal window with the result brought back to the agent. It needs the person's machine to stay on for the duration, and the keys in its environment.
 
 The model is therefore called once per meaningful change, not once per interval.
 
@@ -173,18 +180,21 @@ The goal is that a skill in this repo works in Claude Code and in VS Code Copilo
 4. **Credentials.** Scripts that call the APIs handle keys. They must use read-only keys, and never print them or write them anywhere.
 5. **Request limits.** The tools' APIs have rate limits. A watch mode that polls every minute for 5 services must stay well inside them, so check the documented limits for each.
 6. **What each tool's API offers.** Check each tool's public API docs for the calls and fields the first slice needs, and for any required plan or permission. This decides the "Expected tools" section.
+7. **What "done" means for a GitHub Actions deployment.** A workflow run can finish while the deployment is still waiting for an approval, or can have several jobs of which only one deploys. Decide whether the skill reads the workflow run, a specific job, or the GitHub deployment status for an environment, and what it reports when a run is waiting. The Octopus equivalent (a task's state) is simpler.
+8. **Two sources, one meaning.** The Octopus and GitHub Actions states (queued, running, succeeded, failed, cancelled, waiting) must map to the same few states in the scripts, with a fixture for each source.
 
 ## Suggested first slice
 
-The first version follows a rollout from the first service starting to the last soak window ending, over several services, with the watch mode. Without the watch mode the skill has no point, so it is in. That covers `during` and `after`. The `before` check (is it safe to deploy now?) comes later, and reuses the same comparison script. The first slice reads which services Octopus reports as started and done, and applies each service's soak window.
+The first version follows a rollout from the first service starting to the last soak window ending, over several services, with the watch mode. Without the watch mode the skill has no point, so it is in. That covers `during` and `after`. The `before` check (is it safe to deploy now?) comes later, and reuses the same comparison script. The first slice reads which services their deployment source (Octopus or GitHub Actions) reports as started and done, and applies each service's soak window.
 
 ## Open questions
 
 - Agree the soak window proposal above (30 minutes by default, per service in the config, overridable per run)?
 - Is "healthy so far" a fourth verdict, or a note on `healthy`?
-- Can the Atlassian MCP server add a comment to a Confluence page (and not only create or update pages)? Check this against the tool list before promising the Confluence output.
+- Does the skill still need the `before|during|after` argument? With the watch mode, one command follows a rollout from the first start to the last soak window. A simpler shape is `/deploy-watch <environment> [service ...]` for the rollout, with the `before` check added later as its own option.
 - How does the skill find the baseline for a service: a fixed window before the deployment start (for example the previous hour), or the same time of day on the previous week? The weekly deploy may make "same time last week" a good second baseline, but it needs the data to exist.
-- Where does the person say which release or deployment is meant: by Octopus release version, or "the latest deployment to this environment"?
+- Where does the person say which release or deployment is meant: by Octopus release version, a GitHub Actions run, or "the latest deployment to this environment"?
+- Which GitHub signal marks a deployment: the deploy workflow run, or the GitHub deployment status? (See hard part 7.)
 
 ## Next steps
 
