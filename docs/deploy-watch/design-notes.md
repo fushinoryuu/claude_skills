@@ -41,6 +41,7 @@ A weekly deployment of 3 to 5 services, deployed one after the other, which take
 - **No `before|during|after` argument.** One command follows the whole rollout. The person starts it a few minutes before the deployment, and the `before` check is the first stage of the watch (see "Baseline").
 - **Baseline:** the last 1 to 4 hours before a service's deployment starts, 4 hours by default, overridable in the config. There is no "same time last week" baseline.
 - **The planned release is optional input that can arrive late.** CI prepares it in advance. The person can give it when starting, or paste it in the conversation while the baseline is running, and the watch picks it up on its next poll (see "Knowing what is about to deploy"). What the release document looks like does not matter.
+- **A release has no name or id in the skill.** It is the set of deployments that start in the environment while the watch is running. The optional plan only adds a comparison with what was planned, and it is how the person says which deployments to expect. It can also say where each service deploys ("orders in Octopus, payments in GitHub Actions"). A way to name a specific release can be added later if it is needed.
 - **For GitHub Actions, a deployment is the workflow run** named in the config. A run that is waiting for a manual approval is reported as `waiting for approval`, and a deployment that has not started yet as `waiting`.
 - **Giving up:** if no deployment has started 30 minutes after the skill was started, it stops and says so. The team running the deployment will know quickly if something is wrong with the packages or the tooling (for example a GitHub Actions outage).
 - **An unhealthy environment before the deployment:** the report starts with a clear `degraded` result and the signals behind it. The skill cannot stop the deployment, so the person decides.
@@ -62,7 +63,7 @@ A weekly deployment of 3 to 5 services, deployed one after the other, which take
 
 ## Watching several services
 
-- **A release is a list of services,** each with its own state: not started, deploying, deployed, failed. The services deploy one after the other, so at any moment some are done and some are not.
+- **A release is a list of services,** each with its own state: `waiting`, `waiting for approval`, `deploying`, `soaking`, `done` or `failed`. The services deploy one after the other, so at any moment some are done and some are not.
 - **Each service gets its own verdict and baseline.** The baseline window for a service ends when its deployment starts, not when the release starts. A service deployed 20 minutes into the release must not be compared to a baseline that already includes the earlier services.
 - **One overall verdict on top.** The release is `healthy` only if every service is. One `degraded` service makes the release `degraded`, and a service that cannot be judged makes the overall result at best `unknown`. The report lists the services in deploy order.
 - **Interactions between services.** A fault in a service that is not deploying can still come from one that just did (for example a downstream error rate). The report names the services deployed in the preceding window next to any degraded service.
@@ -92,6 +93,8 @@ So the plan is optional and can arrive late:
 - **Later, in the conversation.** The person starts the skill at 9:45 and the baseline begins. Before the deployment starts at 10:00 they paste the release artifacts as a follow-up message. The agent writes them into a small plan file (for example `.claude/deploy-watch/state/plan.json`, ignored by git), and `watch_release.py` re-reads that file on every poll. The watch is never restarted, and the baseline is not lost. This relies on the host letting the person talk to the agent while the watch runs in the background (Claude Code does). Where it does not, the natural place is between two `--max-wait` slices.
 - **From a document.** If the person gives the Confluence release page, the agent reads only the part that lists the artifacts, through the Atlassian MCP server. This costs the most tokens, so it is a fallback, not the default.
 - **Never.** The skill then watches every service in the config and reports what the deployment sources show.
+
+The plan can also say where each service deploys, for example "orders goes out through Octopus and payments through GitHub Actions". Without that, the config says it (each service has its own `deploy` entry). When the plan names a source for a service, the plan wins, and the config still supplies the details (the Octopus project, or the repository and workflow). A service in the plan that has no config entry cannot be watched, because the skill does not know its project or its monitors, so the report says `unknown` for it and why.
 
 What the release document looks like does not matter to the design. The agent finds the packages that are about to go out, however they are presented.
 
@@ -137,7 +140,7 @@ services:
     soak_minutes: 45
 ```
 
-The usage idea is `/deploy-watch <environment> [release document]`. The services come from the planned release (see "Knowing what is about to deploy"), falling back to the whole config. A hotfix is a planned release with one service. A service entry that sets neither value uses the `defaults`.
+The usage idea is `/deploy-watch <environment> [plan]`. The services come from the planned release (see "Knowing what is about to deploy"), falling back to the whole config. A hotfix is a planned release with one service. A service entry that sets neither value uses the `defaults`.
 
 ## Cost: tokens and eval spend
 
@@ -219,8 +222,8 @@ The goal is that a skill in this repo works in Claude Code and in VS Code Copilo
 4. **Credentials.** Scripts that call the APIs handle keys. They must use read-only keys, and never print them or write them anywhere.
 5. **Request limits.** The tools' APIs have rate limits. A watch mode that polls every minute for 5 services must stay well inside them, so check the documented limits for each.
 6. **What each tool's API offers.** Check each tool's public API docs for the calls and fields the first slice needs, and for any required plan or permission. This decides the "Expected tools" section.
-7. **What "done" means for a GitHub Actions deployment.** A workflow run can finish while the deployment is still waiting for an approval, or can have several jobs of which only one deploys. Decide whether the skill reads the workflow run, a specific job, or the GitHub deployment status for an environment, and what it reports when a run is waiting. The Octopus equivalent (a task's state) is simpler.
-8. **Two sources, one meaning.** The Octopus and GitHub Actions states (queued, running, succeeded, failed, cancelled, waiting) must map to the same few states in the scripts, with a fixture for each source.
+7. **What "done" means for a GitHub Actions deployment.** A workflow run can finish while the deployment is still waiting for an approval, or can have several jobs of which only one deploys. The decision is made: a deployment is the workflow run named in the config, and a run held for a manual approval is reported as `waiting for approval`. What is left to find out is which field of a run, or of its jobs, shows that it is waiting for an approval, and how to tell the deploying job from the others in a run with several jobs. The Octopus equivalent (a task's state) is simpler.
+8. **Two sources, one meaning.** The Octopus and GitHub Actions states (queued, running, succeeded, failed, cancelled, waiting) must map to the one set of service states (`waiting`, `waiting for approval`, `deploying`, `soaking`, `done`, `failed`) in the scripts, with a fixture for each source. `soaking` is not a state either tool reports: the scripts derive it from the time a deployment finished and the service's soak window.
 
 ## Suggested first slice
 
