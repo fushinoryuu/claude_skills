@@ -1,0 +1,10 @@
+{
+  "status": "not_applicable",
+  "spec_files": [],
+  "spec_files_changed": [],
+  "routes_changed": 0,
+  "routes_without_spec_change": [],
+  "routes_with_spec_change": [],
+  "routes_not_compared": [],
+  "note": "The repo has no OpenAPI or Swagger spec, so there is nothing to compare."
+}

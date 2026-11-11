@@ -1,0 +1,14 @@
+{
+  "status": "ok",
+  "spec_files": [
+    "openapi.yaml"
+  ],
+  "spec_files_changed": [
+    "openapi.yaml"
+  ],
+  "routes_changed": 0,
+  "routes_without_spec_change": [],
+  "routes_with_spec_change": [],
+  "routes_not_compared": [],
+  "note": "No changed HTTP route was found in the change, so nothing was compared with the spec."
+}

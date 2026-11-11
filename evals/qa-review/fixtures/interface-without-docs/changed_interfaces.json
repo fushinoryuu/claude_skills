@@ -1,0 +1,23 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "src/filecount/cli.py",
+    "tests/test_cli.py"
+  ],
+  "interfaces": [
+    {
+      "file": "src/filecount/cli.py",
+      "kind": "cli",
+      "name": "--exclude",
+      "change": "added",
+      "line": 12
+    }
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "tests/test_cli.py",
+      "reason": "test file"
+    }
+  ]
+}

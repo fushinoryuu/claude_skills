@@ -67,6 +67,91 @@ def test_changed_paths_is_the_path_half_of_changed_files():
     assert dr.changed_paths(GIT_DIFF) == dr.changed_files(GIT_DIFF)[0]
 
 
+# --- reading the lines ---
+
+LINES_DIFF = """\
+diff --git a/src/app.py b/src/app.py
+index 111..222 100644
+--- a/src/app.py
++++ b/src/app.py
+@@ -3,4 +3,4 @@ def f():
+ keep
+-old
+-- not a header
++new
++new two
+ tail
+\\ No newline at end of file
+diff --git a/old.py b/old.py
+deleted file mode 100644
+--- a/old.py
++++ /dev/null
+@@ -1 +0,0 @@
+-x
+"""
+
+
+def lines_of(diff):
+    return [(line.kind, line.number, line.text) for line in diff.lines]
+
+
+def test_file_diffs_gives_each_file_with_its_numbered_lines():
+    app, old = dr.file_diffs(LINES_DIFF)
+    assert (app.path, app.deleted) == ("src/app.py", False)
+    assert lines_of(app) == [
+        (" ", 3, "keep"),
+        ("-", 4, "old"),
+        ("-", 5, "- not a header"),
+        ("+", 4, "new"),
+        ("+", 5, "new two"),
+        (" ", 6, "tail"),
+    ]
+    assert (old.path, old.deleted) == ("old.py", True)
+    assert lines_of(old) == [("-", 1, "x")]
+
+
+def test_a_removed_line_that_looks_like_a_file_header_is_still_a_line():
+    diff = "diff --git a/a.sql b/a.sql\n--- a/a.sql\n+++ b/a.sql\n@@ -1,2 +1,1 @@\n--- a comment\n+x\n y\n"
+    (only,) = dr.file_diffs(diff)
+    assert [line.kind for line in only.lines] == ["-", "+", " "]
+
+
+def test_a_diff_without_git_headers_is_split_by_its_file_lines():
+    diff = "--- a/x.py\t2026-01-01\n+++ b/x.py\t2026-01-02\n@@ -1 +1 @@\n-a\n+b\n--- a/y.py\n+++ b/y.py\n@@ -1 +1 @@\n-c\n+d\n"
+    first, second = dr.file_diffs(diff)
+    assert (first.path, second.path) == ("x.py", "y.py")
+    assert lines_of(second) == [("-", 1, "c"), ("+", 1, "d")]
+
+
+def test_a_new_file_has_only_added_lines():
+    diff = "diff --git a/n.py b/n.py\nnew file mode 100644\n--- /dev/null\n+++ b/n.py\n@@ -0,0 +1,2 @@\n+a\n+b\n"
+    (new,) = dr.file_diffs(diff)
+    assert lines_of(new) == [("+", 1, "a"), ("+", 2, "b")]
+
+
+def test_a_hunk_shorter_than_it_says_does_not_swallow_the_next_file():
+    diff = "diff --git a/a.py b/a.py\n--- a/a.py\n+++ b/a.py\n@@ -1,3 +1,3 @@\n-a\n+b\ndiff --git a/c.py b/c.py\n--- a/c.py\n+++ b/c.py\n@@ -1 +1 @@\n-c\n+d\n"
+    first, second = dr.file_diffs(diff)
+    assert (first.path, second.path) == ("a.py", "c.py")
+    assert lines_of(second) == [("-", 1, "c"), ("+", 1, "d")]
+
+
+def test_a_blank_context_line_without_its_space_is_kept():
+    diff = "diff --git a/a.py b/a.py\n--- a/a.py\n+++ b/a.py\n@@ -1,3 +1,3 @@\n a\n\n-b\n+c\n"
+    (only,) = dr.file_diffs(diff)
+    assert lines_of(only) == [(" ", 1, "a"), (" ", 2, ""), ("-", 3, "b"), ("+", 3, "c")]
+
+
+@pytest.mark.parametrize("text", ["", "src/app.py\nsrc/util.py\n", "@@ -1 +1 @@\n-a\n+b\n", "\x00\x01 binary �"])
+def test_text_without_files_gives_no_file_diffs(text):
+    assert dr.file_diffs(text) == []
+
+
+def test_a_truncated_diff_never_raises():
+    for cut in range(len(LINES_DIFF)):
+        dr.file_diffs(LINES_DIFF[:cut])
+
+
 # --- reading the input ---
 
 
@@ -127,4 +212,4 @@ def test_a_script_runs_from_another_folder(script, tmp_path):
         [sys.executable, str(script)], input=GIT_DIFF, capture_output=True, text=True, cwd=tmp_path, check=False
     )
     assert result.returncode == 0, result.stderr
-    assert json.loads(result.stdout)["changed_files"] == ["src/app.py", "old.py", "new/name.md"]
+    assert "status" in json.loads(result.stdout)

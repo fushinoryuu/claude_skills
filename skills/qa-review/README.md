@@ -10,7 +10,7 @@ This skill assumes that you have the following tools already set up and fully au
 
 - GitHub CLI (`gh`). The skill needs it to read the pull requests.
 - Atlassian MCP with write access to post comments (setup is in the repository README). Without it, the skill asks you to paste the ticket text and gives you the finished comment to post by hand.
-- Python 3.9 or newer, as `python3`. Check with `python3 --version`. The skill runs small scripts that suggest which lenses fit the change and which changed source files have no matching test change. They use only the standard library, so there is nothing to install. If a script cannot run, the skill says so and does that step by hand, which is slower and less consistent.
+- Python 3.9 or newer, as `python3`. Check with `python3 --version`. The skill runs small scripts that suggest which lenses fit the change, which changed source files have no matching test change, which interfaces (routes, flags, configuration keys, schema files) the change touches, and which changed routes lack a matching change to the API spec. They use only the standard library, so there is nothing to install. If a script cannot run, the skill says so and does that step by hand, which is slower and less consistent.
 - Set effort level to `high` before running skill
 
 On Windows, `python3` can be a Microsoft Store shortcut and not Python: running it only prints "Python was not found" and offers the Store. If `python3 --version` does that, install Python from the Store or from [python.org](https://www.python.org/downloads/), then open a new terminal and check again.

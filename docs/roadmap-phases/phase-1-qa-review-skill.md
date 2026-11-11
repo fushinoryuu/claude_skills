@@ -76,7 +76,7 @@ Settled before the remaining Phase 1 work, so later PRs do not reopen them:
 - **Findings.** Every session ends with a readable list of the gaps. The structured JSON block is printed only when the command ends with `json` (the eval prompts all do), and neither is posted to Jira. The category list includes an `other` catch-all, so the model does not invent a name when none fits.
 - **Templates.** They keep the *Other Findings* section and the `Lenses:` header line.
 - **Uncertainty.** When the ticket has no acceptance criteria, the skill derives them from the description, marks each one as derived and not stated in the ticket, never reports a derived criterion as a gap, and asks the user to confirm them before posting.
-- **Scripts.** Standard library only, runnable with a plain `python3`, and a script that cannot run never stops the review.
+- **Scripts.** Standard library only, runnable with a plain `python3`, and a script that cannot run never stops the review. They may import `diff_reader.py`, the shared module that sits next to them.
 
 ### Progressive disclosure
 
@@ -125,7 +125,7 @@ Deciding which lens to load is real work, and it is done from evidence about the
   - Read diffs only for the files that matter, filtering by path with shell tools or `gh api` with `--jq`. Never fetch lockfile or generated-file diffs.
   - Fetch the ticket and the PR once per review and work from the extracted criteria and file list, not repeated fetches.
   - When the diff is too large to review carefully, review the highest-risk files first and say which files were skipped. Do not silently truncate.
-- [x] **Workflow** section. The 12 steps in SKILL.md replace the earlier 7-step outline: load memory, gather context, understand the change and select lenses, criteria and implementation, test coverage, higher-level tests, interfaces and documentation, sanity check, handle gaps, post the comment, save memory, report. The scripts join Steps 3 to 7 as they land.
+- [x] **Workflow** section. The 12 steps in SKILL.md replace the earlier 7-step outline: load memory, gather context, understand the change and select lenses, criteria and implementation, test coverage, higher-level tests, interfaces and documentation, sanity check, handle gaps, post the comment, save memory, report. `suggest_lenses.py` joins Step 3, `missing_tests.py` joins Step 5, and `changed_interfaces.py` and `openapi_changed.py` join Step 7.
 - [x] **Modes** section describing initial and final behavior.
 - [x] **What to skip** section (style nitpicks a linter owns, generated files, lockfiles) to keep reviews focused.
 - [x] **Uncertainty rule:** when the ticket has no acceptance criteria, say so, derive them from the description, mark each as derived, never report one as a gap, and ask the user to confirm them before posting.
@@ -188,8 +188,8 @@ Per script:
 
 - [x] `suggest_lenses.py`
 - [x] `missing_tests.py`. It compares file names and folders only, and sees only the change, not the project (the skill handles a project with no tests in Step 5). Its test-file patterns have a `{name}` placeholder for the source file's name, and `--test-pattern`, `--no-default-patterns` and `--source-ext` extend or replace them. A team keeps its own patterns in `.claude/qa-review/test-patterns`, which the script reads without any option. Default patterns: Python, JavaScript and TypeScript, Java, Kotlin, Go, Ruby, C#, PHP and Swift. Rust and unknown file types are reported as "could not tell". Fixtures `missing-tests`, `clean`, `untested-edge-case` and `docs-only` hold its output as `missing_tests.json`
-- [ ] `changed_interfaces.py`
-- [ ] `openapi_changed.py`
+- [x] `changed_interfaces.py`. It reads the changed lines of a diff and lists HTTP routes, command-line flags and commands, configuration keys (environment variables read in code, keys in configuration files) and schema files, each as added, removed or modified. It sees only changed lines (plus a few after each, for calls split over lines), skips test files (but lists a schema or spec file in a `spec` or `specs` folder, and skips one only in a test data or fixture folder), and reports "could not tell" and lists nothing when the changed files are of a kind it has no rules for. Rules cover Python, JavaScript and TypeScript, Java and Kotlin, Go, Ruby, C#, PHP and Rust. A list of paths has no lines, so only schema files are found from one. Fixtures `interface-without-docs` and `mixed-lens-change` hold its output as `changed_interfaces.json`. In `mixed-lens-change` the new route is a plain function with a docstring and no decorator, so only the spec file is listed
+- [x] `openapi_changed.py`. Runs only when the repo has an OpenAPI or Swagger spec (found in the working tree or in the change, but not in test data, fixture, vendor or build folders; a `spec` or `specs` folder is fine, because that is where a spec often lives), otherwise `not_applicable`. It takes the HTTP routes from `changed_interfaces.py` and lists the ones that no changed spec line names, with a reason. Parameters (`<id>`, `:id`, `{id}`) are compared as `{}`, a path prefix in the spec is allowed, and the method is not compared. Flags, commands and configuration keys are not compared. Fixtures `interface-without-docs` (`not_applicable`) and `mixed-lens-change` hold its output as `openapi_changed.json`. `SKILL.md` Step 7 runs both scripts, and keeps the words OpenAPI and Swagger out of its text, because the structure test keeps stack words in lenses
 
 ### 5. Report format
 
@@ -223,7 +223,8 @@ Each fixture is a small PR (diff, description, ticket). Planted defects are desc
 - [x] Write one case per fixture, plus a mixed fixture with two defects (`mixed-two-defects`).
 - [x] Include at least one fixture on an unfamiliar or unusual stack (`unfamiliar-stack`, written in Gleam and not run, since no toolchain was available), expecting a core-only review that states the stack was unfamiliar instead of inventing stack conventions.
 - [x] Include at least one case run with an optional lens enabled and the same case run core-only, to confirm the core finds the defect either way (`no-input-validation` cases 01 and 02).
-- [x] Cover lens selection in the fixtures: a mixed change (for example code plus an infrastructure file) that should select more than one lens (`mixed-lens-change`: a handler plus its API spec), and the docs-only change, which should select none and say "core only". Fixtures supply the output of `suggest_lenses.py` as a file, since scripts are not run in evals.
+- [x] Cover lens selection in the fixtures: a mixed change (for example code plus an infrastructure file) that should select more than one lens (`mixed-lens-change`: a handler plus its API spec), and the docs-only change, which should select none and say "core only". Fixtures supply the output of `suggest_lenses.py` as a file, since scripts are not run in evals. The same goes for the other scripts, in the fixtures whose case relies on them.
+
 The skill is slash-only, so it has no trigger prompts and no `triggers.yaml`.
 
 ### 7. Runner and structure support for lenses

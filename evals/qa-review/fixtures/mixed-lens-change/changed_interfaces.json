@@ -1,0 +1,18 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "openapi.yaml",
+    "src/shop/routes/orders.py"
+  ],
+  "interfaces": [
+    {
+      "file": "openapi.yaml",
+      "kind": "schema_file",
+      "name": "openapi.yaml",
+      "change": "modified",
+      "line": null
+    }
+  ],
+  "could_not_tell": [],
+  "not_checked": []
+}

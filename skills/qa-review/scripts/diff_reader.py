@@ -14,7 +14,9 @@ from __future__ import annotations
 import json
 import re
 import sys
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import NamedTuple
 
 _DIFF_HEADER = re.compile(r"^diff --git a/(.+?) b/(.+)$")
 _OLD_FILE = re.compile(r"^--- a/(.+?)(?:\t.*)?$")
@@ -85,3 +87,82 @@ def changed_files(text: str) -> tuple[list[str], set[str]]:
 def changed_paths(text: str) -> list[str]:
     """Only the changed paths, in order."""
     return changed_files(text)[0]
+
+
+# --- reading the lines of a diff ---
+
+_HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
+
+
+class DiffLine(NamedTuple):
+    kind: str  # "+" added, "-" removed, " " unchanged context
+    number: int  # the line number in the new file for "+" and " ", in the old file for "-"
+    text: str
+
+
+@dataclass
+class FileDiff:
+    path: str
+    deleted: bool = False
+    lines: list[DiffLine] = field(default_factory=list)
+    marked: bool = False  # the --- and +++ lines were seen
+
+
+def _clean_path(raw: str) -> str:
+    path = raw.split("\t")[0].strip().strip('"').replace("\\", "/")
+    for prefix in ("a/", "b/", "./"):
+        path = path.removeprefix(prefix)
+    return path
+
+
+def file_diffs(text: str) -> list[FileDiff]:
+    """The changed files of a unified diff with their lines. A plain list of paths has no lines and gives [].
+
+    Hunk lengths are counted, so a removed line that starts with `-- ` is not taken for a file header.
+    """
+    files: list[FileDiff] = []
+    current: FileDiff | None = None
+    old_path = ""
+    old_left = new_left = old_no = new_no = 0
+    for line in text.splitlines():
+        if current is not None and (old_left > 0 or new_left > 0) and not line.startswith(("diff --git ", "@@ ")):
+            if line.startswith("\\"):  # "\ No newline at end of file"
+                continue
+            if line.startswith("+") and new_left > 0:
+                current.lines.append(DiffLine("+", new_no, line[1:]))
+                new_no += 1
+                new_left -= 1
+            elif line.startswith("-") and old_left > 0:
+                current.lines.append(DiffLine("-", old_no, line[1:]))
+                old_no += 1
+                old_left -= 1
+            else:
+                current.lines.append(DiffLine(" ", new_no, line[1:]))
+                old_no += 1
+                new_no += 1
+                old_left -= 1
+                new_left -= 1
+            continue
+        header = _DIFF_HEADER.match(line)
+        hunk = _HUNK.match(line)
+        if header:
+            old_left = new_left = 0  # a hunk that is shorter than it says ends here
+            current = FileDiff(_clean_path(header.group(2)))
+            files.append(current)
+        elif line.startswith("deleted file mode") and current is not None:
+            current.deleted = True
+        elif line.startswith("--- "):
+            old_path = _clean_path(line[4:])
+        elif line.startswith("+++ "):
+            new_path = _clean_path(line[4:])
+            if current is None or current.marked:  # a diff without "diff --git" lines
+                current = FileDiff(old_path if new_path == "/dev/null" else new_path)
+                files.append(current)
+            current.marked = True
+            if new_path == "/dev/null":
+                current.deleted = True
+        elif hunk and current is not None:
+            old_no, new_no = int(hunk.group(1)), int(hunk.group(3))
+            old_left = int(hunk.group(2) or 1)
+            new_left = int(hunk.group(4) or 1)
+    return [f for f in files if f.path and f.path != "/dev/null"]
