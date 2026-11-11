@@ -76,7 +76,7 @@ Settled before the remaining Phase 1 work, so later PRs do not reopen them:
 - **Findings.** Every session ends with a readable list of the gaps. The structured JSON block is printed only when the command ends with `json` (the eval prompts all do), and neither is posted to Jira. The category list includes an `other` catch-all, so the model does not invent a name when none fits.
 - **Templates.** They keep the *Other Findings* section and the `Lenses:` header line.
 - **Uncertainty.** When the ticket has no acceptance criteria, the skill derives them from the description, marks each one as derived and not stated in the ticket, never reports a derived criterion as a gap, and asks the user to confirm them before posting.
-- **Scripts.** Standard library only, runnable with a plain `python3`, and a script that cannot run never stops the review.
+- **Scripts.** Standard library only, runnable with a plain `python3`, and a script that cannot run never stops the review. They may import `diff_reader.py`, the shared module that sits next to them.
 
 ### Progressive disclosure
 
@@ -125,7 +125,7 @@ Deciding which lens to load is real work, and it is done from evidence about the
   - Read diffs only for the files that matter, filtering by path with shell tools or `gh api` with `--jq`. Never fetch lockfile or generated-file diffs.
   - Fetch the ticket and the PR once per review and work from the extracted criteria and file list, not repeated fetches.
   - When the diff is too large to review carefully, review the highest-risk files first and say which files were skipped. Do not silently truncate.
-- [x] **Workflow** section. The 12 steps in SKILL.md replace the earlier 7-step outline: load memory, gather context, understand the change and select lenses, criteria and implementation, test coverage, higher-level tests, interfaces and documentation, sanity check, handle gaps, post the comment, save memory, report. The scripts join Steps 3 to 7 as they land.
+- [x] **Workflow** section. The 12 steps in SKILL.md replace the earlier 7-step outline: load memory, gather context, understand the change and select lenses, criteria and implementation, test coverage, higher-level tests, interfaces and documentation, sanity check, handle gaps, post the comment, save memory, report. `suggest_lenses.py` joins Step 3, `missing_tests.py` joins Step 5, and `changed_interfaces.py` and `openapi_changed.py` join Step 7.
 - [x] **Modes** section describing initial and final behavior.
 - [x] **What to skip** section (style nitpicks a linter owns, generated files, lockfiles) to keep reviews focused.
 - [x] **Uncertainty rule:** when the ticket has no acceptance criteria, say so, derive them from the description, mark each as derived, never report one as a gap, and ask the user to confirm them before posting.
@@ -223,7 +223,8 @@ Each fixture is a small PR (diff, description, ticket). Planted defects are desc
 - [x] Write one case per fixture, plus a mixed fixture with two defects (`mixed-two-defects`).
 - [x] Include at least one fixture on an unfamiliar or unusual stack (`unfamiliar-stack`, written in Gleam and not run, since no toolchain was available), expecting a core-only review that states the stack was unfamiliar instead of inventing stack conventions.
 - [x] Include at least one case run with an optional lens enabled and the same case run core-only, to confirm the core finds the defect either way (`no-input-validation` cases 01 and 02).
-- [x] Cover lens selection in the fixtures: a mixed change (for example code plus an infrastructure file) that should select more than one lens (`mixed-lens-change`: a handler plus its API spec), and the docs-only change, which should select none and say "core only". Fixtures supply the output of `suggest_lenses.py` as a file, since scripts are not run in evals.
+- [x] Cover lens selection in the fixtures: a mixed change (for example code plus an infrastructure file) that should select more than one lens (`mixed-lens-change`: a handler plus its API spec), and the docs-only change, which should select none and say "core only". Fixtures supply the output of `suggest_lenses.py` as a file, since scripts are not run in evals. The same goes for the other scripts, in the fixtures whose case relies on them.
+
 The skill is slash-only, so it has no trigger prompts and no `triggers.yaml`.
 
 ### 7. Runner and structure support for lenses
