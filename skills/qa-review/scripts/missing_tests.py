@@ -70,16 +70,14 @@ Anything that goes wrong is reported in the output and never stops the review.
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 from collections import Counter
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
-_DIFF_HEADER = re.compile(r"^diff --git a/(.+?) b/(.+)$")
-_OLD_FILE = re.compile(r"^--- a/(.+?)(?:\t.*)?$")
-_NEW_FILE = re.compile(r"^\+\+\+ b/(.+?)(?:\t.*)?$")
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # diff_reader.py sits next to this script
+from diff_reader import changed_files, print_report, read_input
 
 TEST_FOLDERS = frozenset(
     {"test", "tests", "__tests__", "spec", "specs", "e2e", "testdata", "fixtures", "__fixtures__", "__snapshots__", "__mocks__"}
@@ -137,50 +135,6 @@ GENERATED_FOLDERS = frozenset({"node_modules", "vendor", "dist", "build", "gener
 GENERATED_MARKERS = (".min.js", ".min.css", ".map", ".snap", "_pb2.py", "_pb2_grpc.py", ".pb.go", ".g.dart", ".generated.")
 DOC_FOLDERS = frozenset({"docs", "doc"})
 CONFIG_FILE_NAME = re.compile(r"\.(?:config|setup)\.[^.]+$")  # webpack.config.js, jest.setup.js
-
-
-# --- reading the change ---
-
-
-def changed_files(text: str) -> tuple[list[str], set[str]]:
-    """The changed paths in order, and the subset a diff shows as deleted."""
-    paths: list[str] = []
-    deleted: set[str] = set()
-
-    def add(path: str) -> str | None:
-        path = path.strip().strip('"').replace("\\", "/").removeprefix("./")
-        if not path or path == "/dev/null":
-            return None
-        if path not in paths:
-            paths.append(path)
-        return path
-
-    lines = text.splitlines()
-    current: str | None = None
-    for line in lines:
-        header = _DIFF_HEADER.match(line)
-        if header:
-            current = add(header.group(2))
-        elif line.startswith("deleted file mode") and current:
-            deleted.add(current)
-    if not paths:  # a diff without git headers: read the --- and +++ lines
-        old: str | None = None
-        for line in lines:
-            old_file, new_file = _OLD_FILE.match(line), _NEW_FILE.match(line)
-            if old_file:
-                old = old_file.group(1)
-            elif new_file:
-                add(new_file.group(1))
-            elif line.startswith("+++ /dev/null") and old:
-                gone = add(old)
-                if gone:
-                    deleted.add(gone)
-    if not paths and not any(line.startswith(("diff ", "--- ", "@@")) for line in lines):
-        for line in lines:
-            readable = not any(ch == "�" or (ch < " " and ch != "\t") for ch in line)
-            if line.strip() and not line.startswith("#") and readable:
-                add(line)
-    return paths, deleted
 
 
 # --- patterns ---
@@ -448,16 +402,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    try:
-        if args.input in (None, "-"):
-            text = sys.stdin.buffer.read().decode("utf-8", errors="replace")
-        else:
-            text = Path(args.input).read_text(encoding="utf-8", errors="replace")
-    except OSError as e:
-        text = ""
-        read_error = f"Could not read the input: {e}."
-    else:
-        read_error = ""
+    text, read_error = read_input(args.input)
 
     project_globs, project_extensions, project_problem = read_project_patterns(args.project_patterns)
     custom = [*project_globs, *args.test_pattern]
@@ -474,8 +419,7 @@ def main(argv: list[str] | None = None) -> int:
     problems = " ".join(p for p in (read_error, project_problem) if p)
     if problems:
         report["note"] = f"{problems} {report.get('note', '')}".strip()
-    sys.stdout.reconfigure(encoding="utf-8")
-    print(json.dumps(report, indent=2))
+    print_report(report)
     return 0
 
 

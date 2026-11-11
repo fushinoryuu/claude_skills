@@ -34,48 +34,16 @@ Anything that goes wrong is reported in the output and never stops the review.
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # diff_reader.py sits next to this script
+from diff_reader import changed_paths, print_report, read_input
+
 LENS_INDEX = "README.md"
 DEFAULT_PROJECT_LENSES = Path(".claude") / "qa-review" / "lenses"
 BUNDLED_LENSES = Path(__file__).resolve().parent.parent / "references" / "lenses"
-
-_DIFF_HEADER = re.compile(r"^diff --git a/(.+?) b/(.+)$")
-_NEW_FILE = re.compile(r"^\+\+\+ b/(.+?)(?:\t.*)?$")
-
-
-# --- reading the change ---
-
-
-def changed_paths(text: str) -> list[str]:
-    """Paths from a unified diff, or from a plain list of paths when the text has no diff headers."""
-    paths: list[str] = []
-
-    def add(path: str) -> None:
-        path = path.strip().strip('"').replace("\\", "/").removeprefix("./")
-        if path and path != "/dev/null" and path not in paths:
-            paths.append(path)
-
-    lines = text.splitlines()
-    for line in lines:
-        header = _DIFF_HEADER.match(line)
-        if header:
-            add(header.group(2))
-    if not paths:
-        for line in lines:
-            new_file = _NEW_FILE.match(line)
-            if new_file:
-                add(new_file.group(1))
-    if not paths and not any(line.startswith(("diff ", "--- ", "@@")) for line in lines):
-        for line in lines:
-            readable = not any(ch == "�" or (ch < " " and ch != "\t") for ch in line)
-            if line.strip() and not line.startswith("#") and readable:
-                add(line)
-    return paths
-
 
 # --- matching ---
 
@@ -262,22 +230,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--bundled-lenses", type=Path, default=BUNDLED_LENSES, help="folder of bundled lenses")
     args = parser.parse_args(argv)
 
-    try:
-        if args.input in (None, "-"):
-            text = sys.stdin.buffer.read().decode("utf-8", errors="replace")
-        else:
-            text = Path(args.input).read_text(encoding="utf-8", errors="replace")
-    except OSError as e:
-        text = ""
-        read_error = f"Could not read the input: {e}."
-    else:
-        read_error = ""
+    text, read_error = read_input(args.input)
 
     report = suggest(text, args.bundled_lenses, args.project_lenses)
     if read_error:
         report["note"] = f"{read_error} {report.get('note', '')}".strip()
-    sys.stdout.reconfigure(encoding="utf-8")
-    print(json.dumps(report, indent=2))
+    print_report(report)
     return 0
 
 
