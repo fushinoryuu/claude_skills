@@ -39,9 +39,11 @@ A weekly deployment of 3 to 5 services, deployed one after the other, which take
 - **Soak window:** 30 minutes by default, and a service can override it in the config.
 - **`healthy so far` is a note, not a fourth verdict.** The verdicts stay `healthy`, `degraded` and `unknown`. A service still inside its soak window reads `healthy (soak ends 14:35)`.
 - **No `before|during|after` argument.** One command follows the whole rollout. The person starts it a few minutes before the deployment, and the `before` check is the first stage of the watch (see "Baseline").
-- **Baseline:** the last 1 to 4 hours before a service's deployment starts, overridable in the config. There is no "same time last week" baseline.
-- **The planned release is known in advance,** because CI prepares it. The skill takes it as input, preferably from the Confluence release document (see "Knowing what is about to deploy").
-- **For GitHub Actions, a deployment is the workflow run** named in the config.
+- **Baseline:** the last 1 to 4 hours before a service's deployment starts, 4 hours by default, overridable in the config. There is no "same time last week" baseline.
+- **The planned release is optional input that can arrive late.** CI prepares it in advance. The person can give it when starting, or paste it in the conversation while the baseline is running, and the watch picks it up on its next poll (see "Knowing what is about to deploy"). What the release document looks like does not matter.
+- **For GitHub Actions, a deployment is the workflow run** named in the config. A run that is waiting for a manual approval is reported as `waiting for approval`, and a deployment that has not started yet as `waiting`.
+- **Giving up:** if no deployment has started 30 minutes after the skill was started, it stops and says so. The team running the deployment will know quickly if something is wrong with the packages or the tooling (for example a GitHub Actions outage).
+- **An unhealthy environment before the deployment:** the report starts with a clear `degraded` result and the signals behind it. The skill cannot stop the deployment, so the person decides.
 - **The name stays `deploy-watch`.** A future "act" mode does not need to be in the name.
 - **Confluence output (later) is a comment on the existing release document,** never an edit of its body, so the release doc is not changed or damaged.
 - **Read-only.** The services are live, probably production. The skill never deploys, rolls back, promotes, or mutes a monitor. It can recommend an action for a person to take. Acting may be added much later, behind explicit approval, and is not part of the first version.
@@ -74,7 +76,7 @@ The default is 30 minutes. A service can override it in the config (a database-b
 
 ## Baseline
 
-The signals from before a service's deployment, which the signals after it are compared to. The window is the last 1 to 4 hours, with a default of 2 hours (a proposal, change it if another length suits your services), set in the config as a default and per service. It ends when that service's deployment starts. There is no "same time last week" baseline: it would complicate the skill for little gain.
+The signals from before a service's deployment, which the signals after it are compared to. The window is the last 1 to 4 hours, with a default of 4 hours, set in the config as a default and per service. It ends when that service's deployment starts. There is no "same time last week" baseline: it would complicate the skill for little gain.
 
 The baseline needs time before the deployment, so the person starts the skill a few minutes ahead of it. While waiting, the skill does the old `before` check: it reads the signals for the look-back window and the monitors' state right now, and says whether the environment looks healthy to deploy into (or `degraded` or `unknown`, with the reason). The skill is read-only and never blocks a deployment. It tells the person, who decides.
 
@@ -82,15 +84,20 @@ Each service then moves through waiting, deploying, soaking and done, and the re
 
 ## Knowing what is about to deploy
 
-CI prepares the release in advance, so what is about to go out is known before the deployment starts, whether it goes through GitHub Actions or Octopus. The skill takes that planned release as input: the services expected, and their versions or artifacts. Sources, in order of preference:
+CI prepares the release in advance, so what is about to go out is known before the deployment starts, whether it goes through GitHub Actions or Octopus. The skill does not need that plan to start. The baseline and the environment check need only the services in the config, and the deployment sources show what actually deploys. The plan adds a comparison: with it, the skill can report a service that was not deployed, one deployed that was not planned, or a version that differs.
 
-1. The release document in Confluence, which lists the release artifacts. The skill reads it through the Atlassian MCP server, from a page given to it.
-2. The command's arguments.
-3. The config (every service in it).
+So the plan is optional and can arrive late:
 
-With a planned release the skill can also compare what actually deploys with what was planned, and report a service that was not deployed, one deployed that was not planned, or a version that differs.
+- **At the start:** an argument, such as a path or a link.
+- **Later, in the conversation.** The person starts the skill at 9:45 and the baseline begins. Before the deployment starts at 10:00 they paste the release artifacts as a follow-up message. The agent writes them into a small plan file (for example `.claude/deploy-watch/state/plan.json`, ignored by git), and `watch_release.py` re-reads that file on every poll. The watch is never restarted, and the baseline is not lost. This relies on the host letting the person talk to the agent while the watch runs in the background (Claude Code does). Where it does not, the natural place is between two `--max-wait` slices.
+- **From a document.** If the person gives the Confluence release page, the agent reads only the part that lists the artifacts, through the Atlassian MCP server. This costs the most tokens, so it is a fallback, not the default.
+- **Never.** The skill then watches every service in the config and reports what the deployment sources show.
 
-Usage idea: `/deploy-watch <environment> [release document]`.
+What the release document looks like does not matter to the design. The agent finds the packages that are about to go out, however they are presented.
+
+A later improvement, not for the first version: CI writes a small release manifest (services and versions) as a build artifact, and the skill reads that file for nothing, with no model involved.
+
+Usage idea: `/deploy-watch <environment> [plan]`.
 
 ## Sketch of the skill
 
@@ -117,7 +124,8 @@ A config file in the repo being watched, `.claude/deploy-watch/config.yaml`, map
 ```yaml
 defaults:
   soak_minutes: 30
-  baseline_hours: 2
+  baseline_hours: 4
+  give_up_minutes: 30
 services:
   orders:
     deploy: { source: octopus, project: "Orders" }
@@ -220,11 +228,13 @@ The first version follows a rollout from the first service starting to the last 
 
 ## Open questions
 
-- What does the release document in Confluence look like (a table, a list of artifacts with versions), and how does the skill read it cheaply? Reading a whole page costs tokens, so it should fetch only the part that lists the artifacts. The real document cannot be copied into the repo, so the fixtures need a synthetic example in the same shape.
-- How long does the skill wait for a deployment to start before it gives up (for example 60 minutes after it was started), and what does it report then?
-- Is 2 hours a good default look-back for the baseline? It is a proposal.
-- What does the skill report when the environment looks unhealthy before the deployment has started? It cannot stop the deployment, so the proposal is a clear `degraded` result at the top of the report, with the signals that caused it.
-- Does a service that deploys through GitHub Actions wait for a manual approval? The workflow run would show `running` or `waiting` while nothing is deploying yet. The proposal is to report `waiting for approval` when the run says so. (See hard part 7.)
+None for the design. Every question from the first review was decided (see "Decisions so far").
+
+Things to verify while building, which belong in the roadmap and not here:
+
+- That the person can send the agent a message while the watch runs in the background, in Claude Code and in VS Code Copilot (needed for pasting the plan late). If not, the plan goes in between `--max-wait` slices.
+- Which field of a GitHub Actions run, or of its jobs, shows that a run is waiting for an approval (see hard part 7).
+- The public API calls and fields each tool offers for the first slice (see hard part 6).
 
 ## Next steps
 
