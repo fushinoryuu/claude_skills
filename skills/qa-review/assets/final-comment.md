@@ -19,6 +19,7 @@ Use this template when posting the Jira comment for a `final` mode review. Fill 
 11. Never change Jira ticket status.
 12. Keep the lines of one group on consecutive lines with no blank line between them: the title and the `PRs`, `Reviewed` and `Lenses` lines, the acceptance criteria, and the Gap (and Action) lines of one section. Leave one blank line between groups and sections. Jira shows a single line break as a line break but a blank line as extra space, so blank lines between every line make the comment look loose. Do not add trailing spaces or backslashes to force a break.
 13. Aim for 1000 words or fewer. Never drop a gap to reach that. If the comment is longer, shorten the Implementation summary and the wording of each Gap and Action. If many gaps still keep it over, keep every gap and go over.
+14. Write every file name, folder name, function or class name, command-line flag and configuration key in backticks, wherever it appears in the comment, not only on a Gap line. Markdown reads underscores and asterisks in plain text as formatting: `__tests__` outside backticks shows as bold "tests", and `__init__` as bold "init". A name in backticks is not a code snippet, so rule 8 does not apply to it.
 
 ---
 

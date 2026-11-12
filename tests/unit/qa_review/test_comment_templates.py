@@ -65,3 +65,33 @@ def test_header_lines_and_acceptance_criteria_are_grouped_without_blank_lines():
         body = template_body(name)
         assert re.search(header, body), name
         assert "✓ {{ AC item text - met }}\n✗ {{ AC item text" in body, name
+
+
+def test_each_template_tells_the_model_to_put_names_in_backticks():
+    """Jira reads __tests__ as bold, so file names, folder names and identifiers need backticks everywhere."""
+    for name in TEMPLATES:
+        rules = template_rules(name)
+        assert "in backticks" in rules and "__tests__" in rules, name
+
+
+SKILL_MD = ROOT / "skills" / "qa-review" / "SKILL.md"
+
+
+def skill_step(number: int) -> str:
+    text = SKILL_MD.read_text(encoding="utf-8")
+    return re.split(rf"^### Step {number}:", text, flags=re.MULTILINE)[1].split("\n### ")[0]
+
+
+def test_step_10_repeats_the_backtick_rule_for_names():
+    assert "in backticks" in skill_step(10)
+
+
+def test_the_report_always_has_the_patterns_section_even_when_empty():
+    item = next(line for line in skill_step(12).splitlines() if "Suggested additions" in line)
+    assert "every review" in item and "None found." in item
+    assert "only if" not in item.lower()
+    assert "Never include it in the Jira comment" in item
+
+
+def test_step_11_records_the_pattern_result_on_every_review():
+    assert "on every review" in skill_step(11) and "no new gap pattern" in skill_step(11)

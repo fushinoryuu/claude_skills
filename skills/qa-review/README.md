@@ -15,7 +15,7 @@ This skill assumes that you have the following tools already set up and fully au
 
 On Windows, `python3` can be a Microsoft Store shortcut and not Python: running it only prints "Python was not found" and offers the Store. If `python3 --version` does that, install Python from the Store or from [python.org](https://www.python.org/downloads/), then open a new terminal and check again.
 
-Optional: put a `.claude/qa-review/patterns.md` file in the repo you are reviewing, with your team's known recurring gaps under an **Implementation Gaps** heading. The skill reads it as a checklist and never edits it. At the end of a review it suggests patterns worth adding, for you to commit.
+Optional: put a `.claude/qa-review/patterns.md` file in the repo you are reviewing, with your team's known recurring gaps under an **Implementation Gaps** heading. The skill reads it as a checklist and never edits it. At the end of a review it suggests patterns worth adding, for you to commit. The report always has a "Suggested additions" section, which says "None found." when there is nothing to add, so you can tell the step ran.
 
 ### Progress list
 
