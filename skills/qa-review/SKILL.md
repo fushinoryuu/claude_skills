@@ -262,7 +262,7 @@ Write the comment for the Jira ticket using the template for the active mode:
 
 Post only the text under the "Template" heading, and follow the rules section of the template. Fill in every `{{ placeholder }}`, keep only the applicable verdict and the applicable branch of each conditional (delete the `{{ ... }}` marker lines), and remove no sections (write "None" or "Not applicable" instead). Keep it scannable: facts and file names, no padding. Aim for the word limit in the template's rules, but never drop a gap to reach it.
 
-The comment must look like a normal comment from a person. Post it as Markdown exactly as the template formats it, with the default content format. Keep the `**bold**` headings, because Jira shows `*text*` as italics, and keep the line grouping the template uses (a blank line only between groups), because Jira shows a blank line as extra space. Never wrap it in a code fence, code block, `{code}`, `{noformat}` or panel, since Jira renders those as a grey box.
+The comment must look like a normal comment from a person. Post it as Markdown exactly as the template formats it, with the default content format. Keep the `**bold**` headings, because Jira shows `*text*` as italics. Put every file name, folder name, function or class name, flag and configuration key in backticks, wherever it appears, because Jira reads `__tests__` outside backticks as bold "tests". Keep the line grouping the template uses (a blank line only between groups), because Jira shows a blank line as extra space. Never wrap it in a code fence, code block, `{code}`, `{noformat}` or panel, since Jira renders those as a grey box.
 
 Then decide how it goes out. The skill only adds comments, and a comment can be edited or deleted in Jira, so do not ask for approval when there is nothing to confirm:
 
@@ -281,7 +281,8 @@ Write or update a memory file at `~/.claude/projects/<project_name>/memory/qa-re
 - All gaps found (even if none), the final review depends on this list.
 - Actions taken (reported to dev, fixed in session, n/a)
 - The Jira comment ID returned by the post, or "not posted" if the user posts it by hand
-- Any patterns specific to this ticket worth remembering for future reviews (e.g. AC misinterpretation, test framework gotchas, etc.). If you saw a gap pattern that `.claude/qa-review/patterns.md` does not list, do not edit that file. Note it here and suggest it in the final report (Step 12).
+- Any patterns specific to this ticket worth remembering for future reviews (e.g. AC misinterpretation, test framework gotchas, etc.).
+- The gap pattern result, on every review: either a gap pattern that `.claude/qa-review/patterns.md` does not list, or the words `no new gap pattern`. Decide this each time, even when the file does not exist or there were no gaps. Never edit that file. Suggest any pattern in the final report (Step 12), which always has a section for it.
 
 Follow the memory file format from the system prompt (frontmatter plus body). Update the existing memory if there is one rather than creating a second. Update `MEMORY.md` index if a new file was created.
 
@@ -292,7 +293,7 @@ End with a report in this order. Give each part its own `##` heading, so a reade
 1. **`## Summary`**: verdict, number of gaps by status, files modified in the working tree (`final` only, uncommitted), commands run with pass/fail, and the posted comment's ID and link (or a note that it was not posted).
 2. **`## Comment`**: the Jira comment exactly as it was posted, so the user sees what went out. If you already showed it as a draft in Step 10 (derived criteria, or a pasted ticket), say that and do not print it again.
 3. **`## Findings`**: the gaps as a readable list, as described in [references/output-format.md](references/output-format.md), starting with a `Lenses applied:` line. It is for the session only. Never include it in the Jira comment.
-4. **`## Suggested additions to .claude/qa-review/patterns.md`**: only if Step 11 found a gap pattern worth keeping. A short list, one or two lines each, for the team to commit. Only edit that file if the user asks you to.
+4. **`## Suggested additions to .claude/qa-review/patterns.md`**: print this heading on every review, so the user can tell the step ran. If Step 11 found a gap pattern worth keeping, give a short list, one or two lines each, for the team to commit. If it found none, write the single line `None found.` under the heading. It is for the session only. Never include it in the Jira comment. Only edit that file if the user asks you to.
 
 If the user ended the command with `json`, finish with the structured findings block described in [references/output-format.md](references/output-format.md), after the list. Without `json`, print no JSON.
 
