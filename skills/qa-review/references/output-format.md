@@ -54,17 +54,17 @@ One fenced `json` block holding one object:
 
 ## Categories
 
-| Slug                           | Use it when                                                                               |
-| ------------------------------ | ----------------------------------------------------------------------------------------- |
-| `missing-tests`                | New or changed behavior has no test at an appropriate level                               |
-| `missing-edge-case-coverage`   | A test exists, but empty, maximum, invalid, duplicate or concurrent cases are not covered |
-| `unmet-acceptance-criterion`   | An acceptance criterion is not implemented, or the code contradicts it                    |
-| `missing-interface-doc-update` | An externally visible interface changed and its documentation did not                     |
-| `missing-input-validation`     | Input from outside is used without being checked                                          |
-| `missing-error-handling`       | A failure path (a failed call, bad data, an empty result) is not handled                  |
-| `unsafe-data-change`           | A change to stored data or its format has no migration, backfill or recovery path         |
-| `excessive-permissions`        | Access is granted more widely than the change needs                                       |
-| `other`                        | A real gap that fits none of the above                                                    |
+| Slug                           | Use it when                                                                                  |
+| ------------------------------ | -------------------------------------------------------------------------------------------- |
+| `missing-tests`                | New or changed behavior has no test at all, or no test at an appropriate level               |
+| `missing-edge-case-coverage`   | The behavior has tests, but they skip empty, maximum, invalid, duplicate or concurrent cases |
+| `unmet-acceptance-criterion`   | An acceptance criterion is not implemented, or the code contradicts it                       |
+| `missing-interface-doc-update` | An externally visible interface changed and its documentation did not                        |
+| `missing-input-validation`     | Input from outside is used without being checked                                             |
+| `missing-error-handling`       | A failure path (a failed call, bad data, an empty result) is not handled                     |
+| `unsafe-data-change`           | A change to stored data or its format has no migration, backfill or recovery path            |
+| `excessive-permissions`        | Access is granted more widely than the change needs                                          |
+| `other`                        | A real gap that fits none of the above                                                       |
 
 ## Severity
 
@@ -77,4 +77,6 @@ One fenced `json` block holding one object:
 - List every gap that the Jira comment reports, whether it was sent back to the developer or fixed in the session.
 - Do not list a gap marked "already fixed on the base branch".
 - One finding per gap. Do not list the same gap twice.
+- Merge related gaps. Gaps in the same file with the same root cause are one gap: for example, several untested edge cases of one function, or several undocumented options of one command. Write one finding and name the specifics in its summary. Never merge gaps with different categories or different files, and never drop a gap to merge it.
+- When the tests for a function cover only its normal cases, the category is `missing-edge-case-coverage`, not `missing-tests`, even if several edge cases are missing.
 - Acceptance criteria that were met are not findings.
