@@ -8,6 +8,14 @@ Three capabilities that extend the Phase 1 skill instead of becoming separate sk
 
 Build in that order. #4 is nearly free, #1 reuses acceptance-criteria logic, and #3 introduces the first script that does real work.
 
+## Carried over from Phase 1
+
+Three follow-ups moved here from Phase 1 (see [Moved to Phase 2](phase-1-qa-review-skill.md#moved-to-phase-2)). They improve the Phase 1 skill and can be built in any order, alongside the three capabilities above.
+
+- [ ] **Copilot (QARS-22).** Run `qa-review` in VS Code Copilot and fix the differences: `${CLAUDE_SKILL_DIR}`, the `mcp__atlassian__*` tool names, `$ARGUMENTS` and `/compact`. The eval runner only calls Anthropic models, so this is checked by hand, once, and the result goes in the skill's README.
+- [ ] **Backend lenses (QARS-23).** Decide from real reviews of a backend project whether `service` fit, and whether lenses are wanted for infrastructure, CI workflows and event contracts. Write any lens from real misses, as a project lens first.
+- [ ] **Several tickets per review (QARS-24).** Let `qa-review` take several Jira tickets for one or more PRs, and post one comment per ticket.
+
 ---
 
 ## #4 Automation Code Review
