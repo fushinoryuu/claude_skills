@@ -150,7 +150,7 @@ Use the linked tickets description, attachments, AC, and all comments as additio
 
 Before judging anything, work out what the change is and how this project does things. Read what exists; do not assume.
 
-1. **State what the change does.** Write a short plain-language summary of what it does and what it touches (user-facing behavior, data, interfaces, configuration, build or deploy, tests, docs). This also feeds the *Implementation* section of the comment.
+1. **State what the change does.** Write a short plain-language summary of what it does and what it touches (user-facing behavior, data, interfaces, configuration, build or deploy, tests, docs). This also feeds the _Implementation_ section of the comment.
 2. **Work out how this project is tested.**
    - Test framework, test file locations and naming (look at config files and neighbouring tests).
    - How tests are split: unit vs. functional/integration/e2e/component tests, and where each lives.
@@ -159,6 +159,7 @@ Before judging anything, work out what the change is and how this project does t
    - Whether the change touches an externally visible interface, and where that interface is documented.
 
    If the stack is unfamiliar, say so and apply the core checklist instead of guessing at the stack's conventions.
+
 3. **Read the core checklist.** [references/qa-core.md](references/qa-core.md) always applies, whatever the project. Steps 4 to 7 point at its sections.
 4. **Select lenses.** A lens is an optional file of extra checks for one kind of change. See [references/lenses/README.md](references/lenses/README.md) for the format. Lenses come from two places: the skill's own `references/lenses/` and the reviewed repo's `.claude/qa-review/lenses/`. If both have a lens with the same name, the repo's lens replaces the skill's.
    - **Run the script.** List the changed files of every PR (`gh pr diff <PR#> --name-only`) and pipe the combined list into `python3 ${CLAUDE_SKILL_DIR}/scripts/suggest_lenses.py`. It prints JSON: `matched` lenses with the changed files that matched their `paths`, and `unmatched` lenses with their `touches` line. Each entry has a `source` (`bundled` or `project`) that says which folder holds the lens file.
@@ -172,17 +173,17 @@ Before judging anything, work out what the change is and how this project does t
 
 List each acceptance criterion from the main ticket (linked tickets are only for extra context). For each, decide whether the PR(s) implement it. Mark each `Covered`, `Partial`, or `Missing`, citing the file and line or test name that shows it. If the ticket has no explicit acceptance criteria, derive them from the description and say so. Write "(derived from the description)" after each derived criterion in the comment. A derived criterion is a working assumption: if the change does not satisfy one, tell the user, but never list it as an unmet acceptance criterion or count it as a gap. Ask the user to confirm the derived criteria before posting (Step 10).
 
-Then review the PR diff itself for implementation-level issues. These are gaps in the actual change, for example incorrect logic, a fix applied inconsistently across similar places, an incomplete data migration, or a missing config or documentation update. Missing test coverage is Step 5 and missing interface documentation is Step 7. Use the *Requirements and implementation* section of [references/qa-core.md](references/qa-core.md), plus the Step 4 checks of every lens you applied.
+Then review the PR diff itself for implementation-level issues. These are gaps in the actual change, for example incorrect logic, a fix applied inconsistently across similar places, an incomplete data migration, or a missing config or documentation update. Missing test coverage is Step 5 and missing interface documentation is Step 7. Use the _Requirements and implementation_ section of [references/qa-core.md](references/qa-core.md), plus the Step 4 checks of every lens you applied.
 
 If the repo being reviewed has `.claude/qa-review/patterns.md`, read its **Implementation Gaps** section as a checklist before concluding. If you are about to move on without flagging anything, scan that list first. The file belongs to the team, so only read it.
 
 When an AC item or test step describes behavior the code doesn't actually implement (or actively contradicts), flag it directly. Do not assume the AC is wrong.
 
-Report implementation-level findings under *Other Findings* in the comment. This step applies in *both* `initial` and `final` modes. Implementation-level issues are visible from the PR diff alone and don't require a live test run.
+Report implementation-level findings under _Other Findings_ in the comment. This step applies in _both_ `initial` and `final` modes. Implementation-level issues are visible from the PR diff alone and don't require a live test run.
 
 ### Step 5: Test coverage
 
-Check the changed code against the *Test coverage* section of [references/qa-core.md](references/qa-core.md), plus the Step 5 checks of every lens you applied.
+Check the changed code against the _Test coverage_ section of [references/qa-core.md](references/qa-core.md), plus the Step 5 checks of every lens you applied.
 
 Start with a check by file name:
 
@@ -197,13 +198,13 @@ Every gap gets: what is untested, where (file and symbol), and what test would c
 
 In `initial` mode skip this step and say it was skipped.
 
-In `final` mode, evaluate whether observable behaviour is covered at the project's higher test level, using the *Higher-level tests* section of [references/qa-core.md](references/qa-core.md) plus the Step 6 checks of every lens you applied.
+In `final` mode, evaluate whether observable behaviour is covered at the project's higher test level, using the _Higher-level tests_ section of [references/qa-core.md](references/qa-core.md) plus the Step 6 checks of every lens you applied.
 
 Only evaluate here. For each behavior with no higher-level test, record a gap: the behavior, the project's own directory and style where the test belongs, and the test that would close it. If you can already tell that the test cannot be written right now (missing environment, dependency, credentials), note why. Writing the tests, adding `.todo` stubs and running them all happen in Step 9, after Step 8 has confirmed the gap is still open.
 
 ### Step 7: Interfaces and documentation
 
-Check the *Interfaces and documentation* section of [references/qa-core.md](references/qa-core.md), plus the Step 7 checks of every lens you applied.
+Check the _Interfaces and documentation_ section of [references/qa-core.md](references/qa-core.md), plus the Step 7 checks of every lens you applied.
 
 Report this step as not applicable if the change touches no externally visible interface and no user-facing behavior.
 
@@ -257,8 +258,8 @@ Write the comment for the Jira ticket using the template for the active mode:
    - From the comments already fetched in Step 2a, count how many prior comments on this ticket have a title matching `Initial QA Review`.
    - Set `N` = that count + 1.
    - Post using [assets/initial-comment.md](assets/initial-comment.md), titled `Initial QA Review` if `N` is 1, otherwise `{{N}}{{ordinal suffix e.g. 2nd, 3rd, 4th, ...}} Initial QA Review`.
-   - Follow the initial template's structure and rules exactly. Fold anything closed from the prior rounds into the *Implementation* narration. Any new gap found in Steps 4-7 (including ones surfaced via functional/integration testing) is reported as a plain `Gap:` entry in the matching section (*Tests*, *Interfaces and Documentation*, or *Other Findings*) with the recommendation worded into the description.
-   - This relabeling changes only how the comment is posted (steps 3-9 still ran in full `final`-mode depth) and the *next* review of this ticket is still invoked as `/qa-review final ...` once dev addresses the gaps.
+   - Follow the initial template's structure and rules exactly. Fold anything closed from the prior rounds into the _Implementation_ narration. Any new gap found in Steps 4-7 (including ones surfaced via functional/integration testing) is reported as a plain `Gap:` entry in the matching section (_Tests_, _Interfaces and Documentation_, or _Other Findings_) with the recommendation worded into the description.
+   - This relabeling changes only how the comment is posted (steps 3-9 still ran in full `final`-mode depth) and the _next_ review of this ticket is still invoked as `/qa-review final ...` once dev addresses the gaps.
 
 Post only the text under the "Template" heading, and follow the rules section of the template. Fill in every `{{ placeholder }}`, keep only the applicable verdict and the applicable branch of each conditional (delete the `{{ ... }}` marker lines), and remove no sections (write "None" or "Not applicable" instead). Keep it scannable: facts and file names, no padding. Aim for the word limit in the template's rules, but never drop a gap to reach it.
 

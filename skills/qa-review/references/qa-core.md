@@ -11,14 +11,14 @@ How to use it:
 
 ## Requirements and implementation (Step 4)
 
-- **Requirements.** Every acceptance criterion is implemented. Behavior beyond the ticket is called out. Unclear requirements are flagged, not assumed. *Evidence:* map each criterion to the file and symbol, or the test, that shows it.
-- **Consistency.** When a fix, new field, or new rule is applied to one of several similar places (sibling modules, entities, call sites), it is applied to all of them. *Evidence:* search the siblings and confirm the same change is present in each.
-- **Error handling and failure behavior.** What happens when an input, a dependency, or a step fails, and whether the failure is visible and recoverable. *Evidence:* look for new calls to outside systems, parsing, and conversions that have no failure path.
-- **Regression risk.** What existing behavior could be affected, and whether existing tests cover it. *Evidence:* shared code that changed, defaults that changed, and callers of anything whose behavior changed.
-- **Data and state.** Schema or data migrations, persisted data, backward compatibility, and rollback or recovery. *Evidence:* migrations or format changes without a recovery path, or a stricter rule added without handling data that already exists.
-- **Security and privacy basics.** Secrets, permissions, sensitive data in logs or output, untrusted input. *Evidence:* new inputs from outside, new credentials or permissions, new logging.
-- **Observability and supportability.** Logging, error messages, and enough information to diagnose a failure. *Evidence:* new failure paths that fail silently or with an unhelpful message.
-- **Testability.** Whether the change can be tested in this repo's environment, and what a QA engineer needs (test data, flags, environments) to verify it manually. *Evidence:* behavior that depends on configuration or data the repo does not provide.
+- **Requirements.** Every acceptance criterion is implemented. Behavior beyond the ticket is called out. Unclear requirements are flagged, not assumed. _Evidence:_ map each criterion to the file and symbol, or the test, that shows it.
+- **Consistency.** When a fix, new field, or new rule is applied to one of several similar places (sibling modules, entities, call sites), it is applied to all of them. _Evidence:_ search the siblings and confirm the same change is present in each.
+- **Error handling and failure behavior.** What happens when an input, a dependency, or a step fails, and whether the failure is visible and recoverable. _Evidence:_ look for new calls to outside systems, parsing, and conversions that have no failure path.
+- **Regression risk.** What existing behavior could be affected, and whether existing tests cover it. _Evidence:_ shared code that changed, defaults that changed, and callers of anything whose behavior changed.
+- **Data and state.** Schema or data migrations, persisted data, backward compatibility, and rollback or recovery. _Evidence:_ migrations or format changes without a recovery path, or a stricter rule added without handling data that already exists.
+- **Security and privacy basics.** Secrets, permissions, sensitive data in logs or output, untrusted input. _Evidence:_ new inputs from outside, new credentials or permissions, new logging.
+- **Observability and supportability.** Logging, error messages, and enough information to diagnose a failure. _Evidence:_ new failure paths that fail silently or with an unhelpful message.
+- **Testability.** Whether the change can be tested in this repo's environment, and what a QA engineer needs (test data, flags, environments) to verify it manually. _Evidence:_ behavior that depends on configuration or data the repo does not provide.
 
 ## Test coverage (Step 5)
 
@@ -27,7 +27,7 @@ How to use it:
 - Tests assert real outcomes, not just that the code ran without throwing.
 - Edge cases and inputs, as relevant to the change: empty, maximum, invalid, duplicate, and concurrent inputs or states.
 
-*Evidence:* compare the changed source files with the changed test files, then read the assertions in the tests that exist.
+_Evidence:_ compare the changed source files with the changed test files, then read the assertions in the tests that exist.
 
 ## Higher-level tests (Step 6, `final` mode only)
 
@@ -38,6 +38,6 @@ How to use it:
 
 ## Interfaces and documentation (Step 7)
 
-- **Interfaces and contracts.** Any externally visible interface that changed (an API, command-line flags, a file format, a schema, a config option, an event) has its documentation updated, and its consumers are accounted for. Breaking changes are called out. *Evidence:* a changed signature, flag, field, or format with no matching change to its documentation.
+- **Interfaces and contracts.** Any externally visible interface that changed (an API, command-line flags, a file format, a schema, a config option, an event) has its documentation updated, and its consumers are accounted for. Breaking changes are called out. _Evidence:_ a changed signature, flag, field, or format with no matching change to its documentation.
 - **Documentation and release notes.** User-facing and operator-facing changes are documented. When new scripts, config, or environment variables are added, the README and any example configuration are updated to match.
 - When the change touches no externally visible interface and no user-facing behavior, report this step as not applicable.
