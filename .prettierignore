@@ -1,0 +1,6 @@
+# Model inputs and test data: formatting would change what the evals and tests see
+evals/
+tests/data/
+
+# Posted to Jira as written
+skills/qa-review/assets/

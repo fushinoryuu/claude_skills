@@ -15,7 +15,7 @@ Start with one line, `Lenses applied:`, followed by the lens names or `core only
 1. [medium] missing-tests - src/orders/service.py - cancel_order has no test for the already-cancelled case.
 ```
 
-That is: a number, the severity in brackets, the category slug, the file, and the one-sentence summary, joined by ` - `. When there are no gaps, write `No gaps found.` after the `Lenses applied:` line. Do not use a table and do not repeat the Jira comment's wording of the verdict.
+That is: a number, the severity in brackets, the category slug, the file, and the one-sentence summary, joined by a hyphen with a space on each side, as in the example. When there are no gaps, write `No gaps found.` after the `Lenses applied:` line. Do not use a table and do not repeat the Jira comment's wording of the verdict.
 
 ## JSON block (only with `json`)
 

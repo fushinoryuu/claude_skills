@@ -74,7 +74,7 @@ Settled before the remaining Phase 1 work, so later PRs do not reopen them:
 - **Project extensions.** A team puts its own files in `.claude/qa-review/` in the repo being reviewed, committed so the whole team shares them: `patterns.md` (known recurring gaps) and later `lenses/` (project-specific lenses). The skill only reads them. The patterns file is read in Step 4 and optional. New patterns are suggested in the final report for a person to commit. Bundled lenses live in the skill's `references/lenses/` and project lenses in `.claude/qa-review/lenses/`. When both have a lens with the same name, the project lens wins, so a team can replace a default without editing the skill. A project lens with a new name is added to the bundled ones.
 - **Report format.** The Jira comment templates are the report. Each acceptance criterion is one line, and there are no tables and no line numbers, because Jira renders them badly and line numbers go stale. Severity appears only in the structured findings block.
 - **Findings.** Every session ends with a readable list of the gaps. The structured JSON block is printed only when the command ends with `json` (the eval prompts all do), and neither is posted to Jira. The category list includes an `other` catch-all, so the model does not invent a name when none fits.
-- **Templates.** They keep the *Other Findings* section and the `Lenses:` header line.
+- **Templates.** They keep the _Other Findings_ section and the `Lenses:` header line.
 - **Uncertainty.** When the ticket has no acceptance criteria, the skill derives them from the description, marks each one as derived and not stated in the ticket, never reports a derived criterion as a gap, and asks the user to confirm them before posting.
 - **Scripts.** Standard library only, runnable with a plain `python3`, and a script that cannot run never stops the review. They may import `diff_reader.py`, the shared module that sits next to them.
 
@@ -197,7 +197,7 @@ The Jira comment templates in `assets/` are the report (see "Decisions").
 
 - [x] Verdict line with the overall assessment.
 - [x] Acceptance criteria, one line each: met or not met, with a brief reason. No table.
-- [x] Gaps grouped by section (*Tests*, *Interfaces and Documentation*, *Other Findings*), each naming the file and the change that would close it. No line numbers.
+- [x] Gaps grouped by section (_Tests_, _Interfaces and Documentation_, _Other Findings_), each naming the file and the change that would close it. No line numbers.
 - [x] A "Lenses applied" line naming each lens, or "core only".
 - [x] Structured findings block, printed after the readable findings list when the command ends with `json`, described in `references/output-format.md`. It carries `category`, `file`, `severity` and `summary` per finding, and a `lenses_applied` list (an extra top-level key, which the current scoring ignores). Never posted to Jira.
 - [x] Keep it short enough that a reviewer reads all of it (a target of 750 words for an initial comment and 1000 for a final one, never met by dropping a gap, and guarded in the evals by `expect.max_comment_words`).

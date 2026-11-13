@@ -1,6 +1,6 @@
 name: CI
 
-# Runs lint, the Markdown table check, and unit and structure tests only. Evals are run manually (see evals/).
+# Runs lint, the Markdown format check, and unit and structure tests only. Evals are run manually (see evals/).
 on:
   push:
     branches:
@@ -14,12 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check repo skeleton
-        run: |
-          for d in docs evals skills tests; do
-            test -d "$d" || { echo "Missing directory: $d"; exit 1; }
-          done
-
       - uses: astral-sh/setup-uv@v10.2.0
 
       - name: Install dependencies
@@ -28,8 +22,16 @@ jobs:
       - name: Lint
         run: uv run ruff check .
 
-      - name: Check markdown tables
-        run: uv run python -m tools.format_tables --check
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Check Markdown formatting
+        run: npm run format:check-md
 
       - name: Unit tests
         run: uv run pytest tests/unit

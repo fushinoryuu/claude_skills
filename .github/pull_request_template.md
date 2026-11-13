@@ -12,7 +12,7 @@
 
 ## Checks
 
-- [ ] `uv run poe check` passes (lint, table check, tests)
+- [ ] `uv run poe check` passes (lint, tests), and `npm run format:check-md` passes (Markdown formatting)
 - [ ] If a skill changed: its eval kit is updated (cases, fixtures, trigger prompts), and `uv run poe eval --skill <name> --dry-run` shows the prompts I expect
 - [ ] README and `docs/` are updated where commands or behavior changed
 - [ ] Roadmap: the finished item is ticked in its phase doc and the matching item in `docs/ROADMAP.md`

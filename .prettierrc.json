@@ -1,0 +1,19 @@
+{
+  "singleQuote": true,
+  "printWidth": 300,
+  "trailingComma": "none",
+  "bracketSpacing": true,
+  "tabWidth": 4,
+  "endOfLine": "auto",
+  "semi": true,
+  "embeddedLanguageFormatting": "off",
+  "proseWrap": "preserve",
+  "overrides": [
+    {
+      "files": ["*.yml", "*.yaml", "*.json", "*.md"],
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ]
+}

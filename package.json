@@ -1,0 +1,15 @@
+{
+  "name": "claude-skills",
+  "private": true,
+  "description": "Development tooling only: Prettier checks the Markdown. The skills themselves need no Node.",
+  "scripts": {
+    "format:write-md": "prettier --write \"**/*.md\"",
+    "format:check-md": "prettier --check \"**/*.md\""
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
+  }
+}
