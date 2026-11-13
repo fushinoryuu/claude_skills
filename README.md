@@ -45,12 +45,21 @@ Set up with [uv](https://docs.astral.sh/uv/): `uv sync` installs the pinned Pyth
 | `uv run poe unit`                           | Unit tests (`tests/unit`)                                                                                                           |
 | `uv run poe structure`                      | Structure tests for every skill (`tests/structure`)                                                                                 |
 | `uv run poe test`                           | All tests                                                                                                                           |
-| `uv run poe fmt-tables`                     | Align the columns of every Markdown table in the repo                                                                               |
-| `uv run poe check-tables`                   | Check that the tables are aligned, without changing any file                                                                        |
-| `uv run poe check`                          | Lint, the table check, then all tests. Same coverage as CI.                                                                         |
+| `uv run poe check`                          | Lint, then all tests. CI also checks the Markdown formatting (see below).                                                           |
 | `uv run poe eval --skill <name> [--runs N]` | Run a skill's eval cases against the model. Add `--triggers` for the trigger tests, or `--dry-run` to preview the prompts for free. |
 | `uv run poe eval-sample`                    | Run the eval cases of the sample skill used to test the runner                                                                      |
 | `uv run poe triggers-sample`                | Run the trigger tests of the sample skill                                                                                           |
+
+### Markdown formatting
+
+[Prettier](https://prettier.io/) formats the Markdown (settings in `.prettierrc.json`, skipped paths in `.prettierignore`), and CI fails a PR that is not formatted. This needs [Node](https://nodejs.org/) 24 or newer; check it with `node --version`. Running a skill does not need Node. Install Prettier once with `npm install`, then:
+
+| Command                   | What it does                                                   |
+| ------------------------- | -------------------------------------------------------------- |
+| `npm run format:write-md` | Format every Markdown file                                     |
+| `npm run format:check-md` | Check the formatting, without changing any file (what CI runs) |
+
+### Evals
 
 The eval commands call the Anthropic API, so they need `ANTHROPIC_API_KEY` and cost a small amount per run. Lint and tests do not. See [docs/eval-format.md](docs/eval-format.md) for how evals work.
 

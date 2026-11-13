@@ -25,15 +25,13 @@ testpaths = ["tests"]
 pythonpath = ["."]
 
 # Short commands, run as `uv run poe <task>`. CI calls the underlying commands directly.
+# Markdown formatting is not here: it uses Prettier through npm (`npm run format:write-md`, `npm run format:check-md`), and CI enforces it.
 [tool.poe.tasks]
 lint = "ruff check ."
 unit = "pytest tests/unit"
 structure = "pytest tests/structure"
 test = "pytest"
-# Align Markdown tables in every tracked .md file; check-tables only reports (see tools/format_tables.py)
-fmt-tables = "python -m tools.format_tables"
-check-tables = "python -m tools.format_tables --check"
-check = ["lint", "check-tables", "test"]
+check = ["lint", "test"]
 # Extra arguments are appended: `uv run poe eval --skill qa-review --runs 3`
 eval = "python -m evals.runner"
 # The sample skill used to test the runner (no real skills needed)
