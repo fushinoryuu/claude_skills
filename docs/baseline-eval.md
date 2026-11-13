@@ -54,16 +54,25 @@ A live run of `/qa-review` on a real pull request covers what the eval cannot. O
 
 ## Live checks
 
-One `/qa-review` run per extra model, on a real pull request, to check tool use, the scripts and Jira.
+One `/qa-review initial QARS-25 23` run per extra model, on 2026-11-13 with effort `high`, to check tool use, the scripts and Jira. Pull request #23 (ticket QARS-25) is already merged. It rewords Step 12 of `SKILL.md` and adds three tests. Claude Sonnet reviewed it earlier and found no gaps (Jira comments 10100 and 10101).
 
-| Model              | Pull request and ticket | What it showed |
-| ------------------ | ----------------------- | -------------- |
-| `claude-haiku-5-5` | to be filled in         |                |
-| `claude-opus-5-5`  | to be filled in         |                |
+| Model              | Jira comment               | What it showed                                                                                                                                                                                                                                                 |
+| ------------------ | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `claude-haiku-5-5` | 10106 (2nd Initial Review) | Passed. It read the ticket and the pull request, posted a comment in the template with core lenses only, and numbered the title after the earlier reviews. It found one low-severity gap.                                                                      |
+| `claude-opus-5-5`  | 10107 (3rd Initial Review) | Passed. Same steps and the same gap, worded more precisely. It also noticed the 2nd review and checked whether anything had changed since. Its comment says the 13 tests in the changed test file pass and that it did not re-run the full `uv run poe check`. |
+
+The gap both found: the Summary test in `tests/unit/qa_review/test_comment_templates.py` checks "only these items" and "Add no other bullets" but not the clause that limits "commands run" to commands. This is a real, low-severity gap, and Sonnet missed it twice. So on this pull request the extra findings were useful, not noise.
+
+How far to trust this:
+
+- **Not a blind comparison.** The skill reads earlier comments on the ticket, so both runs saw Sonnet's "no gaps" comments, and Opus also saw Haiku's. Opus agreeing with Haiku is not independent. Both still reported a gap against that earlier verdict.
+- **Not recorded.** The two session reports were not kept, so whether each run used the scripts, and any tool errors that did not change the result, are not recorded here.
+- **One small pull request, in `initial` mode.** `final` mode (which can write tests) and a large diff were not checked.
 
 ## Reading the results
 
 - Sonnet is the model to use. It is the only one the skill is tuned against, and it is the only one that passes every case.
 - Haiku and Opus find every planted gap, so a gap is not lost by using them. They report more extra low-severity gaps, which makes a review longer to read. Haiku does it the most.
+- Extra findings are not always noise. On the live check, both Haiku and Opus found a real low-severity gap that Sonnet had missed.
 - These are three runs per case on one date. A single 2 of 3 is a signal, not a measurement, and the numbers move a little from one run of the eval to the next.
 - Making the skill quieter on Haiku and Opus is future work and was not done here, because the skill is tuned only against Sonnet.
