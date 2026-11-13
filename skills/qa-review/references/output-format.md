@@ -45,12 +45,12 @@ One fenced `json` block holding one object:
 
 ## Fields of a finding
 
-| Field      | Value                                                                                                                      |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `category` | One slug from the table below. Use `other` only when none fits. Never invent a slug.                                       |
-| `file`     | The path of the file the gap is about, as it appears in the diff. For missing tests, the source file that lacks the tests. |
-| `severity` | `high`, `medium` or `low`, from the guide below.                                                                           |
-| `summary`  | One sentence: what is wrong and why it matters. No line numbers.                                                           |
+| Field      | Value                                                                                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `category` | One slug from the table below. Use `other` only when none fits. Never invent a slug.                                                                                            |
+| `file`     | The path of the file the gap is about, as it appears in the diff. For `missing-tests` and `missing-edge-case-coverage`, the source file the tests are for, never the test file. |
+| `severity` | `high`, `medium` or `low`, from the guide below.                                                                                                                                |
+| `summary`  | One sentence: what is wrong and why it matters. No line numbers.                                                                                                                |
 
 ## Categories
 
