@@ -95,3 +95,26 @@ def test_the_report_always_has_the_patterns_section_even_when_empty():
 
 def test_step_11_records_the_pattern_result_on_every_review():
     assert "on every review" in skill_step(11) and "no new gap pattern" in skill_step(11)
+
+
+def step_12_item(marker: str) -> str:
+    return next(line for line in skill_step(12).splitlines() if marker in line)
+
+
+def test_the_compact_block_has_a_heading_and_comes_last():
+    step = skill_step(12)
+    assert "## Run this to compact context" in step
+    assert step.index("## Run this to compact context") < step.index("/compact Keep:")
+    assert step.index("after the JSON block") > step.index("## Run this to compact context")
+    assert step.rstrip().endswith("```")
+
+
+def test_the_comment_section_is_printed_unchanged_or_marked_shortened():
+    item = step_12_item("`## Comment`")
+    assert "unchanged" in item and "shortened" in item
+    assert "never call a shortened copy exactly" in item
+
+
+def test_the_summary_holds_only_the_listed_items():
+    item = step_12_item("`## Summary`")
+    assert "only these items" in item and "Add no other bullets" in item
