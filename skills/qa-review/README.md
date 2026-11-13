@@ -110,6 +110,10 @@ On Windows, antivirus software that scans HTTPS traffic replaces GitHub's certif
 - Add an exception for `github.com` and `*.github.com` in the antivirus software's HTTPS scanning settings.
 - Or make Git use the Windows certificate store: `git config --global http.sslBackend schannel`.
 
+## Models
+
+The skill is written and tuned against Claude Sonnet 5.5, and that is the model to use. It was also measured on Claude Haiku 5.5 and Claude Opus 5.5. Both found every planted gap in the eval set, and both reported more extra low-severity gaps than Sonnet did. The numbers, the commands, and what the eval cannot check are in [docs/baseline-eval.md](../../docs/baseline-eval.md).
+
 ## Review modes
 
 There are two modes, used at different points in the ticket lifecycle:
