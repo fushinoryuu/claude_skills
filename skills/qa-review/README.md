@@ -8,10 +8,10 @@ The skill is project-agnostic. It applies to any code or feature a QA engineer w
 
 The skill is the folder `skills/qa-review` of this repository. Claude Code finds a skill by looking for `<name>/SKILL.md` in one of two places, so install the folder as `qa-review` in one of them:
 
-| Where                                  | Who gets it                                              | Team files                                              |
-| -------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------- |
-| `~/.claude/skills/qa-review` (global)  | You, in every project                                    | Each project keeps its own, as described below          |
-| `<your repo>/.claude/skills/qa-review` | Everyone who clones that repo, once the folder is pushed | Next to the skill, in the same repo, reviewed like code |
+| Where                                  | Who gets it                                                                                                | Team files                                              |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `~/.claude/skills/qa-review` (global)  | You, in every project                                                                                      | Each project keeps its own, as described below          |
+| `<your repo>/.claude/skills/qa-review` | Everyone who clones that repo, if you commit a copy of the folder (a link to your own clone is not shared) | Next to the skill, in the same repo, reviewed like code |
 
 Then link the folder or copy it. `<clone>` below is where you cloned this repository.
 

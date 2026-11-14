@@ -29,9 +29,9 @@ uv run python -m evals.runner --skill qa-review --runs 3 --jobs 8 --model claude
 - **False-positive rate** is the share of runs, on the clean and tricky cases, that reported anything that was not expected. Lower is better.
 - Input, cache write and cache read are the same for every model because the prompt is the same. Output tokens differ. Compare the full input as the sum of the three input counts.
 
-### Cases that did not pass
+### Cases with failed runs
 
-Both failures are over-reporting. The skill found every planted defect, then reported more other gaps than the case allows.
+One case failed: `vague-criteria-01`, which is why Haiku and Opus show 14 of 15. `criterion-not-implemented-01` passed on all three models, but Opus failed one of its three runs. Both are over-reporting: the skill found every planted defect, then reported more other gaps than the case allows.
 
 | Case                           | Sonnet | Haiku  | Opus   | What the extra findings were                                                                                                                                                                                                                                   |
 | ------------------------------ | ------ | ------ | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
