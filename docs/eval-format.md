@@ -196,7 +196,7 @@ Model output varies, so a case is judged on its pass rate across N runs, not one
 | Case pass rate      | fraction of cases that passed                                                   |
 | Trigger accuracy    | fraction of `triggers.yaml` prompts classified correctly (see below)            |
 
-Results are written to `evals/results/<timestamp>.json` (git-ignored). Each result records the model, the date, and the number of runs, so numbers are never quoted without them.
+Results are written to `evals/results/<timestamp>.json` (git-ignored). Each result records the model, the date, and the number of runs, so numbers are never quoted without them. The recorded baseline for `qa-review`, on three models, is in [baseline-eval.md](baseline-eval.md).
 
 ## Running
 

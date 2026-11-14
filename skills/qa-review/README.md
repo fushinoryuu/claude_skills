@@ -4,6 +4,78 @@ Runs a structured QA review session for a Jira ticket + one or more PRs. This co
 
 The skill is project-agnostic. It applies to any code or feature a QA engineer would review, whatever the stack. A universal core checklist always applies, and optional lenses add stack-specific checks on top.
 
+## Install
+
+The skill is the folder `skills/qa-review` of this repository. Claude Code finds a skill by looking for `<name>/SKILL.md` in one of two places, so install the folder as `qa-review` in one of them:
+
+| Where                                  | Who gets it                                                                                                | Team files                                              |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `~/.claude/skills/qa-review` (global)  | You, in every project                                                                                      | Each project keeps its own, as described below          |
+| `<your repo>/.claude/skills/qa-review` | Everyone who clones that repo, if you commit a copy of the folder (a link to your own clone is not shared) | Next to the skill, in the same repo, reviewed like code |
+
+Then link the folder or copy it. `<clone>` below is where you cloned this repository.
+
+| Way to install | Update                  | Trade-off                                                                                                   |
+| -------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Link           | `git pull` in the clone | Always current, nothing to copy. It follows the branch checked out in the clone (see the warning below)     |
+| Copy           | Copy the folder again   | Stays exactly as it was when you copied it, and a repo install can be committed. It never updates by itself |
+
+### Link a clone (Windows, PowerShell)
+
+```
+New-Item -ItemType Directory -Force "$HOME\.claude\skills"
+New-Item -ItemType Junction -Path "$HOME\.claude\skills\qa-review" -Target "<clone>\skills\qa-review"
+```
+
+To remove the link without touching the clone's files, use `rmdir` through `cmd`, which deletes only the link:
+
+```
+cmd /c rmdir "%USERPROFILE%\.claude\skills\qa-review"
+```
+
+### Link a clone (macOS and Linux)
+
+```
+mkdir -p ~/.claude/skills
+ln -s <clone>/skills/qa-review ~/.claude/skills/qa-review
+```
+
+To remove the link, use `unlink`. It deletes only the link:
+
+```
+unlink ~/.claude/skills/qa-review
+```
+
+For a repo install, use `<your repo>/.claude/skills/qa-review` in place of the global path in any of the commands above.
+
+### A linked skill follows the checked-out branch
+
+A link shows whatever files the clone has checked out. If you switch the clone to a half-finished branch, the skill changes in every project that uses the link. When other projects should get only released changes, link a clone that you keep on `main` and do your own work on in a second clone or a worktree.
+
+### Copy instead
+
+Copy the folder to `~/.claude/skills/qa-review` or `<your repo>/.claude/skills/qa-review`: `Copy-Item -Recurse <clone>\skills\qa-review <target>` on Windows, or `cp -r <clone>/skills/qa-review <target>` on macOS and Linux. The target must not already exist, or the copy ends up inside it.
+
+### Where your team's files go
+
+Files that belong to a project go in the repository being reviewed, not in the skill folder, so they work with any install:
+
+- `.claude/qa-review/patterns.md`: known recurring gaps (see Initial setup).
+- `.claude/qa-review/lenses/`: your own lenses (see Lenses).
+- `.claude/qa-review/test-patterns`: how your project names its tests (see Test patterns).
+
+The skill runs its scripts from `${CLAUDE_SKILL_DIR}`, which Claude Code replaces with the folder that holds `SKILL.md`. The scripts are found the same way for a global install, a repo install, a link and a copy, from any working directory.
+
+## Quick start with only `gh` and a pasted ticket
+
+You need the [GitHub CLI](https://cli.github.com/) signed in (`gh auth status`) and Python 3.9 or newer (`python3 --version`). You do not need the Atlassian MCP server.
+
+1. Install the skill (above) and start Claude Code in the repository the pull request belongs to.
+2. Copy the ticket from Jira: the summary, the description, the acceptance criteria, and any linked tickets and comments you want reviewed.
+3. Run `/qa-review initial ABC-123 456`, with your ticket key and the PR number.
+4. When the skill asks for the ticket, paste the text from step 2. The skill reads the PR with `gh`.
+5. Read the report. Because the ticket was pasted, the skill does not post to Jira: it shows the finished comment as a draft. Copy it into the ticket yourself.
+
 ## Initial setup
 
 This skill assumes that you have the following tools already set up and fully authenticated:
@@ -37,6 +109,10 @@ On Windows, antivirus software that scans HTTPS traffic replaces GitHub's certif
 
 - Add an exception for `github.com` and `*.github.com` in the antivirus software's HTTPS scanning settings.
 - Or make Git use the Windows certificate store: `git config --global http.sslBackend schannel`.
+
+## Models
+
+The skill is written and tuned against Claude Sonnet 5.5, and that is the model to use. It was also measured on Claude Haiku 5.5 and Claude Opus 5.5. Both found every planted gap in the eval set, and both reported more extra low-severity gaps than Sonnet did. The numbers, the commands, and what the eval cannot check are in [docs/baseline-eval.md](../../docs/baseline-eval.md).
 
 ## Review modes
 

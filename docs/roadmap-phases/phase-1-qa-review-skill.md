@@ -239,6 +239,14 @@ Lenses need two small changes outside the skill itself.
   - SKILL.md and the references outside `lenses/` name no specific lens file (the lenses `README.md` may be linked), so removing the `lenses/` folder cannot break them.
   - The stack-term scan (see Risks) covers the same core files and skips lens files. The word list is `STACK_TERMS` in `evals/structure.py`.
 
+## Moved to Phase 2
+
+These came up while finishing Phase 1. None of them blocks using the skill with Claude Code, one ticket at a time, so they are tracked in [Phase 2](phase-2-qa-review-extensions.md#carried-over-from-phase-1):
+
+- Running the skill in VS Code Copilot (QARS-22). The skill is checked only in Claude Code, and Copilot differs in how it names tools and passes arguments.
+- Backend lenses (QARS-23). They should be written from real misses on a backend project, and that project's next ticket is the first chance to see them.
+- Reviewing several Jira tickets for one or more PRs, one comment per ticket (QARS-24). Until then, run the skill once per ticket.
+
 ## Acceptance criteria
 
 - Structure and unit tests pass in CI.
