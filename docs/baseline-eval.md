@@ -56,17 +56,17 @@ A live run of `/qa-review` on a real pull request covers what the eval cannot. O
 
 One `/qa-review initial QARS-25 23` run per extra model, on 2026-11-13 with effort `high`, to check tool use, the scripts and Jira. Pull request #23 (ticket QARS-25) is already merged. It rewords Step 12 of `SKILL.md` and adds three tests. Claude Sonnet reviewed it earlier and found no gaps (Jira comments 10100 and 10101).
 
-| Model              | Jira comment               | What it showed                                                                                                                                                                                                                                                 |
-| ------------------ | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claude-haiku-5-5` | 10106 (2nd Initial Review) | Passed. It read the ticket and the pull request, posted a comment in the template with core lenses only, and numbered the title after the earlier reviews. It found one low-severity gap.                                                                      |
-| `claude-opus-5-5`  | 10107 (3rd Initial Review) | Passed. Same steps and the same gap, worded more precisely. It also noticed the 2nd review and checked whether anything had changed since. Its comment says the 13 tests in the changed test file pass and that it did not re-run the full `uv run poe check`. |
+| Model              | Jira comment               | What it showed                                                                                                                                                                                                                                                                                                                                       |
+| ------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `claude-haiku-5-5` | 10106 (2nd Initial Review) | Passed. It read the ticket and the pull request, ran all four scripts (every one returned `ok`: no lens matched, no source file without a test, no interface, no API spec), posted a comment in the template with core lenses only, and numbered the title after the earlier reviews. It found one low-severity gap. The run took about two minutes. |
+| `claude-opus-5-5`  | 10107 (3rd Initial Review) | Passed. Same steps, the same four scripts with the same results, and the same gap, worded more precisely. It also noticed the 2nd review and checked whether anything had changed since. Its comment says the 13 tests in the changed test file pass and that it did not re-run the full `uv run poe check`. The run took under two minutes.         |
 
 The gap both found: the Summary test in `tests/unit/qa_review/test_comment_templates.py` checks "only these items" and "Add no other bullets" but not the clause that limits "commands run" to commands. This is a real, low-severity gap, and Sonnet missed it twice. So on this pull request the extra findings were useful, not noise.
 
 How far to trust this:
 
-- **Not a blind comparison.** The skill reads earlier comments on the ticket, so both runs saw Sonnet's "no gaps" comments, and Opus also saw Haiku's. Opus agreeing with Haiku is not independent. Both still reported a gap against that earlier verdict.
-- **Not recorded.** The two session reports were not kept, so whether each run used the scripts, and any tool errors that did not change the result, are not recorded here.
+- **Not a blind comparison.** The skill reads earlier comments on the ticket, so both runs saw Sonnet's "no gaps" comments, and Opus also saw Haiku's comment and the memory note Haiku's run wrote. Opus agreeing with Haiku is not independent. Both still reported a gap against that earlier verdict.
+- **Where the script facts come from.** They come from the session transcripts, which are local files and not in the repository. In a live run, the report's `## Summary` lists the commands run, and the scripts appear there. No script call in either run returned an error.
 - **One small pull request, in `initial` mode.** `final` mode (which can write tests) and a large diff were not checked.
 
 ## Reading the results
