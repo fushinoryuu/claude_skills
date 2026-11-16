@@ -31,7 +31,7 @@ QA skills for AI coding agents, with a shared eval runner. The first skill is `q
 
 - The site is a free test site (projects QARS and SAM1). Call `getAccessibleAtlassianResources` once for the `cloudId`. Deferred Atlassian tools are loaded with ToolSearch.
 - Keep tickets few. Group related follow-ups into one ticket, with Context, Scope, Out of scope and Acceptance Criteria.
-- Ask before writing to Jira. Never change a ticket's status and never delete a ticket: I move tickets to Done by hand. QARS-8 is my scratchpad, so leave it alone.
+- Ask before creating or editing tickets. The one exception is the `qa-review` review comment, which the skill posts without asking, unless it derived the acceptance criteria. Then it shows a draft first and waits for a yes. Never change a ticket's status and never delete a ticket: I move tickets to Done by hand. QARS-8 is my scratchpad, so leave it alone.
 
 **Evals and secrets**
 
