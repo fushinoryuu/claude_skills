@@ -224,7 +224,7 @@ The plan keeps the rules in `SKILL.md` and `docs/roadmap-phases/phase-1-qa-revie
 
 ## Work breakdown
 
-Three tickets, filed as sub-tasks of QARS-29 on 2026-11-17. The Phase 2 doc and `docs/ROADMAP.md` name them.
+Three tickets, filed on 2026-11-17 as tasks that relate to QARS-29. The Phase 2 doc and `docs/ROADMAP.md` name them.
 
 | Ticket  | Title                                 | Work                                                                                                                                                                                                             | Size   |
 | ------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
