@@ -180,6 +180,25 @@ Only one existing case sets `lenses:`. The other 14 load every lens by default, 
 
 Unit tests do not depend on the exact set of lenses (`test_suggest_lenses.py` checks that `service` and `api-spec` are present, not that they are the only ones).
 
+### Cases that require an exact lens list
+
+`expect.lenses` is scored as an exact match: a run passes only if the reported lenses equal the list. Three older cases are affected, because the proposed `security` globs match files their fixtures change (`**/handlers/**` and `**/routes/**`):
+
+| Case                     | Expects today         | Fixture file the globs match          | Expects after the lens exists   |
+| ------------------------ | --------------------- | ------------------------------------- | ------------------------------- |
+| `no-input-validation-01` | `[service]`           | `src/orders/handlers/create_order.py` | `[service, security]`           |
+| `mixed-lens-change-01`   | `[service, api-spec]` | `src/shop/routes/orders.py`           | `[service, api-spec, security]` |
+| `docs-only-01`           | `[]`                  | none (docs only)                      | `[]`, unchanged                 |
+
+Each of the three fixtures also holds a `suggest_lenses.json`, the saved output of `suggest_lenses.py`. It was made before `security` existed, so it no longer matches what the real script prints. `docs/eval-format.md` says this file must be the script's real output on the fixture's inputs. The fix:
+
+- Regenerate `suggest_lenses.json` for `no-input-validation`, `mixed-lens-change` and `docs-only` by running the script, once the `security` lens file exists. Do not edit them by hand.
+- Change the two expectations in the table. Leave `docs-only-01` at `[]`, since no `security` path matches a docs-only change. Its regenerated file only gains `security` in the unmatched list.
+- Do not pin these cases to the old lenses with `lenses:`. That would hide the change in lens choice that the cases exist to check.
+- The expectations depend on the final path globs. QARS-31 settles the globs (decision D4), so this work happens in QARS-32 after it. If QARS-31 narrows the globs so that `handlers/` and `routes/` no longer match, the two expectations stay as they are today, and only the regenerated files need review.
+- "No regression on the 15 older cases" in QARS-32 means the findings, the false-positive rate and the comment length. The three lens lists above are an intended change, and the PR description names them.
+- The older cases can also fail on findings, because `security` is now loaded for them. The full re-run shows that, and the lens text is tightened if it does.
+
 ### Fixture values and the secret scanner
 
 A TruffleHog scan runs on every push (`.github/workflows/secret-scanner.yaml`). The fake secret in `security-hardcoded-secret` and the fake password in `security-tricky` must not look like a real key format from a known provider. Use plain made-up strings. Push the fixtures once on a branch and read the scanner result before the PR is opened. The PR checklist item "no secrets" stays unticked until then.
@@ -226,13 +245,13 @@ The plan keeps the rules in `SKILL.md` and `docs/roadmap-phases/phase-1-qa-revie
 
 Three tickets, filed on 2026-11-17 as tasks that relate to QARS-29. The Phase 2 doc and `docs/ROADMAP.md` name them.
 
-| Ticket  | Title                                 | Work                                                                                                                                                                                                             | Size   |
-| ------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| QARS-30 | Core security upgrade                 | Rewrite the core security section and add the Step 5 bullet and the severity line. Move the duplicated `service` items (decision D1). Dry-run, then run the validation and permission cases and the clean cases. | Small  |
-| QARS-31 | `security` lens and categories        | Write `lenses/security.md`. Add the seven categories to `categories.yaml` and `output-format.md`. Check the path globs with `suggest_lenses.py` and add a unit test for them.                                    | Medium |
-| QARS-32 | Security fixtures, cases and baseline | Nine fixtures and twelve cases. Scan them for secrets. Run Sonnet on the new cases, then the full set. Record the result in `docs/baseline-eval.md` or a short note beside it.                                   | Medium |
+| Ticket  | Title                                 | Work                                                                                                                                                                                                                                                                                                                                                         | Size   |
+| ------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| QARS-30 | Core security upgrade                 | Rewrite the core security section and add the Step 5 bullet and the severity line. Move the duplicated `service` items (decision D1). Dry-run, then run the validation and permission cases and the clean cases.                                                                                                                                             | Small  |
+| QARS-31 | `security` lens and categories        | Write `lenses/security.md`. Add the seven categories to `categories.yaml` and `output-format.md`. Check the path globs with `suggest_lenses.py` and add a unit test for them.                                                                                                                                                                                | Medium |
+| QARS-32 | Security fixtures, cases and baseline | Nine fixtures and twelve cases. Scan them for secrets. Regenerate the `suggest_lenses.json` of three older fixtures and update two lens expectations (see "Cases that require an exact lens list"), after QARS-31 settles the globs. Run Sonnet on the new cases, then the full set. Record the result in `docs/baseline-eval.md` or a short note beside it. | Medium |
 
-Order: QARS-30, then QARS-31, then QARS-32. QARS-30 can ship alone. The other two need its wording. Because QARS-32 is where the evals cost money, the person who owns the budget runs the full eval.
+Order: QARS-30, then QARS-31, then QARS-32. QARS-30 can ship alone. The other two need its wording, and QARS-32 also needs the final path globs from QARS-31. Because QARS-32 is where the evals cost money, the person who owns the budget runs the full eval.
 
 Later, as its own ticket and not part of QARS-29: the standalone whole-repo security skill.
 
