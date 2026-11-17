@@ -16,6 +16,15 @@ Three follow-ups moved here from Phase 1 (see [Moved to Phase 2](phase-1-qa-revi
 - [ ] **Backend lenses (QARS-23).** Decide from real reviews of a backend project whether `service` fit, and whether lenses are wanted for infrastructure, CI workflows and event contracts. Write any lens from real misses, as a project lens first.
 - [ ] **Several tickets per review (QARS-24).** Let `qa-review` take several Jira tickets for one or more PRs, and post one comment per ticket.
 
+## Security review (QARS-29)
+
+A deeper security review for `qa-review`: a stack-free upgrade of the core security checks, plus an optional `security` lens for server-side code. It is not a new step, so the 12-step workflow stays as it is. The plan, the options, the eval plan and the limits are in [the design notes](../security-lens/design-notes.md). A standalone whole-repo security skill is a later, separate ticket.
+
+- [x] Design notes and work breakdown (QARS-29)
+- [ ] Core security upgrade (ticket to be filed)
+- [ ] `security` lens and its categories (ticket to be filed)
+- [ ] Security fixtures, cases and eval baseline (ticket to be filed)
+
 ---
 
 ## #4 Automation Code Review
