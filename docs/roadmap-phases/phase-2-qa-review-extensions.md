@@ -21,9 +21,9 @@ Three follow-ups moved here from Phase 1 (see [Moved to Phase 2](phase-1-qa-revi
 A deeper security review for `qa-review`: a stack-free upgrade of the core security checks, plus an optional `security` lens for server-side code. It is not a new step, so the 12-step workflow stays as it is. The plan, the options, the eval plan and the limits are in [the design notes](../security-lens/design-notes.md). A standalone whole-repo security skill is a later, separate ticket.
 
 - [x] Design notes and work breakdown (QARS-29)
-- [ ] Core security upgrade (ticket to be filed)
-- [ ] `security` lens and its categories (ticket to be filed)
-- [ ] Security fixtures, cases and eval baseline (ticket to be filed)
+- [ ] Core security upgrade (QARS-30)
+- [ ] `security` lens and its categories (QARS-31)
+- [ ] Security fixtures, cases and eval baseline (QARS-32)
 
 ---
 

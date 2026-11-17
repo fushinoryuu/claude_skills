@@ -224,24 +224,26 @@ The plan keeps the rules in `SKILL.md` and `docs/roadmap-phases/phase-1-qa-revie
 
 ## Work breakdown
 
-Kept to three tickets, filed under QARS-29 after approval. The Phase 2 doc and `docs/ROADMAP.md` name them once they exist.
+Three tickets, filed as sub-tasks of QARS-29 on 2026-11-17. The Phase 2 doc and `docs/ROADMAP.md` name them.
 
-| #   | Ticket                                | Work                                                                                                                                                                                                             | Size   |
-| --- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| A   | Core security upgrade                 | Rewrite the core security section and add the Step 5 bullet and the severity line. Move the duplicated `service` items (decision D1). Dry-run, then run the validation and permission cases and the clean cases. | Small  |
-| B   | `security` lens and categories        | Write `lenses/security.md`. Add the seven categories to `categories.yaml` and `output-format.md`. Check the path globs with `suggest_lenses.py` and add a unit test for them.                                    | Medium |
-| C   | Security fixtures, cases and baseline | Nine fixtures and twelve cases. Scan them for secrets. Run Sonnet on the new cases, then the full set. Record the result in `docs/baseline-eval.md` or a short note beside it.                                   | Medium |
+| Ticket  | Title                                 | Work                                                                                                                                                                                                             | Size   |
+| ------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| QARS-30 | Core security upgrade                 | Rewrite the core security section and add the Step 5 bullet and the severity line. Move the duplicated `service` items (decision D1). Dry-run, then run the validation and permission cases and the clean cases. | Small  |
+| QARS-31 | `security` lens and categories        | Write `lenses/security.md`. Add the seven categories to `categories.yaml` and `output-format.md`. Check the path globs with `suggest_lenses.py` and add a unit test for them.                                    | Medium |
+| QARS-32 | Security fixtures, cases and baseline | Nine fixtures and twelve cases. Scan them for secrets. Run Sonnet on the new cases, then the full set. Record the result in `docs/baseline-eval.md` or a short note beside it.                                   | Medium |
 
-Order: A, then B, then C. A can ship alone. B and C need A's wording. Because C is where the evals cost money, the person who owns the budget runs the full eval.
+Order: QARS-30, then QARS-31, then QARS-32. QARS-30 can ship alone. The other two need its wording. Because QARS-32 is where the evals cost money, the person who owns the budget runs the full eval.
 
 Later, as its own ticket and not part of QARS-29: the standalone whole-repo security skill.
 
-## Open decisions
+## Decisions
 
-1. **D1: the `service` lens.** Recommended: move "Input validation" and "Authorization" out of `service`, since the core upgrade now covers them and the eval pair shows the core already catches validation. `service` keeps idempotency and migrations. The alternative is to leave `service` alone and accept some double reporting.
-2. **D2: category count.** Recommended: the seven above, so a case can say exactly what it expects. The alternative is fewer, coarser categories (for example one for authentication and authorization), which is simpler but scores less precisely.
-3. **D3: dependency checks and lockfiles.** `SKILL.md` tells the agent to skip lockfile diffs. Recommended: check the manifest only (the file that names the dependency) and keep that rule as it is. The alternative is a one-line exception in "What to skip", which is a `SKILL.md` edit.
-4. **D4: path globs.** The list above is broad on purpose. If it matches too often, the lens loads on changes with no security surface. This is measured in ticket B, not decided here.
+All four were agreed on 2026-11-17, with the recommendations below. They are tracked in the follow-up tickets.
+
+1. **D1: the `service` lens.** Agreed: move "Input validation" and "Authorization" out of `service`, since the core upgrade now covers them and the eval pair shows the core already catches validation. `service` keeps idempotency and migrations. The alternative is to leave `service` alone and accept some double reporting.
+2. **D2: category count.** Agreed: the seven above, so a case can say exactly what it expects. The alternative is fewer, coarser categories (for example one for authentication and authorization), which is simpler but scores less precisely.
+3. **D3: dependency checks and lockfiles.** `SKILL.md` tells the agent to skip lockfile diffs. Agreed: check the manifest only (the file that names the dependency) and keep that rule as it is. The alternative is a one-line exception in "What to skip", which is a `SKILL.md` edit.
+4. **D4: path globs.** The list above is broad on purpose. If it matches too often, the lens loads on changes with no security surface. Agreed: measure it in QARS-31 and narrow the list if needed.
 
 ## Not in this plan
 
