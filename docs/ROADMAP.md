@@ -37,7 +37,7 @@ Build order for the qa-review skill and its related QA skills. Every skill gets 
 - [ ] **Security review (QARS-29)**
   - [x] Design notes and work breakdown (QARS-29)
   - [x] Core security upgrade (QARS-30)
-  - [ ] `security` lens and its categories (QARS-31)
+  - [x] `security` lens and its categories (QARS-31)
   - [ ] Security fixtures, cases and eval baseline (QARS-32)
 
 ## Phase 3: Standalone skills
