@@ -10,11 +10,12 @@ Build in that order. #4 is nearly free, #1 reuses acceptance-criteria logic, and
 
 ## Carried over from Phase 1
 
-Three follow-ups moved here from Phase 1 (see [Moved to Phase 2](phase-1-qa-review-skill.md#moved-to-phase-2)). They improve the Phase 1 skill and can be built in any order, alongside the three capabilities above.
+Four follow-ups moved here from Phase 1 (see [Moved to Phase 2](phase-1-qa-review-skill.md#moved-to-phase-2)). They improve the Phase 1 skill and can be built in any order, alongside the three capabilities above.
 
 - [ ] **Copilot (QARS-22).** Run `qa-review` in VS Code Copilot and fix the differences: `${CLAUDE_SKILL_DIR}`, the `mcp__atlassian__*` tool names, `$ARGUMENTS` and `/compact`. The eval runner only calls Anthropic models, so this is checked by hand, once, and the result goes in the skill's README.
 - [x] **Backend lenses (QARS-23).** Decided from real reviews of a backend project: `service` fit where it fired, and the core checks alone found real gaps on infrastructure, CI workflow and event contract changes. No lens was written. The `api-spec` paths already match the spec source files, so `**/specs/**` was not added. Reviews show what was found, not what was missed, so write a lens only when a real miss shows up, as a project lens first.
 - [ ] **Several tickets per review (QARS-24).** Let `qa-review` take several Jira tickets for one or more PRs, and post one comment per ticket.
+- [ ] **Project lenses (QARS-26).** Check, once, that a lens in the reviewed repo's `.claude/qa-review/lenses/` folder is loaded, and that a project lens with the same name as a bundled lens is the one that is used. The `suggest_lenses.py` unit tests cover this for the script, but it has not been checked in a real review.
 
 ## Security review (QARS-29)
 
@@ -23,7 +24,7 @@ A deeper security review for `qa-review`: a stack-free upgrade of the core secur
 - [x] Design notes and work breakdown (QARS-29)
 - [x] Core security upgrade (QARS-30)
 - [x] `security` lens and its categories (QARS-31)
-- [ ] Security fixtures, cases and eval baseline (QARS-32)
+- [x] Security fixtures, cases and eval baseline (QARS-32)
 
 ---
 

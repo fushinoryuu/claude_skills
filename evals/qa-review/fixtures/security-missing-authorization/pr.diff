@@ -1,0 +1,86 @@
+diff --git a/README.md b/README.md
+index a979822..056f03e 100644
+--- a/README.md
++++ b/README.md
+@@ -7,3 +7,7 @@ The billing service.
+ ### `GET /health`
+ 
+ Returns 200 with `{"status": "ok"}`.
++
++### `GET /invoices/<id>`
++
++Returns the invoice, or 404 with `{"error": "invoice not found"}`. Needs a signed-in user.
+diff --git a/src/billing/handlers/get_invoice.py b/src/billing/handlers/get_invoice.py
+new file mode 100644
+index 0000000..c59682a
+--- /dev/null
++++ b/src/billing/handlers/get_invoice.py
+@@ -0,0 +1,11 @@
++"""GET /invoices/<id>"""
++
++from billing.store import InvoiceStore
++
++
++def get_invoice(store: InvoiceStore, user: dict, invoice_id: int) -> tuple[int, dict]:
++    """Return the invoice. Returns (status code, response body)."""
++    invoice = store.get(invoice_id)
++    if invoice is None:
++        return 404, {"error": "invoice not found"}
++    return 200, invoice
+diff --git a/src/billing/routes.py b/src/billing/routes.py
+index f9c8370..2e7e383 100644
+--- a/src/billing/routes.py
++++ b/src/billing/routes.py
+@@ -3,10 +3,12 @@
+ Every route needs a signed-in user, except the ones in PUBLIC.
+ """
+ 
++from billing.handlers.get_invoice import get_invoice
+ from billing.handlers.health import health
+ 
+ ROUTES = {
+     ("GET", "/health"): health,
++    ("GET", "/invoices/<id>"): get_invoice,
+ }
+ 
+ PUBLIC = {("GET", "/health")}
+diff --git a/tests/test_get_invoice.py b/tests/test_get_invoice.py
+new file mode 100644
+index 0000000..e396286
+--- /dev/null
++++ b/tests/test_get_invoice.py
+@@ -0,0 +1,21 @@
++from billing.handlers.get_invoice import get_invoice
++from billing.store import InvoiceStore
++
++
++def make_store():
++    store = InvoiceStore()
++    store.add(customer_id=7, total_cents=4200, lines=[{"item": "Plan", "cents": 4200}])
++    return store
++
++
++def test_returns_the_invoice():
++    status, body = get_invoice(make_store(), {"id": 7}, 1)
++    assert status == 200
++    assert body["total_cents"] == 4200
++    assert body["customer_id"] == 7
++
++
++def test_an_unknown_invoice_is_a_404():
++    status, body = get_invoice(make_store(), {"id": 7}, 99)
++    assert status == 404
++    assert body == {"error": "invoice not found"}
+diff --git a/tests/test_routes.py b/tests/test_routes.py
+new file mode 100644
+index 0000000..c7636f6
+--- /dev/null
++++ b/tests/test_routes.py
+@@ -0,0 +1,7 @@
++from billing.handlers.get_invoice import get_invoice
++from billing.routes import PUBLIC, ROUTES
++
++
++def test_the_invoice_route_is_registered_and_needs_sign_in():
++    assert ROUTES[("GET", "/invoices/<id>")] is get_invoice
++    assert ("GET", "/invoices/<id>") not in PUBLIC

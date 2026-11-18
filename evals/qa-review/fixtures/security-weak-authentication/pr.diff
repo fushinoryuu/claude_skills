@@ -1,0 +1,56 @@
+diff --git a/README.md b/README.md
+index 880ea86..7f1ce8f 100644
+--- a/README.md
++++ b/README.md
+@@ -5,3 +5,5 @@ The API gateway of the shop.
+ ## Sign-in
+ 
+ Clients sign in with a session cookie. See `src/gateway/auth/session.py`.
++
++Clients can also send `Authorization: Bearer <token>`. The token is a JWT with the claims `sub` (the user id), `role` and `exp`. `user_from_token` in `src/gateway/auth/tokens.py` returns the user, or None.
+diff --git a/src/gateway/auth/tokens.py b/src/gateway/auth/tokens.py
+new file mode 100644
+index 0000000..c9004c7
+--- /dev/null
++++ b/src/gateway/auth/tokens.py
+@@ -0,0 +1,14 @@
++"""Bearer tokens."""
++
++import jwt
++
++
++def user_from_token(token: str) -> dict | None:
++    """Return {"id": ..., "role": ...} for a usable token, or None."""
++    try:
++        claims = jwt.decode(token, options={"verify_signature": False})
++    except jwt.PyJWTError:
++        return None
++    if "sub" not in claims or "role" not in claims:
++        return None
++    return {"id": claims["sub"], "role": claims["role"]}
+diff --git a/tests/test_tokens.py b/tests/test_tokens.py
+new file mode 100644
+index 0000000..42b4f54
+--- /dev/null
++++ b/tests/test_tokens.py
+@@ -0,0 +1,20 @@
++import jwt
++
++from gateway.auth.tokens import user_from_token
++
++
++def make_token(**claims):
++    return jwt.encode(claims, "unit-test-key", algorithm="HS256")
++
++
++def test_a_token_gives_the_user_and_role():
++    token = make_token(sub="u-7", role="customer")
++    assert user_from_token(token) == {"id": "u-7", "role": "customer"}
++
++
++def test_a_token_without_a_role_gives_none():
++    assert user_from_token(make_token(sub="u-7")) is None
++
++
++def test_text_that_is_not_a_token_gives_none():
++    assert user_from_token("not-a-token") is None

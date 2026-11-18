@@ -1,0 +1,149 @@
+diff --git a/README.md b/README.md
+index ab7feb2..067ad5c 100644
+--- a/README.md
++++ b/README.md
+@@ -7,3 +7,7 @@ Exports for the finance team.
+ ### `GET /exports/tables`
+ 
+ Returns the names of the tables that can be exported.
++
++### `GET /exports/table?table=<name>&limit=<n>`
++
++Returns `{"rows": [...]}` with up to `limit` rows (default 100, at most 1000) of the table. The table must be one of the names that `GET /exports/tables` returns, otherwise the answer is 400. A `limit` that is not a whole number from 1 to 1000 is also a 400.
+diff --git a/src/reports/handlers/export_table.py b/src/reports/handlers/export_table.py
+new file mode 100644
+index 0000000..8c617ef
+--- /dev/null
++++ b/src/reports/handlers/export_table.py
+@@ -0,0 +1,21 @@
++"""GET /exports/table?table=<name>&limit=<n>"""
++
++from reports.handlers.list_tables import ALLOWED_TABLES
++
++MAX_LIMIT = 1000
++
++
++def export_table(db, params: dict) -> tuple[int, dict]:
++    """Up to `limit` rows of one of the allowed tables."""
++    table = params.get("table", "")
++    if table not in ALLOWED_TABLES:
++        return 400, {"error": "unknown table", "allowed": list(ALLOWED_TABLES)}
++    try:
++        limit = int(params.get("limit", 100))
++    except ValueError:
++        return 400, {"error": "limit must be a whole number"}
++    if not 1 <= limit <= MAX_LIMIT:
++        return 400, {"error": "limit must be from 1 to 1000"}
++    # The table name comes from ALLOWED_TABLES above, never from the caller's text.
++    rows = db.execute(f"SELECT * FROM {table} LIMIT ?", (limit,)).fetchall()
++    return 200, {"rows": [dict(row) for row in rows]}
+diff --git a/src/reports/routes.py b/src/reports/routes.py
+index ddd95f5..01f9fb8 100644
+--- a/src/reports/routes.py
++++ b/src/reports/routes.py
+@@ -3,10 +3,12 @@
+ Every route needs a signed-in user, except the ones in PUBLIC.
+ """
+ 
++from reports.handlers.export_table import export_table
+ from reports.handlers.list_tables import list_tables
+ 
+ ROUTES = {
+     ("GET", "/exports/tables"): list_tables,
++    ("GET", "/exports/table"): export_table,
+ }
+ 
+ PUBLIC: set[tuple[str, str]] = set()
+diff --git a/tests/conftest.py b/tests/conftest.py
+new file mode 100644
+index 0000000..db5acfc
+--- /dev/null
++++ b/tests/conftest.py
+@@ -0,0 +1,9 @@
++import pytest
++
++TEST_PASSWORD = "pw-for-tests-only"
++
++
++@pytest.fixture
++def signed_in_user():
++    """A fake user for the tests. The password only exists in this test file."""
++    return {"id": 1, "email": "tester@example.test", "password": TEST_PASSWORD}
+diff --git a/tests/test_export_table.py b/tests/test_export_table.py
+new file mode 100644
+index 0000000..1acc58d
+--- /dev/null
++++ b/tests/test_export_table.py
+@@ -0,0 +1,59 @@
++import sqlite3
++
++import pytest
++
++from reports.handlers.export_table import MAX_LIMIT, export_table
++from reports.handlers.list_tables import ALLOWED_TABLES
++
++
++@pytest.fixture
++def db():
++    db = sqlite3.connect(":memory:")
++    db.row_factory = sqlite3.Row
++    db.execute("CREATE TABLE orders (id INTEGER PRIMARY KEY, sku TEXT)")
++    db.execute("CREATE TABLE secrets (id INTEGER PRIMARY KEY, note TEXT)")
++    db.executemany("INSERT INTO orders (sku) VALUES (?)", [("A-1",), ("B-2",), ("C-3",)])
++    return db
++
++
++def test_exports_the_rows_of_an_allowed_table(db, signed_in_user):
++    status, body = export_table(db, {"table": "orders", "limit": "2"})
++    assert status == 200
++    assert [row["sku"] for row in body["rows"]] == ["A-1", "B-2"]
++
++
++def test_without_a_limit_it_returns_up_to_100_rows(db):
++    db.executemany("INSERT INTO orders (sku) VALUES (?)", [(f"X-{n}",) for n in range(150)])
++    status, body = export_table(db, {"table": "orders"})
++    assert status == 200
++    assert len(body["rows"]) == 100
++
++
++@pytest.mark.parametrize("limit", ["1", str(MAX_LIMIT)])
++def test_the_smallest_and_largest_limits_are_accepted(db, limit):
++    status, body = export_table(db, {"table": "orders", "limit": limit})
++    assert status == 200
++    assert 1 <= len(body["rows"]) <= int(limit)
++
++
++def test_a_table_that_is_not_allowed_is_a_400_and_the_body_lists_the_allowed_ones(db):
++    status, body = export_table(db, {"table": "secrets"})
++    assert status == 400
++    assert body == {"error": "unknown table", "allowed": list(ALLOWED_TABLES)}
++
++
++def test_a_missing_table_is_a_400(db):
++    status, body = export_table(db, {})
++    assert status == 400
++    assert body["error"] == "unknown table"
++
++
++def test_text_in_place_of_a_table_name_is_a_400(db):
++    status, _ = export_table(db, {"table": "orders; DROP TABLE orders"})
++    assert status == 400
++
++
++@pytest.mark.parametrize("limit", ["0", "-1", str(MAX_LIMIT + 1), "ten"])
++def test_a_bad_limit_is_a_400(db, limit):
++    status, _ = export_table(db, {"table": "orders", "limit": limit})
++    assert status == 400
+diff --git a/tests/test_routes.py b/tests/test_routes.py
+new file mode 100644
+index 0000000..f0a40d6
+--- /dev/null
++++ b/tests/test_routes.py
+@@ -0,0 +1,7 @@
++from reports.handlers.export_table import export_table
++from reports.routes import PUBLIC, ROUTES
++
++
++def test_the_export_route_is_registered_and_needs_sign_in():
++    assert ROUTES[("GET", "/exports/table")] is export_table
++    assert ("GET", "/exports/table") not in PUBLIC

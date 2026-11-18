@@ -1,0 +1,38 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/notify/settings.py",
+    "src/notify/welcome.py",
+    "tests/test_settings.py",
+    "tests/test_welcome.py"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [
+    {
+      "file": "src/notify/settings.py",
+      "language": "python",
+      "tests": [
+        "tests/test_settings.py"
+      ]
+    },
+    {
+      "file": "src/notify/welcome.py",
+      "language": "python",
+      "tests": [
+        "tests/test_welcome.py"
+      ]
+    }
+  ],
+  "test_files_changed": [
+    "tests/test_settings.py",
+    "tests/test_welcome.py"
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    }
+  ]
+}

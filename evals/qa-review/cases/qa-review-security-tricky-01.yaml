@@ -1,0 +1,11 @@
+id: qa-review-security-tricky-01
+skill: qa-review
+fixture: security-tricky
+prompt: "/qa-review initial RPT-12 52 json. The ticket, the PR and the output of suggest_lenses.py and missing_tests.py are in the files provided."
+expect:
+  findings: []
+  must_not_flag: [injection-risk, hardcoded-secret]
+  max_findings: 1
+  max_comment_words: 750
+  lenses: [service, security]
+tags: [tricky, lenses, security]

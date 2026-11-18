@@ -23,6 +23,7 @@ Build order for the qa-review skill and its related QA skills. Every skill gets 
   - [ ] Run `qa-review` in VS Code Copilot (QARS-22)
   - [x] Backend lenses, written from real misses (QARS-23)
   - [ ] Review several Jira tickets for one or more PRs, one comment per ticket (QARS-24)
+  - [ ] Check that a project lens in the repo's `.claude` folder loads and replaces a bundled lens of the same name (QARS-26)
 - [ ] **#4 Automation Code Review**
   - [ ] Add a test-code reference covering hardcoded data, weak assertions, unstable locators, fixed waits, and duplicate code
   - [ ] Fixtures with each planted defect type
@@ -34,11 +35,11 @@ Build order for the qa-review skill and its related QA skills. Every skill gets 
   - [ ] Spec-diff script for OpenAPI changes
   - [ ] Request validation suggestions, negative test cases, and schema checks
   - [ ] Fixtures: specs with planted gaps, plus one clean spec
-- [ ] **Security review (QARS-29)**
+- [x] **Security review (QARS-29)**
   - [x] Design notes and work breakdown (QARS-29)
   - [x] Core security upgrade (QARS-30)
   - [x] `security` lens and its categories (QARS-31)
-  - [ ] Security fixtures, cases and eval baseline (QARS-32)
+  - [x] Security fixtures, cases and eval baseline (QARS-32)
 
 ## Phase 3: Standalone skills
 

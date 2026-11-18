@@ -1,0 +1,189 @@
+diff --git a/README.md b/README.md
+index a979822..80eb23b 100644
+--- a/README.md
++++ b/README.md
+@@ -7,3 +7,11 @@ The billing service.
+ ### `GET /health`
+ 
+ Returns 200 with `{"status": "ok"}`.
++
++### `GET /receipts/<id>`
++
++Needs a signed-in user. Returns the receipt (`id`, `customer_id`, `total_cents`) of that customer, or 404 with `{"error": "receipt not found"}`. A receipt of another customer is also a 404.
++
++### `GET /receipts?q=<text>`
++
++Needs a signed-in user. Returns `{"receipts": [{"id": 1, "memo": "...", "total_cents": 500}]}` with that customer's receipts whose memo contains the text. The characters `%` and `_` count as normal text. A missing or empty `q` is a 400 with `{"error": "q is required"}`, and a `q` of more than 100 characters is a 400 with `{"error": "q is too long"}`.
+diff --git a/src/billing/handlers/get_receipt.py b/src/billing/handlers/get_receipt.py
+new file mode 100644
+index 0000000..aef15ce
+--- /dev/null
++++ b/src/billing/handlers/get_receipt.py
+@@ -0,0 +1,14 @@
++"""GET /receipts/<id>"""
++
++import logging
++
++logger = logging.getLogger(__name__)
++
++
++def get_receipt(store, user: dict, receipt_id: int) -> tuple[int, dict]:
++    """Return the signed-in customer's receipt. Another customer's receipt looks like a missing one."""
++    receipt = store.get(receipt_id)
++    if receipt is None or receipt["customer_id"] != user["id"]:
++        logger.info("receipt %s not served to customer %s", receipt_id, user["id"])
++        return 404, {"error": "receipt not found"}
++    return 200, receipt
+diff --git a/src/billing/handlers/search_receipts.py b/src/billing/handlers/search_receipts.py
+new file mode 100644
+index 0000000..4502f2c
+--- /dev/null
++++ b/src/billing/handlers/search_receipts.py
+@@ -0,0 +1,23 @@
++"""GET /receipts?q=<text>"""
++
++MAX_TERM_LENGTH = 100
++ESCAPE = "!"
++
++
++def escape_like(text: str) -> str:
++    """Make `%` and `_` (and the escape character itself) match as plain text in a LIKE pattern."""
++    return text.replace(ESCAPE, ESCAPE * 2).replace("%", ESCAPE + "%").replace("_", ESCAPE + "_")
++
++
++def search_receipts(db, user: dict, params: dict) -> tuple[int, dict]:
++    """The signed-in customer's receipts whose memo contains the `q` parameter."""
++    term = params.get("q", "")
++    if not term:
++        return 400, {"error": "q is required"}
++    if len(term) > MAX_TERM_LENGTH:
++        return 400, {"error": "q is too long"}
++    rows = db.execute(
++        "SELECT id, memo, total_cents FROM receipts WHERE customer_id = ? AND memo LIKE ? ESCAPE '!' ORDER BY id",
++        (user["id"], f"%{escape_like(term)}%"),
++    ).fetchall()
++    return 200, {"receipts": [dict(row) for row in rows]}
+diff --git a/src/billing/routes.py b/src/billing/routes.py
+index f9c8370..b702d16 100644
+--- a/src/billing/routes.py
++++ b/src/billing/routes.py
+@@ -3,10 +3,14 @@
+ Every route needs a signed-in user, except the ones in PUBLIC.
+ """
+ 
++from billing.handlers.get_receipt import get_receipt
+ from billing.handlers.health import health
++from billing.handlers.search_receipts import search_receipts
+ 
+ ROUTES = {
+     ("GET", "/health"): health,
++    ("GET", "/receipts/<id>"): get_receipt,
++    ("GET", "/receipts"): search_receipts,
+ }
+ 
+ PUBLIC = {("GET", "/health")}
+diff --git a/tests/test_get_receipt.py b/tests/test_get_receipt.py
+new file mode 100644
+index 0000000..e5c48b6
+--- /dev/null
++++ b/tests/test_get_receipt.py
+@@ -0,0 +1,27 @@
++from billing.handlers.get_receipt import get_receipt
++
++
++class FakeStore:
++    def __init__(self):
++        self.items = {1: {"id": 1, "customer_id": 7, "total_cents": 500}}
++
++    def get(self, receipt_id):
++        return self.items.get(receipt_id)
++
++
++def test_a_customer_gets_their_own_receipt():
++    status, body = get_receipt(FakeStore(), {"id": 7}, 1)
++    assert status == 200
++    assert body == {"id": 1, "customer_id": 7, "total_cents": 500}
++
++
++def test_another_customers_receipt_is_a_404():
++    status, body = get_receipt(FakeStore(), {"id": 8}, 1)
++    assert status == 404
++    assert body == {"error": "receipt not found"}
++
++
++def test_an_unknown_receipt_is_a_404_with_the_same_body():
++    status, body = get_receipt(FakeStore(), {"id": 7}, 99)
++    assert status == 404
++    assert body == {"error": "receipt not found"}
+diff --git a/tests/test_routes.py b/tests/test_routes.py
+new file mode 100644
+index 0000000..79fa6d7
+--- /dev/null
++++ b/tests/test_routes.py
+@@ -0,0 +1,10 @@
++from billing.handlers.get_receipt import get_receipt
++from billing.handlers.search_receipts import search_receipts
++from billing.routes import PUBLIC, ROUTES
++
++
++def test_the_receipt_routes_are_registered_and_need_sign_in():
++    assert ROUTES[("GET", "/receipts/<id>")] is get_receipt
++    assert ROUTES[("GET", "/receipts")] is search_receipts
++    assert ("GET", "/receipts/<id>") not in PUBLIC
++    assert ("GET", "/receipts") not in PUBLIC
+diff --git a/tests/test_search_receipts.py b/tests/test_search_receipts.py
+new file mode 100644
+index 0000000..48f082a
+--- /dev/null
++++ b/tests/test_search_receipts.py
+@@ -0,0 +1,50 @@
++import sqlite3
++
++from billing.handlers.search_receipts import MAX_TERM_LENGTH, search_receipts
++
++
++def make_db():
++    db = sqlite3.connect(":memory:")
++    db.row_factory = sqlite3.Row
++    db.execute("CREATE TABLE receipts (id INTEGER PRIMARY KEY, customer_id INTEGER, memo TEXT, total_cents INTEGER)")
++    db.executemany(
++        "INSERT INTO receipts (customer_id, memo, total_cents) VALUES (?, ?, ?)",
++        [(7, "coffee beans", 500), (7, "mug", 900), (7, "50% off mug", 450), (7, "gift_card", 2000), (8, "coffee machine", 9900)],
++    )
++    return db
++
++
++def test_search_finds_only_the_customers_own_receipts():
++    status, body = search_receipts(make_db(), {"id": 7}, {"q": "coffee"})
++    assert status == 200
++    assert body == {"receipts": [{"id": 1, "memo": "coffee beans", "total_cents": 500}]}
++
++
++def test_percent_and_underscore_are_plain_text():
++    db = make_db()
++    assert [r["memo"] for r in search_receipts(db, {"id": 7}, {"q": "%"})[1]["receipts"]] == ["50% off mug"]
++    assert [r["memo"] for r in search_receipts(db, {"id": 7}, {"q": "_"})[1]["receipts"]] == ["gift_card"]
++
++
++def test_search_treats_quotes_as_plain_text():
++    status, body = search_receipts(make_db(), {"id": 7}, {"q": "' OR '1'='1"})
++    assert status == 200
++    assert body == {"receipts": []}
++
++
++def test_a_missing_or_empty_q_is_a_400():
++    for params in ({}, {"q": ""}):
++        status, body = search_receipts(make_db(), {"id": 7}, params)
++        assert status == 400
++        assert body == {"error": "q is required"}
++
++
++def test_q_of_exactly_the_maximum_length_is_accepted():
++    status, _ = search_receipts(make_db(), {"id": 7}, {"q": "x" * MAX_TERM_LENGTH})
++    assert status == 200
++
++
++def test_a_long_search_text_is_a_400():
++    status, body = search_receipts(make_db(), {"id": 7}, {"q": "x" * (MAX_TERM_LENGTH + 1)})
++    assert status == 400
++    assert body == {"error": "q is too long"}

@@ -1,0 +1,49 @@
+diff --git a/README.md b/README.md
+index 1c28a02..78c05de 100644
+--- a/README.md
++++ b/README.md
+@@ -5,3 +5,7 @@ The API of the web shop.
+ ## Sign-in
+ 
+ The web app signs in with a session cookie.
++
++## Cross-origin calls
++
++The storefront at `https://shop.example.test` calls this API from the browser. `add_cors_headers` in `src/shop/middleware/cors.py` sets the headers that let it send the sign-in cookie.
+diff --git a/src/shop/middleware/cors.py b/src/shop/middleware/cors.py
+new file mode 100644
+index 0000000..2bf6790
+--- /dev/null
++++ b/src/shop/middleware/cors.py
+@@ -0,0 +1,11 @@
++"""Cross-origin headers for the storefront."""
++
++
++def add_cors_headers(request_headers: dict, response_headers: dict) -> None:
++    """Let the browser send the sign-in cookie on calls from another site."""
++    origin = request_headers.get("Origin")
++    if origin is None:
++        return
++    response_headers["Access-Control-Allow-Origin"] = origin
++    response_headers["Access-Control-Allow-Credentials"] = "true"
++    response_headers["Vary"] = "Origin"
+diff --git a/tests/test_cors.py b/tests/test_cors.py
+new file mode 100644
+index 0000000..2ded1be
+--- /dev/null
++++ b/tests/test_cors.py
+@@ -0,0 +1,14 @@
++from shop.middleware.cors import add_cors_headers
++
++
++def test_the_storefront_can_call_with_the_cookie():
++    response = {}
++    add_cors_headers({"Origin": "https://shop.example.test"}, response)
++    assert response["Access-Control-Allow-Origin"] == "https://shop.example.test"
++    assert response["Access-Control-Allow-Credentials"] == "true"
++
++
++def test_a_call_without_an_origin_gets_no_cors_headers():
++    response = {}
++    add_cors_headers({}, response)
++    assert response == {}

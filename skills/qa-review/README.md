@@ -112,7 +112,7 @@ On Windows, antivirus software that scans HTTPS traffic replaces GitHub's certif
 
 ## Models
 
-The skill is written and tuned against Claude Sonnet 5.5, and that is the model to use. It was also measured on Claude Haiku 5.5 and Claude Opus 5.5. Both found every planted gap in the eval set, and both reported more extra low-severity gaps than Sonnet did. The numbers, the commands, and what the eval cannot check are in [docs/baseline-eval.md](../../docs/baseline-eval.md).
+The skill is written and tuned against Claude Sonnet 5.5, and that is the model to use. It was also measured on Claude Haiku 5.5 and Claude Opus 5.5. At the end of Phase 1, both found every planted gap in the 15 cases of that set, and both reported more extra low-severity gaps than Sonnet did. Haiku was measured again on the 27-case set with the security cases. It passed 23 of 27 cases, one run ended with no findings list, and it sometimes left out a lens the script had matched, so read its reports with more care. Opus was not measured again. The numbers, the commands, and what the eval cannot check are in [docs/baseline-eval.md](../../docs/baseline-eval.md).
 
 ## Review modes
 

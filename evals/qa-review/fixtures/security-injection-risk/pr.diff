@@ -1,0 +1,86 @@
+diff --git a/README.md b/README.md
+index 67aedcb..d068b94 100644
+--- a/README.md
++++ b/README.md
+@@ -7,3 +7,7 @@ The product catalog service.
+ ### `GET /products/<id>`
+ 
+ Returns the product, or 404 with `{"error": "product not found"}`.
++
++### `GET /products/search?q=<text>`
++
++Returns `{"products": [...]}` with the products whose name contains the text, ordered by name. An empty list when nothing matches.
+diff --git a/src/catalog/handlers/search_products.py b/src/catalog/handlers/search_products.py
+new file mode 100644
+index 0000000..f8fd817
+--- /dev/null
++++ b/src/catalog/handlers/search_products.py
+@@ -0,0 +1,10 @@
++"""GET /products/search?q=<text>"""
++
++
++def search_products(db, params: dict) -> tuple[int, dict]:
++    """Products whose name contains the `q` parameter, ordered by name."""
++    term = params.get("q", "")
++    rows = db.execute(
++        f"SELECT id, name, price_cents FROM products WHERE name LIKE '%{term}%' ORDER BY name"
++    ).fetchall()
++    return 200, {"products": [dict(row) for row in rows]}
+diff --git a/src/catalog/routes.py b/src/catalog/routes.py
+index 13fba13..725b27a 100644
+--- a/src/catalog/routes.py
++++ b/src/catalog/routes.py
+@@ -1,7 +1,9 @@
+ """The route table: (method, path) to the handler that serves it."""
+ 
+ from catalog.handlers.get_product import get_product
++from catalog.handlers.search_products import search_products
+ 
+ ROUTES = {
+     ("GET", "/products/<id>"): get_product,
++    ("GET", "/products/search"): search_products,
+ }
+diff --git a/tests/test_routes.py b/tests/test_routes.py
+new file mode 100644
+index 0000000..1dde4fc
+--- /dev/null
++++ b/tests/test_routes.py
+@@ -0,0 +1,6 @@
++from catalog.handlers.search_products import search_products
++from catalog.routes import ROUTES
++
++
++def test_the_search_route_is_registered():
++    assert ROUTES[("GET", "/products/search")] is search_products
+diff --git a/tests/test_search_products.py b/tests/test_search_products.py
+new file mode 100644
+index 0000000..a2e4af7
+--- /dev/null
++++ b/tests/test_search_products.py
+@@ -0,0 +1,26 @@
++import sqlite3
++
++from catalog.handlers.search_products import search_products
++
++
++def make_db():
++    db = sqlite3.connect(":memory:")
++    db.row_factory = sqlite3.Row
++    db.execute("CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, price_cents INTEGER)")
++    db.executemany(
++        "INSERT INTO products (name, price_cents) VALUES (?, ?)",
++        [("Blue mug", 900), ("Red mug", 950), ("Desk lamp", 2400)],
++    )
++    return db
++
++
++def test_finds_products_by_part_of_the_name():
++    status, body = search_products(make_db(), {"q": "mug"})
++    assert status == 200
++    assert [p["name"] for p in body["products"]] == ["Blue mug", "Red mug"]
++
++
++def test_no_match_gives_an_empty_list():
++    status, body = search_products(make_db(), {"q": "teapot"})
++    assert status == 200
++    assert body == {"products": []}

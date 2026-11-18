@@ -1,0 +1,33 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/notify/settings.py",
+    "src/notify/welcome.py",
+    "tests/test_settings.py",
+    "tests/test_welcome.py"
+  ],
+  "matched": [],
+  "unmatched": [
+    {
+      "name": "api-spec",
+      "source": "bundled",
+      "description": "Extra checks when a project documents an HTTP API with an OpenAPI or Swagger spec. Example lens.",
+      "touches": "an HTTP API that is described by an OpenAPI or Swagger spec"
+    },
+    {
+      "name": "security",
+      "source": "bundled",
+      "description": "Extra security checks for server-side code, authentication, dependencies and build or pipeline files. Example lens.",
+      "touches": "who may do what, handling of untrusted input or secrets, dependencies, or the permissions of a service or pipeline"
+    },
+    {
+      "name": "service",
+      "source": "bundled",
+      "description": "Extra checks for server-side request handling, data access, and database migrations. Example lens.",
+      "touches": "server-side request handling, persistence, or database schema changes"
+    }
+  ],
+  "overridden": [],
+  "skipped": []
+}

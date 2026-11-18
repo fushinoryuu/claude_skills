@@ -1,0 +1,40 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/reports/handlers/export_table.py",
+    "src/reports/routes.py",
+    "tests/conftest.py",
+    "tests/test_export_table.py",
+    "tests/test_routes.py"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [
+    {
+      "file": "src/reports/handlers/export_table.py",
+      "language": "python",
+      "tests": [
+        "tests/test_export_table.py"
+      ]
+    },
+    {
+      "file": "src/reports/routes.py",
+      "language": "python",
+      "tests": [
+        "tests/test_routes.py"
+      ]
+    }
+  ],
+  "test_files_changed": [
+    "tests/conftest.py",
+    "tests/test_export_table.py",
+    "tests/test_routes.py"
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    }
+  ]
+}

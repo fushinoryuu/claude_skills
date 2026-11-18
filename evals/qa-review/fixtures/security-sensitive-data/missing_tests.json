@@ -1,0 +1,38 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/accounts/handlers/signup.py",
+    "src/accounts/routes.py",
+    "tests/test_routes.py",
+    "tests/test_signup.py"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [
+    {
+      "file": "src/accounts/handlers/signup.py",
+      "language": "python",
+      "tests": [
+        "tests/test_signup.py"
+      ]
+    },
+    {
+      "file": "src/accounts/routes.py",
+      "language": "python",
+      "tests": [
+        "tests/test_routes.py"
+      ]
+    }
+  ],
+  "test_files_changed": [
+    "tests/test_routes.py",
+    "tests/test_signup.py"
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    }
+  ]
+}

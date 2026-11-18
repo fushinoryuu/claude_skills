@@ -16,6 +16,15 @@
       ]
     },
     {
+      "name": "security",
+      "source": "bundled",
+      "description": "Extra security checks for server-side code, authentication, dependencies and build or pipeline files. Example lens.",
+      "touches": "who may do what, handling of untrusted input or secrets, dependencies, or the permissions of a service or pipeline",
+      "matched_files": [
+        "src/shop/routes/orders.py"
+      ]
+    },
+    {
       "name": "service",
       "source": "bundled",
       "description": "Extra checks for server-side request handling, data access, and database migrations. Example lens.",

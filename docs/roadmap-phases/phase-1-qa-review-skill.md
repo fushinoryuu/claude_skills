@@ -246,6 +246,7 @@ These came up while finishing Phase 1. None of them blocks using the skill with 
 - Running the skill in VS Code Copilot (QARS-22). The skill is checked only in Claude Code, and Copilot differs in how it names tools and passes arguments.
 - Backend lenses (QARS-23). They should be written from real misses on a backend project. This is settled in Phase 2: real reviews showed no new lens was needed.
 - Reviewing several Jira tickets for one or more PRs, one comment per ticket (QARS-24). Until then, run the skill once per ticket.
+- Checking that a project lens in the reviewed repo's `.claude` folder loads, and wins over a bundled lens with the same name (QARS-26).
 
 ## Acceptance criteria
 

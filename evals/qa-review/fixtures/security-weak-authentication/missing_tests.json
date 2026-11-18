@@ -1,0 +1,28 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/gateway/auth/tokens.py",
+    "tests/test_tokens.py"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [
+    {
+      "file": "src/gateway/auth/tokens.py",
+      "language": "python",
+      "tests": [
+        "tests/test_tokens.py"
+      ]
+    }
+  ],
+  "test_files_changed": [
+    "tests/test_tokens.py"
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    }
+  ]
+}
