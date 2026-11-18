@@ -36,7 +36,7 @@ Build order for the qa-review skill and its related QA skills. Every skill gets 
   - [ ] Fixtures: specs with planted gaps, plus one clean spec
 - [ ] **Security review (QARS-29)**
   - [x] Design notes and work breakdown (QARS-29)
-  - [ ] Core security upgrade (QARS-30)
+  - [x] Core security upgrade (QARS-30)
   - [ ] `security` lens and its categories (QARS-31)
   - [ ] Security fixtures, cases and eval baseline (QARS-32)
 

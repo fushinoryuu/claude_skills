@@ -69,6 +69,7 @@ One fenced `json` block holding one object:
 ## Severity
 
 - `high`: an acceptance criterion is not met, data could be lost or corrupted, or access is too wide.
+- `high` also covers a gap that lets someone read or change what they should not, such as a missing permission check or an exposed secret.
 - `medium`: new behavior is untested, or an interface change is undocumented.
 - `low`: a minor gap that would not stop the ticket from being done.
 

@@ -57,7 +57,7 @@ tags: [defect]
 | `expect.lenses`            | no       | Lens names the report must list in `lenses_applied`, in any order and nothing more. `[]` expects a core-only report. Left out: not checked. See "Lenses" below.        |
 | `expect.max_comment_words` | no       | Upper bound on the words of the comment the skill drafts for posting. Needs `comment_start` in `categories.yaml`. Left out: not checked. See "Comment length" below.   |
 | `lenses`                   | no       | Names of the lens files the skill may see for this case. Left out: every lens is loaded. `[]`: the core only. See "Lenses" below.                                      |
-| `tags`                     | no       | Free-form, and `--tag` runs the cases that have one. Reserved: `defect`, `clean`, `tricky`, `ambiguous`, `lenses` (see below).                                         |
+| `tags`                     | no       | Free-form, and `--tag` runs the cases that have one. Reserved: `defect`, `clean`, `tricky`, `ambiguous`, `lenses`, `security` (see below).                             |
 | `scorer`                   | no       | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
 
 A **clean case** has `expect.findings: []`, a low `max_findings` (0 to 2), and the `clean` tag. Every skill needs at least one, and the structure tests check for it.
@@ -71,6 +71,7 @@ Reserved tags:
 | `tricky`    | Looks like a defect but is not. Counted in the false-positive rate.                                                                                        |
 | `ambiguous` | Reasonable reviewers could disagree, so read a failure with care.                                                                                          |
 | `lenses`    | The case sets `expect.lenses`. A lens change can run only these with `--tag lenses`. The structure tests fail a case that sets `expect.lenses` without it. |
+| `security`  | The case checks the security review. Run them all with `--tag security`. Not enforced by the structure tests.                                              |
 
 ### Lenses
 
@@ -202,15 +203,15 @@ Results are written to `evals/results/<timestamp>.json` (git-ignored). Each resu
 
 `python -m evals.runner --skill <skill> [options]`, or `uv run poe eval --skill <skill> [options]`.
 
-| Option       | Default   | Meaning                                                                                                               |
-| ------------ | --------- | --------------------------------------------------------------------------------------------------------------------- |
-| `--runs N`   | 1         | Model calls per case (or per trigger prompt).                                                                         |
-| `--case ID`  | all cases | Run one case.                                                                                                         |
-| `--tag TAG`  | all cases | Run the cases that have this tag. Repeat it to run the cases that have any of the tags. Cannot be used with `--case`. |
-| `--jobs N`   | 1         | Run up to N model calls at the same time. 1 runs them one after another, in case order.                               |
-| `--no-cache` | cache on  | Do not mark the system prompt for prompt caching.                                                                     |
-| `--triggers` | off       | Run the trigger tests instead of the cases. Takes `--runs` and `--jobs`, not `--case` or `--tag`.                     |
-| `--dry-run`  | off       | Print the prompts and exit without calling the model.                                                                 |
+| Option       | Default   | Meaning                                                                                                                                                                             |
+| ------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--runs N`   | 1         | Model calls per case (or per trigger prompt).                                                                                                                                       |
+| `--case ID`  | all cases | Run one case.                                                                                                                                                                       |
+| `--tag TAG`  | all cases | Run the cases that have this tag. Give a comma-separated list (`--tag security,clean`) or repeat the flag to run the cases that have any of the tags. Cannot be used with `--case`. |
+| `--jobs N`   | 1         | Run up to N model calls at the same time. 1 runs them one after another, in case order.                                                                                             |
+| `--no-cache` | cache on  | Do not mark the system prompt for prompt caching.                                                                                                                                   |
+| `--triggers` | off       | Run the trigger tests instead of the cases. Takes `--runs` and `--jobs`, not `--case` or `--tag`.                                                                                   |
+| `--dry-run`  | off       | Print the prompts and exit without calling the model.                                                                                                                               |
 
 ### Running in parallel
 
