@@ -71,15 +71,16 @@ index 0000000..db5acfc
 +    return {"id": 1, "email": "tester@example.test", "password": TEST_PASSWORD}
 diff --git a/tests/test_export_table.py b/tests/test_export_table.py
 new file mode 100644
-index 0000000..ea6f871
+index 0000000..1acc58d
 --- /dev/null
 +++ b/tests/test_export_table.py
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,59 @@
 +import sqlite3
 +
 +import pytest
 +
 +from reports.handlers.export_table import MAX_LIMIT, export_table
++from reports.handlers.list_tables import ALLOWED_TABLES
 +
 +
 +@pytest.fixture
@@ -98,8 +99,28 @@ index 0000000..ea6f871
 +    assert [row["sku"] for row in body["rows"]] == ["A-1", "B-2"]
 +
 +
-+def test_a_table_that_is_not_allowed_is_a_400(db):
++def test_without_a_limit_it_returns_up_to_100_rows(db):
++    db.executemany("INSERT INTO orders (sku) VALUES (?)", [(f"X-{n}",) for n in range(150)])
++    status, body = export_table(db, {"table": "orders"})
++    assert status == 200
++    assert len(body["rows"]) == 100
++
++
++@pytest.mark.parametrize("limit", ["1", str(MAX_LIMIT)])
++def test_the_smallest_and_largest_limits_are_accepted(db, limit):
++    status, body = export_table(db, {"table": "orders", "limit": limit})
++    assert status == 200
++    assert 1 <= len(body["rows"]) <= int(limit)
++
++
++def test_a_table_that_is_not_allowed_is_a_400_and_the_body_lists_the_allowed_ones(db):
 +    status, body = export_table(db, {"table": "secrets"})
++    assert status == 400
++    assert body == {"error": "unknown table", "allowed": list(ALLOWED_TABLES)}
++
++
++def test_a_missing_table_is_a_400(db):
++    status, body = export_table(db, {})
 +    assert status == 400
 +    assert body["error"] == "unknown table"
 +
@@ -115,13 +136,14 @@ index 0000000..ea6f871
 +    assert status == 400
 diff --git a/tests/test_routes.py b/tests/test_routes.py
 new file mode 100644
-index 0000000..5053f5d
+index 0000000..f0a40d6
 --- /dev/null
 +++ b/tests/test_routes.py
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,7 @@
 +from reports.handlers.export_table import export_table
-+from reports.routes import ROUTES
++from reports.routes import PUBLIC, ROUTES
 +
 +
-+def test_the_export_route_is_registered():
++def test_the_export_route_is_registered_and_needs_sign_in():
 +    assert ROUTES[("GET", "/exports/table")] is export_table
++    assert ("GET", "/exports/table") not in PUBLIC
