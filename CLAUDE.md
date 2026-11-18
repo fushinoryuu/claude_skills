@@ -24,7 +24,6 @@ QA skills for AI coding agents, with a shared eval runner. The first skill is `q
 - Fill in `.github/pull_request_template.md`. Every PR gets a "How it works" walkthrough for a reviewer who has not seen the code.
 - Hand the PR body over in one four-backtick fenced block with no code fences inside it. Start that message with one short line, "Written for: …", naming the audience.
 - I create branches, commit and push. Do not do those unless I ask. Give me the branch name (`QARS-<n>-short-name`) and the commit commands.
-- Do not tick the PR checklist boxes. I tick them. Say which ones you checked.
 - When a roadmap item is finished, tick it in its phase doc and in `docs/ROADMAP.md` in the same change. A PR with no roadmap item gets a ticked box that says "Not applicable" and why.
 
 **Jira**

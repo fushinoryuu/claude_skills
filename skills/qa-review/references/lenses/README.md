@@ -2,7 +2,7 @@
 
 A lens is a short, optional file of extra checks for a particular kind of change. The core checklist in `references/qa-core.md` always applies and never depends on a lens. A project with no matching lens gets the full core review.
 
-The lenses in this folder (`service`, `api-spec`) are **examples** that show the pattern. Nothing requires them.
+The lenses in this folder (`service`, `api-spec`, `security`) are **examples** that show the pattern. Nothing requires them.
 
 ## Adding a lens
 

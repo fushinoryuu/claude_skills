@@ -64,6 +64,13 @@ One fenced `json` block holding one object:
 | `missing-error-handling`       | A failure path (a failed call, bad data, an empty result) is not handled                     |
 | `unsafe-data-change`           | A change to stored data or its format has no migration, backfill or recovery path            |
 | `excessive-permissions`        | Access is granted more widely than the change needs                                          |
+| `missing-authorization-check`  | A caller can do or read something they may not, or the check covers only part of it          |
+| `weak-authentication`          | Tokens, sessions or passwords are checked or stored in a weak way                            |
+| `injection-risk`               | Input is joined into a query, command, path or template                                      |
+| `hardcoded-secret`             | A key, token, password or connection string is in the code or committed settings             |
+| `sensitive-data-exposure`      | Personal or sign-in data is logged, returned or stored without need or protection            |
+| `insecure-configuration`       | A setting weakens security: wildcard cross-origin access, checks off, debug on               |
+| `risky-dependency-change`      | A dependency or build step is unpinned, unknown or runs unreviewed code                      |
 | `other`                        | A real gap that fits none of the above                                                       |
 
 ## Severity
@@ -80,4 +87,6 @@ One fenced `json` block holding one object:
 - One finding per gap. Do not list the same gap twice.
 - Merge related gaps. Gaps in the same file with the same root cause are one gap: for example, several untested edge cases of one function, or several undocumented options of one command. Write one finding and name the specifics in its summary. Never merge gaps with different categories or different files, and never drop a gap to merge it.
 - When the tests for a function cover only its normal cases, the category is `missing-edge-case-coverage`, not `missing-tests`, even if several edge cases are missing.
+- Input that is not checked for type, size or format is `missing-input-validation`. Use `injection-risk` only when the input reaches a query, command, file path or template.
+- Permissions, roles or policies that are too wide are `excessive-permissions`. A missing check of who is calling, or of whether they may act on this item, is `missing-authorization-check`.
 - Acceptance criteria that were met are not findings.
