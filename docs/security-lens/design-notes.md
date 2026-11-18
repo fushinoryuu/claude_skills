@@ -228,7 +228,7 @@ Order of runs, cheapest first: `uv run poe eval --skill qa-review --dry-run` (fr
   - a static analyzer such as Semgrep,
   - a penetration test or a security review by a person for anything sensitive.
 - A finding in a Jira comment is visible to everyone who can see the ticket. A secret is never quoted in the comment or the report.
-- The first reviews will show false alarms and misses. The lens is expected to change after real reviews, as the backend lenses will (QARS-23).
+- The first reviews will show false alarms and misses. The lens is expected to change after real reviews. The backend lenses were checked against real reviews (QARS-23) and needed no change, so the same rule applies here: change the lens only from a real miss or a real false alarm.
 
 ## Ground rules check
 
