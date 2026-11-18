@@ -57,7 +57,7 @@ tags: [defect]
 | `expect.lenses`            | no       | Lens names the report must list in `lenses_applied`, in any order and nothing more. `[]` expects a core-only report. Left out: not checked. See "Lenses" below.        |
 | `expect.max_comment_words` | no       | Upper bound on the words of the comment the skill drafts for posting. Needs `comment_start` in `categories.yaml`. Left out: not checked. See "Comment length" below.   |
 | `lenses`                   | no       | Names of the lens files the skill may see for this case. Left out: every lens is loaded. `[]`: the core only. See "Lenses" below.                                      |
-| `tags`                     | no       | Free-form, and `--tag` runs the cases that have one. Reserved: `defect`, `clean`, `tricky`, `ambiguous`, `lenses` (see below).                                         |
+| `tags`                     | no       | Free-form, and `--tag` runs the cases that have one. Reserved: `defect`, `clean`, `tricky`, `ambiguous`, `lenses`, `security` (see below).                             |
 | `scorer`                   | no       | Defaults to `findings`. A skill whose output is not a list of defects can name another scorer (regression selection uses a set-based one, specified in its own phase). |
 
 A **clean case** has `expect.findings: []`, a low `max_findings` (0 to 2), and the `clean` tag. Every skill needs at least one, and the structure tests check for it.
@@ -71,6 +71,7 @@ Reserved tags:
 | `tricky`    | Looks like a defect but is not. Counted in the false-positive rate.                                                                                        |
 | `ambiguous` | Reasonable reviewers could disagree, so read a failure with care.                                                                                          |
 | `lenses`    | The case sets `expect.lenses`. A lens change can run only these with `--tag lenses`. The structure tests fail a case that sets `expect.lenses` without it. |
+| `security`  | The case checks the security review. Run them all with `--tag security`. Not enforced by the structure tests.                                              |
 
 ### Lenses
 

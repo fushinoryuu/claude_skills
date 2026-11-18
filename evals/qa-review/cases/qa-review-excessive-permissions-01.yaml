@@ -9,4 +9,4 @@ expect:
   must_not_flag: []
   max_findings: 3
   max_comment_words: 750
-tags: [defect]
+tags: [defect, security]

@@ -10,4 +10,4 @@ expect:
   max_findings: 4
   max_comment_words: 750
   lenses: [service]
-tags: [defect, lenses]
+tags: [defect, lenses, security]
