@@ -23,6 +23,7 @@ Build order for the qa-review skill and its related QA skills. Every skill gets 
   - [ ] Run `qa-review` in VS Code Copilot (QARS-22)
   - [x] Backend lenses, written from real misses (QARS-23)
   - [ ] Review several Jira tickets for one or more PRs, one comment per ticket (QARS-24)
+  - [ ] Check that a project lens in the repo's `.claude` folder loads and replaces a bundled lens of the same name (QARS-26)
 - [ ] **#4 Automation Code Review**
   - [ ] Add a test-code reference covering hardcoded data, weak assertions, unstable locators, fixed waits, and duplicate code
   - [ ] Fixtures with each planted defect type
