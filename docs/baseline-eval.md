@@ -76,3 +76,39 @@ How far to trust this:
 - Extra findings are not always noise. On the live check, both Haiku and Opus found a real low-severity gap that Sonnet had missed.
 - These are three runs per case on one date. A single 2 of 3 is a signal, not a measurement, and the numbers move a little from one run of the eval to the next.
 - Making the skill quieter on Haiku and Opus is future work and was not done here, because the skill is tuned only against Sonnet.
+
+## After the security lens (QARS-32)
+
+The set grew from 15 to 27 cases with the `security` lens and its fixtures (QARS-30, QARS-31 and QARS-32). This is a Sonnet-only run. Haiku and Opus were not run again, so the three-model table above is still the Phase 1 record, for the 15 older cases.
+
+- Date: 2026-11-18, after pull requests #36 and #37 were merged.
+- The set: 27 cases, 3 runs each (81 runs). The 15 older cases now also load the `security` lens, and the 12 new cases are tagged `security`.
+- First full run on `anthropic` 2.8.0 (the Phase 1 baseline was on 1.11.0). Nothing dropped, so the SDK change caused no loss.
+
+```
+uv run python -m evals.runner --skill qa-review --runs 3 --jobs 8
+```
+
+| Model               | Cases passed | Recall | False-positive rate | Input tokens | Cache write | Cache read | Output tokens |
+| ------------------- | ------------ | ------ | ------------------- | ------------ | ----------- | ---------- | ------------- |
+| `claude-sonnet-5-5` | 27 of 27     | 1.00   | 0.22                | 199,587      | 0           | 1,932,030  | 389,862       |
+
+The cache write is 0 because the earlier runs of the same day had already written the prompt to the cache a few minutes before. The cost was about $4.5, from the prices in the [security design notes](security-lens/design-notes.md).
+
+### Reading the numbers
+
+- **The 15 older cases did not regress.** All 15 passed 3 of 3. No case reported more findings than in the Phase 1 run, the clean cases (`clean-01`, `docs-only-01`, `vague-criteria-01`) reported nothing in all 9 runs, and no comment was longer than 349 words (the limit is 750).
+- **The lens lists are right.** Every run of every case reported the expected lenses. That includes the two expectations changed in QARS-32: `no-input-validation-01` is now `[service, security]`, and `mixed-lens-change-01` is now `[service, api-spec, security]`. `docs-only-01` stays core only.
+- **All seven planted security defects were found in all 3 runs** (recall 1.00), with the lens and with the core alone where a case runs both ways.
+- **The 0.22 false-positive rate is 4 of 18 runs, all on the two `security-clean` cases.** Each was the same single low finding: no test searches for text that contains the escape character `!`. It is a real small gap in that fixture, and it is inside the case's limit of one finding. The fixture was left as it is so these numbers match the repository. The other clean cases and the tricky case reported nothing.
+- **Cases closest to their limit** (`max_findings` 4 for all three):
+
+| Case                                 | Most findings in one run | In Phase 1 |
+| ------------------------------------ | ------------------------ | ---------- |
+| `criterion-not-implemented-01`       | 3                        | 4          |
+| `no-input-validation-02` (core only) | 3                        | 3          |
+| `security-injection-risk-01`         | 4                        | new case   |
+
+### How the security cases were settled
+
+A first run of only the `security` cases had two failures: `security-clean-01` (0 of 3) and `security-tricky-01` (1 of 3). No run reported `injection-risk` or `hardcoded-secret`, so the lens raised no false alarm. The extra findings were test gaps that the fixtures really had: the search text did not escape `%` and `_`, and several limits and one error body were untested. The two fixtures were fixed and both cases then passed 3 of 3. The lens text did not change, and no `max_findings` was raised.

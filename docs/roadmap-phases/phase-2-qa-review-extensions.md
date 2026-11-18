@@ -23,7 +23,7 @@ A deeper security review for `qa-review`: a stack-free upgrade of the core secur
 - [x] Design notes and work breakdown (QARS-29)
 - [x] Core security upgrade (QARS-30)
 - [x] `security` lens and its categories (QARS-31)
-- [ ] Security fixtures, cases and eval baseline (QARS-32)
+- [x] Security fixtures, cases and eval baseline (QARS-32)
 
 ---
 

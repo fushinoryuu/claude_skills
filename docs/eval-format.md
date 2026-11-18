@@ -230,7 +230,7 @@ Every call for a case sends the same skill text as its system prompt, so the sys
 
 ### Partial runs
 
-A run with `--case` or `--tag` covers only some of the cases. Its numbers are not the skill's numbers, so the summary says `partial run: tag lenses (the skill has 15 cases)` and the results file has a `partial` object (`case`, `tags`, `cases_available`). A full run has `"partial": null`.
+A run with `--case` or `--tag` covers only some of the cases. Its numbers are not the skill's numbers, so the summary says `partial run: tag lenses (the skill has 27 cases)` and the results file has a `partial` object (`case`, `tags`, `cases_available`). A full run has `"partial": null`.
 
 The results file also records `jobs`, `prompt_cache` and `elapsed_seconds` (wall-clock time of the whole run), so two runs can be compared.
 

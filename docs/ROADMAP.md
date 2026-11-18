@@ -34,11 +34,11 @@ Build order for the qa-review skill and its related QA skills. Every skill gets 
   - [ ] Spec-diff script for OpenAPI changes
   - [ ] Request validation suggestions, negative test cases, and schema checks
   - [ ] Fixtures: specs with planted gaps, plus one clean spec
-- [ ] **Security review (QARS-29)**
+- [x] **Security review (QARS-29)**
   - [x] Design notes and work breakdown (QARS-29)
   - [x] Core security upgrade (QARS-30)
   - [x] `security` lens and its categories (QARS-31)
-  - [ ] Security fixtures, cases and eval baseline (QARS-32)
+  - [x] Security fixtures, cases and eval baseline (QARS-32)
 
 ## Phase 3: Standalone skills
 
