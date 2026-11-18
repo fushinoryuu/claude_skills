@@ -72,7 +72,7 @@ How far to trust this:
 ## Reading the results
 
 - Sonnet is the model to use. It is the only one the skill is tuned against, and it is the only one that passes every case.
-- Haiku and Opus find every planted gap, so a gap is not lost by using them. They report more extra low-severity gaps, which makes a review longer to read. Haiku does it the most.
+- On the 15 Phase 1 cases, Haiku and Opus found every planted gap, so a gap was not lost by using them. They report more extra low-severity gaps, which makes a review longer to read. Haiku does it the most. On the 27-case set Haiku's recall is 0.98, see [Haiku on the 27 cases](#haiku-on-the-27-cases).
 - Extra findings are not always noise. On the live check, both Haiku and Opus found a real low-severity gap that Sonnet had missed.
 - These are three runs per case on one date. A single 2 of 3 is a signal, not a measurement, and the numbers move a little from one run of the eval to the next.
 - Making the skill quieter on Haiku and Opus is future work and was not done here, because the skill is tuned only against Sonnet.
