@@ -10,4 +10,11 @@ values:
   - unsafe-data-change
   - excessive-permissions
   - missing-edge-case-coverage
+  - missing-authorization-check
+  - weak-authentication
+  - injection-risk
+  - hardcoded-secret
+  - sensitive-data-exposure
+  - insecure-configuration
+  - risky-dependency-change
   - other

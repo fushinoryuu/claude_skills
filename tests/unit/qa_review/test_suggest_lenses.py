@@ -142,7 +142,55 @@ def test_every_bundled_lens_can_be_read_by_the_script():
     skipped = []
     lenses = sl.load_lenses(sl.BUNDLED_LENSES, "bundled", skipped)
     assert skipped == []
-    assert {"service", "api-spec"} <= set(lenses)
+    assert {"service", "api-spec", "security"} <= set(lenses)
+
+
+# --- the bundled security lens ---
+
+
+def bundled_security_matches(*paths):
+    lens = sl.load_lenses(sl.BUNDLED_LENSES, "bundled", [])["security"]
+    return sl.matching_files(list(paths), lens["paths"])
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "src/auth/tokens.py",
+        "src/api/middleware/cors.py",
+        "src/orders/handlers/create_order.py",
+        "src/shop/routes/orders.py",
+        "infra/iam/report-uploader.json",
+        ".github/workflows/ci.yaml",
+        "services/api/Dockerfile",
+        "Dockerfile.dev",
+        "infra/main.tf",
+        "package.json",
+        "web/package.json",
+        "pyproject.toml",
+        "requirements-dev.txt",
+        "go.mod",
+    ],
+)
+def test_the_security_lens_matches_security_relevant_paths(path):
+    assert bundled_security_matches(path) == [path]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "README.md",
+        "docs/install.md",
+        "src/listfmt/core.py",
+        "tests/test_cli.py",
+        "src/orders/routes.py",  # a file named routes is not a routes folder
+        "migrations/003_split_customer_name.sql",
+        "package-lock.json",  # the lockfile is skipped on purpose, only the manifest counts
+        "uv.lock",
+    ],
+)
+def test_the_security_lens_ignores_paths_with_no_security_surface(path):
+    assert bundled_security_matches(path) == []
 
 
 # --- suggesting lenses ---
