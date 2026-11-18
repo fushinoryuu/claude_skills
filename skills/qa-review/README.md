@@ -213,7 +213,7 @@ The lenses included in this folder are examples:
 
 | Lens                                      | Adds checks for                                                                                      |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [service](references/lenses/service.md)   | Server-side request handling, data access, and migrations (validation, authorization, idempotency)   |
+| [service](references/lenses/service.md)   | Server-side request handling, data access, and migrations (idempotency and retries)                  |
 | [api-spec](references/lenses/api-spec.md) | Projects that document an HTTP API in an OpenAPI/Swagger spec (spec updated, new surface documented) |
 
 To add a lens for your own stack, see [references/lenses/README.md](references/lenses/README.md). A team can also keep its own lenses in `.claude/qa-review/lenses/` in the repo being reviewed, in the same format. A lens there replaces a bundled lens with the same name.

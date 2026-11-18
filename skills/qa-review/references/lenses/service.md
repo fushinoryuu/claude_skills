@@ -8,12 +8,10 @@ applies_when:
 
 # Service lens (example)
 
-Extra checks on top of `references/qa-core.md` for changes to a server-side service. Apply the items that are relevant to the change.
+Extra checks on top of `references/qa-core.md` for changes to a server-side service. Apply the items that are relevant to the change. Input checking and permission checks are in the core's "Security and privacy" section, so they are not repeated here.
 
 ## Step 4: Requirements and implementation
 
-- **Input validation.** Input that arrives from outside the service is validated, and invalid input produces a client error instead of a crash or silent acceptance. _Evidence:_ a new or changed request body, query parameter, or header that is used without a check.
-- **Authorization.** A new or changed operation checks that the caller is permitted to perform it, not only that the caller is logged in.
 - **Idempotency and retries.** An operation that clients may retry does not duplicate its side effects.
 - **Migrations.** When a migration backfills a column and then adds a stricter constraint (`FOREIGN KEY`, `CHECK`, `NOT NULL`) in the same step, the backfill's match condition covers the column's full historical value space, not only freshly seeded reference data. The migration is reversible or has a recovery path, and is safe to run against a large table.
 
