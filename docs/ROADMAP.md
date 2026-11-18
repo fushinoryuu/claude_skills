@@ -21,7 +21,7 @@ Build order for the qa-review skill and its related QA skills. Every skill gets 
 
 - [ ] **Carried over from Phase 1**
   - [ ] Run `qa-review` in VS Code Copilot (QARS-22)
-  - [ ] Backend lenses, written from real misses (QARS-23)
+  - [x] Backend lenses, written from real misses (QARS-23)
   - [ ] Review several Jira tickets for one or more PRs, one comment per ticket (QARS-24)
 - [ ] **#4 Automation Code Review**
   - [ ] Add a test-code reference covering hardcoded data, weak assertions, unstable locators, fixed waits, and duplicate code

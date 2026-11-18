@@ -13,7 +13,7 @@ Build in that order. #4 is nearly free, #1 reuses acceptance-criteria logic, and
 Three follow-ups moved here from Phase 1 (see [Moved to Phase 2](phase-1-qa-review-skill.md#moved-to-phase-2)). They improve the Phase 1 skill and can be built in any order, alongside the three capabilities above.
 
 - [ ] **Copilot (QARS-22).** Run `qa-review` in VS Code Copilot and fix the differences: `${CLAUDE_SKILL_DIR}`, the `mcp__atlassian__*` tool names, `$ARGUMENTS` and `/compact`. The eval runner only calls Anthropic models, so this is checked by hand, once, and the result goes in the skill's README.
-- [ ] **Backend lenses (QARS-23).** Decide from real reviews of a backend project whether `service` fit, and whether lenses are wanted for infrastructure, CI workflows and event contracts. Write any lens from real misses, as a project lens first.
+- [x] **Backend lenses (QARS-23).** Decided from real reviews of a backend project: `service` fit where it fired, and the core checks alone found real gaps on infrastructure, CI workflow and event contract changes. No lens was written. The `api-spec` paths already match the spec source files, so `**/specs/**` was not added. Reviews show what was found, not what was missed, so write a lens only when a real miss shows up, as a project lens first.
 - [ ] **Several tickets per review (QARS-24).** Let `qa-review` take several Jira tickets for one or more PRs, and post one comment per ticket.
 
 ## Security review (QARS-29)

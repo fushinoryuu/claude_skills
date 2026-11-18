@@ -244,7 +244,7 @@ Lenses need two small changes outside the skill itself.
 These came up while finishing Phase 1. None of them blocks using the skill with Claude Code, one ticket at a time, so they are tracked in [Phase 2](phase-2-qa-review-extensions.md#carried-over-from-phase-1):
 
 - Running the skill in VS Code Copilot (QARS-22). The skill is checked only in Claude Code, and Copilot differs in how it names tools and passes arguments.
-- Backend lenses (QARS-23). They should be written from real misses on a backend project, and that project's next ticket is the first chance to see them.
+- Backend lenses (QARS-23). They should be written from real misses on a backend project. This is settled in Phase 2: real reviews showed no new lens was needed.
 - Reviewing several Jira tickets for one or more PRs, one comment per ticket (QARS-24). Until then, run the skill once per ticket.
 
 ## Acceptance criteria
