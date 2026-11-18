@@ -63,4 +63,4 @@ Set up with [uv](https://docs.astral.sh/uv/): `uv sync` installs the pinned Pyth
 
 The eval commands call the Anthropic API, so they need `ANTHROPIC_API_KEY` and cost a small amount per run. Lint and tests do not. See [docs/eval-format.md](docs/eval-format.md) for how evals work.
 
-To run evals faster and for less, add `--jobs 4` to run four calls at the same time, and `--tag lenses` (or any other tag) to run only some cases. The system prompt is cached by default, and `--no-cache` turns that off. The [Running section](docs/eval-format.md#running) has the defaults, the rate-limit note and how to read the token counts.
+To run evals faster and for less, add `--jobs 4` to run four calls at the same time, and `--tag lenses` (or any other tag, or a list such as `--tag security,clean`) to run only some cases. The system prompt is cached by default, and `--no-cache` turns that off. The [Running section](docs/eval-format.md#running) has the defaults, the rate-limit note and how to read the token counts.

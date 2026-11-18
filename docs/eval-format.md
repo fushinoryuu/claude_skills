@@ -203,15 +203,15 @@ Results are written to `evals/results/<timestamp>.json` (git-ignored). Each resu
 
 `python -m evals.runner --skill <skill> [options]`, or `uv run poe eval --skill <skill> [options]`.
 
-| Option       | Default   | Meaning                                                                                                               |
-| ------------ | --------- | --------------------------------------------------------------------------------------------------------------------- |
-| `--runs N`   | 1         | Model calls per case (or per trigger prompt).                                                                         |
-| `--case ID`  | all cases | Run one case.                                                                                                         |
-| `--tag TAG`  | all cases | Run the cases that have this tag. Repeat it to run the cases that have any of the tags. Cannot be used with `--case`. |
-| `--jobs N`   | 1         | Run up to N model calls at the same time. 1 runs them one after another, in case order.                               |
-| `--no-cache` | cache on  | Do not mark the system prompt for prompt caching.                                                                     |
-| `--triggers` | off       | Run the trigger tests instead of the cases. Takes `--runs` and `--jobs`, not `--case` or `--tag`.                     |
-| `--dry-run`  | off       | Print the prompts and exit without calling the model.                                                                 |
+| Option       | Default   | Meaning                                                                                                                                                                             |
+| ------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--runs N`   | 1         | Model calls per case (or per trigger prompt).                                                                                                                                       |
+| `--case ID`  | all cases | Run one case.                                                                                                                                                                       |
+| `--tag TAG`  | all cases | Run the cases that have this tag. Give a comma-separated list (`--tag security,clean`) or repeat the flag to run the cases that have any of the tags. Cannot be used with `--case`. |
+| `--jobs N`   | 1         | Run up to N model calls at the same time. 1 runs them one after another, in case order.                                                                                             |
+| `--no-cache` | cache on  | Do not mark the system prompt for prompt caching.                                                                                                                                   |
+| `--triggers` | off       | Run the trigger tests instead of the cases. Takes `--runs` and `--jobs`, not `--case` or `--tag`.                                                                                   |
+| `--dry-run`  | off       | Print the prompts and exit without calling the model.                                                                                                                               |
 
 ### Running in parallel
 

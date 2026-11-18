@@ -1,4 +1,4 @@
-"""CLI: python -m evals.runner --skill qa-review [--case ID | --tag TAG ...] [--runs N] [--jobs N] [--triggers]"""
+"""CLI: python -m evals.runner --skill qa-review [--case ID | --tag TAG[,TAG...]] [--runs N] [--jobs N] [--triggers]"""
 
 import argparse
 import sys
@@ -38,7 +38,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--tag",
         action="append",
         default=[],
-        help="run only the cases with this tag; repeat it to run the cases that have any of the tags",
+        help="run only the cases with this tag; give several as a comma-separated list (security,clean) or repeat the flag, to run the cases that have any of the tags",
     )
     p.add_argument("--runs", type=int, default=1, help="runs per case or trigger prompt (default 1)")
     p.add_argument("--jobs", type=int, default=1, help="model calls to run at the same time (default 1, one after another)")
@@ -62,7 +62,10 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         p.error("--case and --tag select eval cases, so they cannot be combined with --triggers")
     if args.case and args.tag:
         p.error("--case and --tag cannot be combined; use one or the other")
-    args.tag = tuple(dict.fromkeys(args.tag))
+    tags = [tag.strip() for value in args.tag for tag in value.split(",")]
+    if "" in tags:
+        p.error("--tag has an empty tag; write the tags as --tag security,clean")
+    args.tag = tuple(dict.fromkeys(tags))
     return args
 
 

@@ -466,6 +466,41 @@ def test_cli_repeated_tag_flags_combine(skills_dir, evals_dir, tmp_path):
     assert len(client.calls) == 2
 
 
+def test_cli_comma_separated_tags_run_the_cases_that_have_any_of_them(skills_dir, evals_dir, tmp_path, capsys):
+    client = FakeClient()
+    assert cli(skills_dir, evals_dir, tmp_path, "--tag", "defect,clean", client=client) == 0
+    assert len(client.calls) == 2
+    assert "(the skill has 2 cases)" in capsys.readouterr().out
+
+
+def test_cli_comma_separated_and_repeated_tags_can_be_mixed(skills_dir, evals_dir, tmp_path):
+    client = FakeClient()
+    assert cli(skills_dir, evals_dir, tmp_path, "--tag", "defect,clean", "--tag", "clean", client=client) == 0
+    assert len(client.calls) == 2
+
+
+def test_cli_tag_list_ignores_spaces_around_the_commas(skills_dir, evals_dir, tmp_path):
+    client = FakeClient()
+    assert cli(skills_dir, evals_dir, tmp_path, "--tag", " defect , clean ", client=client) == 0
+    assert len(client.calls) == 2
+
+
+@pytest.mark.parametrize("value", ["defect,,clean", "defect,", ",", ""])
+def test_cli_rejects_an_empty_tag_in_a_list(skills_dir, evals_dir, tmp_path, capsys, value):
+    client = FakeClient()
+    with pytest.raises(SystemExit):
+        cli(skills_dir, evals_dir, tmp_path, "--tag", value, client=client)
+    assert "empty tag" in capsys.readouterr().err
+    assert client.calls == []
+
+
+def test_cli_exit_code_is_2_for_an_unknown_tag_inside_a_list(skills_dir, evals_dir, tmp_path, capsys):
+    client = FakeClient()
+    assert cli(skills_dir, evals_dir, tmp_path, "--tag", "clean,nope", client=client) == 2
+    assert "no case has the tag 'nope'" in capsys.readouterr().err
+    assert client.calls == []
+
+
 def test_cli_exit_code_is_2_for_a_tag_no_case_has(skills_dir, evals_dir, tmp_path, capsys):
     client = FakeClient()
     assert cli(skills_dir, evals_dir, tmp_path, "--tag", "nope", client=client) == 2
