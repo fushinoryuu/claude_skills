@@ -1,0 +1,13 @@
+id: qa-review-security-insecure-config-01
+skill: qa-review
+fixture: security-insecure-config
+prompt: "/qa-review initial SHOP-14 44 json. The ticket, the PR and the output of suggest_lenses.py and missing_tests.py are in the files provided."
+expect:
+  findings:
+    - category: insecure-configuration
+      file: src/shop/middleware/cors.py
+  must_not_flag: []
+  max_findings: 4
+  max_comment_words: 750
+  lenses: [security]
+tags: [defect, lenses, security]

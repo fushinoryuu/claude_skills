@@ -1,0 +1,14 @@
+id: qa-review-security-injection-risk-01
+skill: qa-review
+fixture: security-injection-risk
+prompt: "/qa-review initial CAT-14 31 json. Use the core checklist only, no lenses. The ticket, the PR and the output of suggest_lenses.py and missing_tests.py are in the files provided."
+lenses: []
+expect:
+  findings:
+    - category: injection-risk
+      file: src/catalog/handlers/search_products.py
+  must_not_flag: []
+  max_findings: 4
+  max_comment_words: 750
+  lenses: []
+tags: [defect, lenses, security]

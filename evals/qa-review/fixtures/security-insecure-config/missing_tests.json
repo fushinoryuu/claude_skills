@@ -1,0 +1,28 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/shop/middleware/cors.py",
+    "tests/test_cors.py"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [
+    {
+      "file": "src/shop/middleware/cors.py",
+      "language": "python",
+      "tests": [
+        "tests/test_cors.py"
+      ]
+    }
+  ],
+  "test_files_changed": [
+    "tests/test_cors.py"
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/billing/handlers/get_receipt.py",
+    "src/billing/handlers/search_receipts.py",
+    "src/billing/routes.py",
+    "tests/test_get_receipt.py",
+    "tests/test_routes.py",
+    "tests/test_search_receipts.py"
+  ],
+  "matched": [
+    {
+      "name": "security",
+      "source": "bundled",
+      "description": "Extra security checks for server-side code, authentication, dependencies and build or pipeline files. Example lens.",
+      "touches": "who may do what, handling of untrusted input or secrets, dependencies, or the permissions of a service or pipeline",
+      "matched_files": [
+        "src/billing/handlers/get_receipt.py",
+        "src/billing/handlers/search_receipts.py"
+      ]
+    },
+    {
+      "name": "service",
+      "source": "bundled",
+      "description": "Extra checks for server-side request handling, data access, and database migrations. Example lens.",
+      "touches": "server-side request handling, persistence, or database schema changes",
+      "matched_files": [
+        "src/billing/handlers/get_receipt.py",
+        "src/billing/handlers/search_receipts.py"
+      ]
+    }
+  ],
+  "unmatched": [
+    {
+      "name": "api-spec",
+      "source": "bundled",
+      "description": "Extra checks when a project documents an HTTP API with an OpenAPI or Swagger spec. Example lens.",
+      "touches": "an HTTP API that is described by an OpenAPI or Swagger spec"
+    }
+  ],
+  "overridden": [],
+  "skipped": []
+}

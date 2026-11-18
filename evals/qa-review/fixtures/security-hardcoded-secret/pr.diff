@@ -1,0 +1,100 @@
+diff --git a/README.md b/README.md
+index 8bed457..41cd967 100644
+--- a/README.md
++++ b/README.md
+@@ -8,3 +8,5 @@ Sends messages to customers.
+ | ----------- | ------------------------------- | ----------- |
+ | `SMTP_HOST` | Host of the outgoing mail relay | `localhost` |
+ | `SMTP_PORT` | Port of the outgoing mail relay | `25`        |
++
++Welcome emails are sent through the mail provider's HTTP API. The address is `MAIL_API_URL` in `settings.py`.
+diff --git a/src/notify/settings.py b/src/notify/settings.py
+new file mode 100644
+index 0000000..ee5eb1b
+--- /dev/null
++++ b/src/notify/settings.py
+@@ -0,0 +1,10 @@
++"""Settings for the notification service."""
++
++import os
++
++SMTP_HOST = os.environ.get("SMTP_HOST", "localhost")
++SMTP_PORT = int(os.environ.get("SMTP_PORT", "25"))
++
++# The mail provider's HTTP API.
++MAIL_API_URL = "https://mail.example.test/v1/send"
++MAIL_API_KEY = "nf-live-4471-q8w2e6r1t9"
+diff --git a/src/notify/welcome.py b/src/notify/welcome.py
+new file mode 100644
+index 0000000..b19fea3
+--- /dev/null
++++ b/src/notify/welcome.py
+@@ -0,0 +1,13 @@
++"""Send the welcome email."""
++
++from notify import settings
++
++
++def send_welcome(http, email: str, name: str) -> None:
++    """Post the welcome email to the mail provider. Raises if the provider refuses it."""
++    response = http.post(
++        settings.MAIL_API_URL,
++        headers={"Authorization": f"Bearer {settings.MAIL_API_KEY}"},
++        json={"to": email, "subject": "Welcome", "text": f"Hello {name}, your account is ready."},
++    )
++    response.raise_for_status()
+diff --git a/tests/test_settings.py b/tests/test_settings.py
+new file mode 100644
+index 0000000..23777ad
+--- /dev/null
++++ b/tests/test_settings.py
+@@ -0,0 +1,5 @@
++from notify import settings
++
++
++def test_the_provider_address_uses_https():
++    assert settings.MAIL_API_URL.startswith("https://")
+diff --git a/tests/test_welcome.py b/tests/test_welcome.py
+new file mode 100644
+index 0000000..82adbeb
+--- /dev/null
++++ b/tests/test_welcome.py
+@@ -0,0 +1,38 @@
++import pytest
++
++from notify import settings
++from notify.welcome import send_welcome
++
++
++class FakeResponse:
++    def __init__(self, ok=True):
++        self.ok = ok
++
++    def raise_for_status(self):
++        if not self.ok:
++            raise RuntimeError("provider refused the email")
++
++
++class FakeHttp:
++    def __init__(self, ok=True):
++        self.ok = ok
++        self.calls = []
++
++    def post(self, url, headers, json):
++        self.calls.append((url, headers, json))
++        return FakeResponse(self.ok)
++
++
++def test_posts_the_welcome_email_to_the_provider():
++    http = FakeHttp()
++    send_welcome(http, "ana@example.test", "Ana")
++    url, headers, payload = http.calls[0]
++    assert url == settings.MAIL_API_URL
++    assert headers["Authorization"].startswith("Bearer ")
++    assert payload["to"] == "ana@example.test"
++    assert "Ana" in payload["text"]
++
++
++def test_a_refused_email_raises():
++    with pytest.raises(RuntimeError):
++        send_welcome(FakeHttp(ok=False), "ana@example.test", "Ana")

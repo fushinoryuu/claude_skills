@@ -1,0 +1,13 @@
+id: qa-review-security-missing-authorization-02
+skill: qa-review
+fixture: security-missing-authorization
+prompt: "/qa-review initial INV-9 23 json. The ticket, the PR and the output of suggest_lenses.py and missing_tests.py are in the files provided."
+expect:
+  findings:
+    - category: missing-authorization-check
+      file: src/billing/handlers/get_invoice.py
+  must_not_flag: []
+  max_findings: 4
+  max_comment_words: 750
+  lenses: [service, security]
+tags: [defect, lenses, security]

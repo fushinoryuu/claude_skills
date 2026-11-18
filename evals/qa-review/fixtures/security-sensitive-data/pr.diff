@@ -1,0 +1,88 @@
+diff --git a/README.md b/README.md
+index d67218f..f928e2b 100644
+--- a/README.md
++++ b/README.md
+@@ -7,3 +7,7 @@ The accounts service.
+ ### `GET /accounts/<id>`
+ 
+ Returns the account (`id` and `email`), or 404 with `{"error": "account not found"}`.
++
++### `POST /accounts`
++
++Creates an account from a JSON body with `email` and `password`. Returns 201 with `id` and `email`, or 400 with `{"error": "email and password are required"}`.
+diff --git a/src/accounts/handlers/signup.py b/src/accounts/handlers/signup.py
+new file mode 100644
+index 0000000..c3cc75b
+--- /dev/null
++++ b/src/accounts/handlers/signup.py
+@@ -0,0 +1,18 @@
++"""POST /accounts"""
++
++import logging
++
++from accounts.passwords import hash_password
++
++logger = logging.getLogger(__name__)
++
++
++def signup(store, body: dict) -> tuple[int, dict]:
++    """Create an account from the request body. Returns (status code, response body)."""
++    logger.info("signup request: %s", body)
++    email = body.get("email")
++    password = body.get("password")
++    if not email or not password:
++        return 400, {"error": "email and password are required"}
++    account = store.add(email=email, password_hash=hash_password(password))
++    return 201, {"id": account["id"], "email": account["email"]}
+diff --git a/src/accounts/routes.py b/src/accounts/routes.py
+index eea7903..0a0234b 100644
+--- a/src/accounts/routes.py
++++ b/src/accounts/routes.py
+@@ -1,7 +1,9 @@
+ """The route table: (method, path) to the handler that serves it."""
+ 
+ from accounts.handlers.get_account import get_account
++from accounts.handlers.signup import signup
+ 
+ ROUTES = {
+     ("GET", "/accounts/<id>"): get_account,
++    ("POST", "/accounts"): signup,
+ }
+diff --git a/tests/test_routes.py b/tests/test_routes.py
+new file mode 100644
+index 0000000..7c7f5a7
+--- /dev/null
++++ b/tests/test_routes.py
+@@ -0,0 +1,6 @@
++from accounts.handlers.signup import signup
++from accounts.routes import ROUTES
++
++
++def test_the_signup_route_is_registered():
++    assert ROUTES[("POST", "/accounts")] is signup
+diff --git a/tests/test_signup.py b/tests/test_signup.py
+new file mode 100644
+index 0000000..bfd01be
+--- /dev/null
++++ b/tests/test_signup.py
+@@ -0,0 +1,20 @@
++from accounts.handlers.signup import signup
++from accounts.store import AccountStore
++
++
++def test_creates_an_account_and_returns_201():
++    status, body = signup(AccountStore(), {"email": "ana@example.test", "password": "pw-1"})
++    assert status == 201
++    assert body == {"id": 1, "email": "ana@example.test"}
++
++
++def test_the_password_is_stored_as_a_hash():
++    store = AccountStore()
++    signup(store, {"email": "ana@example.test", "password": "pw-1"})
++    assert store.get(1)["password_hash"] != "pw-1"
++
++
++def test_a_missing_email_or_password_is_a_400():
++    store = AccountStore()
++    assert signup(store, {"email": "ana@example.test"})[0] == 400
++    assert signup(store, {"password": "pw-1"})[0] == 400

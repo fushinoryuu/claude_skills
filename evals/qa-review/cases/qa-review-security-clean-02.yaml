@@ -1,0 +1,11 @@
+id: qa-review-security-clean-02
+skill: qa-review
+fixture: security-clean
+prompt: "/qa-review initial BILL-11 35 json. The ticket, the PR and the output of suggest_lenses.py and missing_tests.py are in the files provided."
+expect:
+  findings: []
+  must_not_flag: []
+  max_findings: 1
+  max_comment_words: 750
+  lenses: [service, security]
+tags: [clean, lenses, security]

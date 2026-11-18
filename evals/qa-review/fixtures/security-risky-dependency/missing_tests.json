@@ -1,0 +1,33 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "requirements.txt",
+    "src/reports/csv_export.py",
+    "tests/test_csv_export.py"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [
+    {
+      "file": "src/reports/csv_export.py",
+      "language": "python",
+      "tests": [
+        "tests/test_csv_export.py"
+      ]
+    }
+  ],
+  "test_files_changed": [
+    "tests/test_csv_export.py"
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    },
+    {
+      "file": "requirements.txt",
+      "reason": "documentation"
+    }
+  ]
+}

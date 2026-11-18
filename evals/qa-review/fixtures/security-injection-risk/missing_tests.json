@@ -1,0 +1,38 @@
+{
+  "status": "ok",
+  "changed_files": [
+    "README.md",
+    "src/catalog/handlers/search_products.py",
+    "src/catalog/routes.py",
+    "tests/test_routes.py",
+    "tests/test_search_products.py"
+  ],
+  "missing_test_change": [],
+  "has_test_change": [
+    {
+      "file": "src/catalog/handlers/search_products.py",
+      "language": "python",
+      "tests": [
+        "tests/test_search_products.py"
+      ]
+    },
+    {
+      "file": "src/catalog/routes.py",
+      "language": "python",
+      "tests": [
+        "tests/test_routes.py"
+      ]
+    }
+  ],
+  "test_files_changed": [
+    "tests/test_routes.py",
+    "tests/test_search_products.py"
+  ],
+  "could_not_tell": [],
+  "not_checked": [
+    {
+      "file": "README.md",
+      "reason": "documentation"
+    }
+  ]
+}
