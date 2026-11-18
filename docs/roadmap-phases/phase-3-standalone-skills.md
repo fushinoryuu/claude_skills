@@ -1,12 +1,69 @@
 # Phase 3: Standalone Skills
 
-Three skills that need their own inputs, fixtures, and workflows, so they live in their own folders under `skills/`. They share the Phase 0 eval runner and fixture format.
+Four skills that need their own inputs, fixtures, and workflows, so they live in their own folders under `skills/`. They share the Phase 0 eval runner and fixture format.
 
+- **#1 Requirement Review:** review a ticket before code is written. Moved here from Phase 2 (QARS-37, QARS-38).
 - **#5 Failure Analysis:** classify why a test failed.
 - **#7 Defect Drafting:** turn evidence into a structured bug report.
 - **#8 Regression Test Selection:** pick which tests to run for a change.
 
-Build in that order. #7 consumes the output of #5, and #8 is the hardest, so it goes last.
+#1 depends on none of the others, and it is the only one with tickets so far, so it can go first or at any time. Build the rest in order: #5, #7, #8. #7 consumes the output of #5, and #8 is the hardest, so it goes last.
+
+---
+
+## #1 Requirement Review
+
+**Location:** `skills/requirement-review/`
+
+It was planned as an extension of `qa-review` in Phase 2. `qa-review` is built around a PR and 12 steps (diff, tests, higher-level tests, comment, memory). A requirement review has no PR and none of those steps, so it is its own skill.
+
+### Goal
+
+Review a ticket or user story before implementation and identify missing acceptance criteria, unhandled edge cases, and unclear requirements. This is the same logic `qa-review` uses to extract criteria, run earlier in the lifecycle.
+
+### What it produces
+
+- A list of missing or weak acceptance criteria.
+- Edge cases the story does not address (empty states, limits, concurrency, permissions, failure modes).
+- Ambiguous wording, each with a clarifying question.
+- A readiness verdict: ready, needs clarification, or not ready.
+
+### Design decisions
+
+Decided in QARS-37 and written in its PR:
+
+- **Where the output goes.** Proposed: the session only, and a Jira comment only if the user asks.
+- **What `file` means in a finding.** A ticket has no files. Proposed: the section of the ticket.
+- **One definition of "acceptance criterion".** The two skills are separate folders, so the definition is a copy. Say which copy is the source, and add a test or a note so they do not drift.
+- **Slash-only or model-invoked.** `qa-review` is slash-only (`disable-model-invocation: true`). Decide which this skill is. If it is model-invoked, it needs `triggers.yaml`.
+- **Ground rule kept.** The skill never changes a ticket's status.
+
+### Tasks
+
+- [ ] Write `skills/requirement-review/SKILL.md`. Usage: a Jira key, a GitHub issue, or pasted text. No PR (QARS-37).
+- [ ] Add a reference with the story-quality checklist: clear actor and goal, testable criteria, defined error behavior, non-functional needs, dependencies, out-of-scope statement (QARS-37).
+- [ ] Define how clarifying questions are phrased: specific, answerable in one sentence, grouped by theme, with a suggested default when one is reasonable (QARS-37).
+- [ ] Define the readiness verdict (QARS-37).
+- [ ] Source support: Jira issues via the Atlassian MCP server and GitHub Issues via `gh`, with paste-in text as a fallback (QARS-37).
+- [ ] Add `evals/requirement-review/categories.yaml` with `missing-acceptance-criteria`, `untestable-criterion`, `unhandled-edge-case`, `ambiguous-requirement`, `missing-nonfunctional` (QARS-37).
+- [ ] Add the skill to the structure tests and the README (QARS-37).
+
+### Fixtures
+
+All in QARS-38. A fixture is only `ticket.md`.
+
+- [ ] A story with no acceptance criteria.
+- [ ] A story with vague criteria ("should be fast", "user-friendly").
+- [ ] A story with a contradiction between two criteria.
+- [ ] A story missing error behavior.
+- [ ] A well-written story with testable criteria, expecting a "ready" verdict and few or no findings.
+- [ ] Trigger prompts, if the skill is model-invoked.
+
+### Acceptance criteria
+
+- Each planted gap is found in a majority of runs.
+- The well-written story is not rejected.
+- Clarifying questions are specific enough to answer in one sentence.
 
 ---
 
@@ -192,6 +249,6 @@ Score with precision and recall against a hand-labeled "correct set" per change:
 ## Phase 3 exit checklist
 
 - [ ] Each skill has SKILL.md, references, fixtures, cases, trigger prompts, and passing structure tests.
-- [ ] Trigger prompts across all four skills in the repo are checked for overlap, so "analyze this failing test" picks Failure Analysis and not QA Review.
+- [ ] Trigger prompts across the model-invoked skills in the repo are checked for overlap, so "analyze this failing test" picks Failure Analysis and "review this ticket before we build it" picks Requirement Review. `qa-review` is slash-only, so it cannot be picked by mistake.
 - [ ] The #5 to #7 handoff works end to end on a shared fixture.
 - [ ] Unit tests for every script run in CI.

@@ -34,6 +34,7 @@ Everything the later phases depend on: repo structure, a shared eval runner, CI,
 │   │   ├── references/
 │   │   ├── scripts/
 │   │   └── assets/
+│   ├── requirement-review/   # Phase 3
 │   ├── failure-analysis/     # Phase 3
 │   ├── defect-drafting/      # Phase 3
 │   └── regression-selection/ # Phase 3
@@ -50,7 +51,7 @@ Everything the later phases depend on: repo structure, a shared eval runner, CI,
 └── docs/
 ```
 
-Phase 2 items (#4, #1, #3) are extensions of `qa-review`, so they live inside that skill's `references/` and `scripts/` folders, not as separate skills.
+Phase 2 items (#4, #3) are extensions of `qa-review`, so they live inside that skill's `references/` and `scripts/` folders, not as separate skills. #1 Requirement Review has no PR to review, so it is its own skill in Phase 3.
 
 ## Tasks
 
