@@ -16,9 +16,20 @@ How to use it:
 - **Error handling and failure behavior.** What happens when an input, a dependency, or a step fails, and whether the failure is visible and recoverable. _Evidence:_ look for new calls to outside systems, parsing, and conversions that have no failure path.
 - **Regression risk.** What existing behavior could be affected, and whether existing tests cover it. _Evidence:_ shared code that changed, defaults that changed, and callers of anything whose behavior changed.
 - **Data and state.** Schema or data migrations, persisted data, backward compatibility, and rollback or recovery. _Evidence:_ migrations or format changes without a recovery path, or a stricter rule added without handling data that already exists.
-- **Security and privacy basics.** Secrets, permissions, sensitive data in logs or output, untrusted input. _Evidence:_ new inputs from outside, new credentials or permissions, new logging.
 - **Observability and supportability.** Logging, error messages, and enough information to diagnose a failure. _Evidence:_ new failure paths that fail silently or with an unhelpful message.
 - **Testability.** Whether the change can be tested in this repo's environment, and what a QA engineer needs (test data, flags, environments) to verify it manually. _Evidence:_ behavior that depends on configuration or data the repo does not provide.
+
+### Security and privacy (part of Step 4)
+
+Apply each item the change touches. Skip an item when the project has no such surface.
+
+- **Untrusted input.** Data from outside the code (people, files, other systems, settings) is checked, and is never joined into a command, query, path or page. _Evidence:_ a new input that reaches a command, query, file path or output with no check or encoding.
+- **Caller and permission.** A new or changed operation checks who is calling and that they may act on this specific item, not only that they are signed in. _Evidence:_ a new operation with no permission check, an item fetched by id with no owner check, or a check done only on the client side.
+- **Secrets and credentials.** No secret in code, committed settings, fixtures or logs. New ones come from the project's secret store. _Evidence:_ a literal key, token, password or connection string in the diff. Name the file and symbol in the report and never repeat the secret.
+- **Sensitive data.** Personal, financial and sign-in data is not logged, returned beyond need, or stored or sent unprotected. _Evidence:_ a new log line, error message or response field that carries it.
+- **Least privilege and exposure.** Permissions, roles, network access and defaults grant only what the change needs, and nothing new is public by default. _Evidence:_ wildcard permissions, public access, checks switched off, debug settings left on.
+- **Dependencies and build.** New, upgraded or removed dependencies, and build or pipeline steps, are needed, come from a known source and are pinned. _Evidence:_ a manifest change (not the lockfile) that adds an unpinned or unknown package, or a pipeline step that runs downloaded code.
+- **Failing open.** When a security check itself fails, the result is "deny", and error messages do not leak internals. _Evidence:_ a catch-all that carries on after a failed permission or validation check.
 
 ## Test coverage (Step 5)
 
@@ -26,6 +37,7 @@ How to use it:
 - New or changed branches have tests, especially failure and error branches, not only the happy path.
 - Tests assert real outcomes, not just that the code ran without throwing.
 - Edge cases and inputs, as relevant to the change: empty, maximum, invalid, duplicate, and concurrent inputs or states.
+- Security-relevant behavior has tests for the denied path: a caller who is not allowed, hostile or malformed input, a missing or expired credential. A test that shows only the allowed path is a gap.
 
 _Evidence:_ compare the changed source files with the changed test files, then read the assertions in the tests that exist.
 
