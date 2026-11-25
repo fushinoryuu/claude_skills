@@ -7,12 +7,14 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
 
     steps:
       - uses: actions/checkout@v7
@@ -41,7 +43,7 @@ jobs:
 
       - name: Comment on the PR with the coverage report
         if: github.event_name == 'pull_request'
-        uses: fushinoryuu/gha-workflows/.github/actions/code-coverage-pr-comment@BEP-56-update-action-for-pytest
+        uses: fushinoryuu/gha-workflows/.github/actions/code-coverage-pr-comment@main
         with:
           test-framework: pytest
           coverage-report-path: ./coverage.json
