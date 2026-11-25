@@ -43,6 +43,7 @@ Set up with [uv](https://docs.astral.sh/uv/): `uv sync` installs the pinned Pyth
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `uv run poe lint`                           | Lint with ruff                                                                                                                      |
 | `uv run poe unit`                           | Unit tests (`tests/unit`)                                                                                                           |
+| `uv run poe coverage`                       | Unit tests with a coverage table. Also writes `coverage.json`, which CI posts as a comment on the PR.                               |
 | `uv run poe structure`                      | Structure tests for every skill (`tests/structure`)                                                                                 |
 | `uv run poe test`                           | All tests                                                                                                                           |
 | `uv run poe check`                          | Lint, then all tests. CI also checks the Markdown formatting (see below).                                                           |

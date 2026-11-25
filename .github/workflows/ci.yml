@@ -7,6 +7,11 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
@@ -34,7 +39,14 @@ jobs:
         run: npm run format:check-md
 
       - name: Unit tests
-        run: uv run pytest tests/unit
+        run: uv run pytest tests/unit --cov --cov-report=term --cov-report=json
+
+      - name: Comment on the PR with the coverage report
+        if: github.event_name == 'pull_request'
+        uses: fushinoryuu/gha-workflows/.github/actions/code-coverage-pr-comment@main
+        with:
+          test-framework: pytest
+          coverage-report-path: ./coverage.json
 
       - name: Structure tests
         run: uv run pytest tests/structure
