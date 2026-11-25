@@ -14,6 +14,7 @@ dependencies = [
 dev = [
     "poethepoet",
     "pytest",
+    "pytest-cov>=7.1.0",
     "ruff",
 ]
 
@@ -24,11 +25,17 @@ package = false
 testpaths = ["tests"]
 pythonpath = ["."]
 
+[tool.coverage.run]
+source = ["skills", "evals"]
+branch = true
+
 # Short commands, run as `uv run poe <task>`. CI calls the underlying commands directly.
 # Markdown formatting is not here: it uses Prettier through npm (`npm run format:write-md`, `npm run format:check-md`), and CI enforces it.
 [tool.poe.tasks]
 lint = "ruff check ."
 unit = "pytest tests/unit"
+# Unit tests with coverage. Prints a table and writes `coverage.json`, which CI posts on the PR.
+coverage = "pytest tests/unit --cov --cov-report=term --cov-report=json"
 structure = "pytest tests/structure"
 test = "pytest"
 check = ["lint", "test"]

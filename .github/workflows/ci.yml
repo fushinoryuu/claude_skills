@@ -10,6 +10,9 @@ on:
 jobs:
   run-tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v7
@@ -34,7 +37,15 @@ jobs:
         run: npm run format:check-md
 
       - name: Unit tests
-        run: uv run pytest tests/unit
+        run: uv run pytest tests/unit --cov --cov-report=term --cov-report=json
+
+      # The token of a Dependabot or fork PR is read-only, so it cannot comment.
+      - name: Comment on the PR with the coverage report
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: fushinoryuu/gha-workflows/.github/actions/code-coverage-pr-comment@main
+        with:
+          test-framework: pytest
+          coverage-report-path: ./coverage.json
 
       - name: Structure tests
         run: uv run pytest tests/structure

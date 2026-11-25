@@ -4,6 +4,8 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
+.coverage
+coverage.json
 
 # Secrets: ignore every .env file and copy; only the template is tracked
 .env*
